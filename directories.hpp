@@ -33,7 +33,7 @@ public:
 
 	virtual const vector_of_strings& getFiles() const = 0;
 	vector_of_strings nextBlock();
-	void completeFileName(vector_of_strings& file_pathes);
+	void completeFilePath(const string& p, string& command);
 	void insertOutFilesToDb(const vector_of_strings&) {};
 
 protected:
@@ -42,6 +42,7 @@ protected:
 
 private:
 	vector_of_strings::iterator blk_ptr;
+	void replaceTmpl(const string& tmpl, const string& value, string& text);
 };
 
 #endif

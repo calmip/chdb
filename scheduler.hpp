@@ -27,7 +27,8 @@ using namespace std;
 class Scheduler: private NonCopyable {
 
 public:
-	Scheduler(const Parameters& p, Directories& d):prms(p),dir(d){};
+
+	Scheduler(const Parameters& p, Directories& d);
 
 	virtual void init()=0;
 	virtual void mainLoop()=0;

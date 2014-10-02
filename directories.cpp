@@ -16,6 +16,7 @@ using namespace std;
 #include <string>
 #include <list>
 #include <cerrno>
+#include <libgen.h>
 
 //#include "command.h"
 #include "usingfs.hpp"
@@ -59,7 +60,59 @@ vector_of_strings Directories::nextBlock() {
 	return blk;
 }
 
-	
+/** 
+ * @brief Replace some templates in the parameter, using the file_path:
+ *        file pathes: #path#, #dirname#
+ * 
+ * @param[in]    p Path used as a source for the template expansion
+ * @param[out] command String to expand (generally a command line)
+ */
+void Directories::completeFilePath(const string& p, string& command) {
+
+	// We must work with a readwrite copy !
+	// p is the path (a/toto.txt), d the dirname (a), n the name (toto.txt), b the basename (toto)
+	char*  file_path = (char*) malloc(p.length()+1);
+	strcpy(file_path,p.c_str());
+	string d = dirname(file_path);
+	strcpy(file_path,p.c_str());
+	string n = basename(file_path);
+	free(file_path);
+
+	string b;
+	if (n[0] != '.') {
+		size_t dot = n.find_last_of('.');
+		b = (dot!=string::npos)?n.substr(0,dot):b;
+	} else {
+		b = "";
+	}
+
+	static string tmpl1="#path#";
+	static string tmpl2="#basename#";
+	static string tmpl3="#name#";
+	static string tmpl4="#dirname#";
+	replaceTmpl(tmpl1,p,command);
+	replaceTmpl(tmpl2,b,command);
+	replaceTmpl(tmpl3,n,command);
+	replaceTmpl(tmpl4,d,command);
+}
+
+/** 
+ * @brief replace a template with value
+ * 
+ * @param[in]  tmpl  The template to look for in text
+ * @param[in]  value The value to replace with 
+ * @param[out] text
+ */
+void Directories::replaceTmpl(const string& tmpl, const string& value, string& text) {
+	size_t pos = 0;
+	do {
+		pos = text.find(tmpl,pos);
+		if (pos != string::npos) {
+			text.replace(pos,tmpl.length(),value);
+		}
+	} while(pos != string::npos);
+}
+
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
  * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx

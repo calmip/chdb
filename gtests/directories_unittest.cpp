@@ -260,6 +260,54 @@ TEST_F(ChdbTest,block4) {
 
 }
 
+// Testing 
+TEST_F(ChdbTest,completeFilePath) {
+
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+
+	string f1 = "A/B/C/D.txt";
+
+	string s1 = "outputdir/#path#";
+	string s2 = "outputdir/#name#";
+	string s3 = "outputdir/#basename#.out";
+	string s4 = "outputdir/#dirname#/#basename#.out";
+	string s5 = s1 + "##" + s1 + "##" + s2 + "##" + s2 + "##" + s3 + "##" + s3;
+	dir.completeFilePath(f1,s1);
+	dir.completeFilePath(f1,s2);
+	dir.completeFilePath(f1,s3);
+	dir.completeFilePath(f1,s4);
+	dir.completeFilePath(f1,s5);
+
+	string expected_s1 = "outputdir/A/B/C/D.txt";
+	string expected_s2 = "outputdir/D.txt";
+	string expected_s3 = "outputdir/D.out";
+	string expected_s4 = "outputdir/A/B/C/D.out";
+	string expected_s5 = expected_s1 + "##" + expected_s1 + "##" + expected_s2 + "##" + expected_s2 + "##" + expected_s3 + "##" + expected_s3;
+	vector_of_strings block;
+	vector_of_strings expected_block;
+
+	EXPECT_EQ(s1,expected_s1);
+	EXPECT_EQ(s2,expected_s2);
+	EXPECT_EQ(s3,expected_s3);
+	EXPECT_EQ(s4,expected_s4);
+	EXPECT_EQ(s5,expected_s5);
+
+	FREE_ARGV(7);
+
+}
+
+
 
 #ifdef AJETER		
 

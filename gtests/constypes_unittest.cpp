@@ -18,6 +18,7 @@ void createFile(const string& d, const naco& n) {
 }
 
 ChdbTest::ChdbTest(): input_dir("inputdir") {
+
 	// Create and populate inputdir
 	vector<naco> files;
 

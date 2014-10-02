@@ -13,6 +13,7 @@
 //#include <set>
 using namespace std;
 
+#include <mpi.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -29,6 +30,23 @@ using namespace std;
 //#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
+
+/** 
+ * @brief throw an error if MPI not yet initialized
+ * 
+ * @param p 
+ * @param d 
+ * 
+ * @return 
+ */
+
+Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d) {
+	int flg;
+	MPI_Initialized(&flg);
+	if (flg==0) {
+		throw logic_error("ERROR - MPI not yet initialized");
+	};
+}
 
 /** 
  * @brief Write in a Buffer for sending a block of file names

@@ -63,6 +63,11 @@ gtest_main.o : $(GTEST_SRCS_)
 	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
             $(GTEST_DIR)/src/gtest_main.cc
 
+# gtest_main_mpi = same as gtest_main, except we add MPI_Init() call
+gtest_main_mpi.o : gtest_main_mpi.cc
+	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
+            gtest_main_mpi.cc
+
 gtest.a : gtest-all.o
 	$(AR) $(ARFLAGS) $@ $^
 
@@ -88,10 +93,10 @@ directories_unittest.o : directories_unittest.cpp ../directories.cpp
 directories_unittest : directories_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp
+scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c scheduler_unittest.cpp	
 
-scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main.a
+scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main_mpi.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 run: parameters_unittest directories_unittest
