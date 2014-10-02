@@ -126,7 +126,7 @@ void BasicScheduler::mainLoopSlave() {
 }
 
 /** 
- * @brief Alloc a buffer big enough to send/receive return_values and file_names
+ * @brief Alloc a buffer big enough to send/receive return_values and file_pathes
  *        For block_size 4 and FILEPATH_MAXLENGTH 5 we may have at most:
  *          4000AAAABBBBCCCCDDDD4000xxxxx\0xxxxx\0xxxxx\0xxxxx\0
  *          4000 is the integer representation of 4 in little endian machines
@@ -147,15 +147,15 @@ void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
 }
 
 /** 
- * @brief The invariant is: return_values empty, OR same size as file_names
+ * @brief The invariant is: return_values empty, OR same size as file_pathes
  *
  */
 void BasicScheduler::checkInvariant() {
-	assert(return_values.empty() || return_values.size()==file_names.size());
+	assert(return_values.empty() || return_values.size()==file_pathes.size());
 }
 
 /** 
- * @brief Write to a send buffer the vectors return_values and file_names
+ * @brief Write to a send buffer the vectors return_values and file_pathes
  * 
  * @pre The bfr should be already allocated with allocBfr
 
@@ -169,7 +169,7 @@ void BasicScheduler::writeToSndBfr(void* bfr, size_t bfr_size, size_t& data_size
 	size_t int_data_size=0;
 	size_t str_data_size=0;
 
-	// Fill the buffer with the data from return_values, then from file_names
+	// Fill the buffer with the data from return_values, then from file_pathes
 	//      iiiiiiiiifffffffffffffffffffffffffff00000000000000000000000000000
 	//      ^        ^                          ^
 	//      0        int_data_size              int_data_size+str_data_size  ^bfr_size
@@ -178,7 +178,7 @@ void BasicScheduler::writeToSndBfr(void* bfr, size_t bfr_size, size_t& data_size
 	vctToBfr(return_values,bfr,bfr_size,int_data_size);
 	bfr = (void*) ((char*) bfr + int_data_size);
 	bfr_size = bfr_size - int_data_size;
-	vctToBfr(file_names,bfr,bfr_size,str_data_size);
+	vctToBfr(file_pathes,bfr,bfr_size,str_data_size);
 	data_size = int_data_size + str_data_size;
 }
 
@@ -186,7 +186,7 @@ void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
 	size_t data_size;
 	bfrToVct(bfr,data_size,return_values);
 	bfr = (void*) ((char*) bfr + data_size);
-	bfrToVct(bfr, data_size, file_names);
+	bfrToVct(bfr, data_size, file_pathes);
 	checkInvariant();
 }
 	

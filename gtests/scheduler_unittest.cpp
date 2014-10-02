@@ -12,11 +12,11 @@ using namespace std;
 class SchedTestStr : public ChdbTest {
 public:
 	SchedTestStr() {
-		expected_file_names.push_back(input_dir + '/' + "B.txt");
-		expected_file_names.push_back(input_dir + '/' + "C/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "C/C/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "D/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "A.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
 
 		int n = 5;
 		string tmp((char*) &n,sizeof(int));
@@ -36,7 +36,7 @@ public:
 	~SchedTestStr() { free(bfr); };
 
 protected:
-	vector_of_strings expected_file_names;
+	vector_of_strings expected_file_pathes;
 	
 	//size_t expected_length;
 	string expected_bfr;
@@ -87,11 +87,11 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	UsingFs dir(prms);
 	BasicScheduler sched(prms,dir);
 
-	vector_of_strings file_names;
+	vector_of_strings file_pathes;
 	size_t  data_size;
-	sched.bfrToVct((const void*)bfr,data_size,file_names);
+	sched.bfrToVct((const void*)bfr,data_size,file_pathes);
 	EXPECT_EQ(data_size,expected_bfr.length());
-	EXPECT_EQ(expected_file_names,file_names);
+	EXPECT_EQ(expected_file_pathes,file_pathes);
 	
 	FREE_ARGV(7);
 };
@@ -179,11 +179,11 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 class SchedTestStrInt : public ChdbTest {
 public:
 	SchedTestStrInt() {
-		expected_file_names.push_back(input_dir + '/' + "B.txt");
-		expected_file_names.push_back(input_dir + '/' + "C/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "C/C/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "D/C.txt");
-		expected_file_names.push_back(input_dir + '/' + "A.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
 
 		// no value, 5 files
 		int v[2] = {0,5};
@@ -218,7 +218,7 @@ public:
 	~SchedTestStrInt() { free(bfr); };
 
 protected:
-	vector_of_strings expected_file_names;
+	vector_of_strings expected_file_pathes;
 	vector_of_int expected_values_1;
 	string expected_bfr;
 	string expected_bfr_1;
@@ -243,13 +243,13 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
 	Parameters prms(9,argv);
 	UsingFs dir(prms);
 
-	// Load (empty) values and file_names from expected_bfr
+	// Load (empty) values and file_pathes from expected_bfr
 	BasicScheduler sched(prms,dir);
 	sched.readFrmRecvBfr(expected_bfr.c_str());
 	EXPECT_EQ(0,sched.return_values.size());
-	EXPECT_EQ(expected_file_names,sched.file_names);
+	EXPECT_EQ(expected_file_pathes,sched.file_pathes);
 
-	// Create a bfr from the (empty) values and file_names and compare it to expected_bfr
+	// Create a bfr from the (empty) values and file_pathes and compare it to expected_bfr
 	size_t data_size;
 	size_t bfr_size = expected_bfr.length() + 50;
 	void * bfr = malloc(bfr_size);
@@ -257,11 +257,11 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
 	EXPECT_EQ(0,memcmp(bfr,expected_bfr.c_str(),data_size));
 	EXPECT_EQ(data_size,expected_bfr.length());
 	
-	// clear file_names and reload values and file_names from  expected_bfr_1
-	sched.file_names.clear();
+	// clear file_pathes and reload values and file_pathes from  expected_bfr_1
+	sched.file_pathes.clear();
 	sched.readFrmRecvBfr(expected_bfr_1.c_str());
 	EXPECT_EQ(expected_values_1,sched.return_values);
-	EXPECT_EQ(expected_file_names,sched.file_names);
+	EXPECT_EQ(expected_file_pathes,sched.file_pathes);
 
 	// write again to bfr and compare value to expected_bfr_1
 	sched.writeToSndBfr(bfr,bfr_size,data_size);

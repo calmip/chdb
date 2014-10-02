@@ -35,7 +35,7 @@ private:
 	bool is_master;
 
 	vector_of_int return_values;
-	vector_of_strings file_names;
+	vector_of_strings file_pathes;
 
 	void mainLoopMaster();
 	void mainLoopSlave();

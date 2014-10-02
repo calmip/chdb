@@ -33,7 +33,7 @@ public:
 
 	virtual const vector_of_strings& getFiles() const = 0;
 	vector_of_strings nextBlock();
-	void completeFileName(vector_of_strings& file_names);
+	void completeFileName(vector_of_strings& file_pathes);
 	void insertOutFilesToDb(const vector_of_strings&) {};
 
 protected:

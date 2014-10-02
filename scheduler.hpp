@@ -41,7 +41,7 @@ public:
 	friend class SchedTestInt_bfrToVctInt_Test;
 
 protected:
-	void vctToBfr(const vector_of_strings& file_names, void* bfr, size_t bfr_size, size_t& data_size);
+	void vctToBfr(const vector_of_strings& file_pathes, void* bfr, size_t bfr_size, size_t& data_size);
 	void bfrToVct(void const* bfr, size_t& data_size, vector_of_strings& files_names);
 	void vctToBfr(const vector_of_int& values, void* bfr, size_t bfr_size, size_t& data_size);
 	void bfrToVct(void const* bfr, size_t& data_size, vector_of_int& values);
