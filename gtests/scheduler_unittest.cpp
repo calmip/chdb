@@ -12,23 +12,27 @@ using namespace std;
 class SchedTestStr : public ChdbTest {
 public:
 	SchedTestStr() {
-		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
+		expected_file_pathes.push_back("B.txt");
+		expected_file_pathes.push_back("C/C.txt");
+		expected_file_pathes.push_back("C/C/C.txt");
+		expected_file_pathes.push_back("D/C.txt");
+		expected_file_pathes.push_back("A.txt");
 
 		int n = 5;
 		string tmp((char*) &n,sizeof(int));
 		expected_bfr  = tmp;
-		expected_bfr += input_dir + '/' + "B.txt" + '\0';
-		expected_bfr += input_dir + '/' + "C/C.txt" + '\0';
-		expected_bfr += input_dir + '/' + "C/C/C.txt" + '\0';
-		expected_bfr += input_dir + '/' + "D/C.txt"   + '\0';
-		expected_bfr += input_dir + '/' + "A.txt"     + '\0';
+		expected_bfr += "B.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "D/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "A.txt";
+		expected_bfr += '\0';
 
-		bfr_len  = 5 * input_dir.length();
-		bfr_len += 10;
+		bfr_len = 5;
 		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
 		bfr = malloc(bfr_len);
 
@@ -282,6 +286,39 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
 	free(bfr);
 
 	FREE_ARGV(9);
+};
+
+TEST_F(ChdbTest,ExecuteCommand) {
+
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"./ext_cmd.sh #input_path# #output_path#");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"#output_path#");
+	INIT_ARGV(9,"--block-size");
+	INIT_ARGV(10,"5");
+	
+	Parameters prms(11,argv);
+	UsingFs dir(prms);
+	dir.makeOutputDir();
+
+	// Load (empty) values and file_pathes from expected_bfr
+	BasicScheduler sched(prms,dir);
+	sched.return_values.clear();
+	sched.file_pathes = dir.nextBlock();
+	EXPECT_NO_THROW(sched.executeCommand());
+
+	string cmd = "rm -r ";
+	cmd += prms.getOutDir();
+	system(cmd.c_str());
+
+	FREE_ARGV(11);
 };
 
 // Step 3. Call RUN_ALL_TESTS() in main().

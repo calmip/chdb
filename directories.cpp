@@ -104,14 +104,20 @@ void Directories::completeFilePath(const string& p, string& command) {
 		b = "";
 	}
 
-	static string tmpl1="#path#";
-	static string tmpl2="#basename#";
-	static string tmpl3="#name#";
-	static string tmpl4="#dirname#";
-	replaceTmpl(tmpl1,p,command);
-	replaceTmpl(tmpl2,b,command);
-	replaceTmpl(tmpl3,n,command);
-	replaceTmpl(tmpl4,d,command);
+	string ip = prms.getInDir()  + '/' + p;
+	string op = prms.getOutDir() + '/' + p;
+	static string tmpl1="#input_path#";
+	static string tmpl2="#output_path#";
+	static string tmpl3="#path#";
+	static string tmpl4="#basename#";
+	static string tmpl5="#name#";
+	static string tmpl6="#dirname#";
+	replaceTmpl(tmpl1,ip,command);
+	replaceTmpl(tmpl2,op,command);
+	replaceTmpl(tmpl3,p,command);
+	replaceTmpl(tmpl4,b,command);
+	replaceTmpl(tmpl5,n,command);
+	replaceTmpl(tmpl6,d,command);
 }
 
 /** 

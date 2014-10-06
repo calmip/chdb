@@ -79,11 +79,11 @@ TEST_F(ChdbTest,getFiles_Unsorted) {
 	UsingFs dir(prms);
 	vector_of_strings found_files=dir.getFiles();
 	vector_of_strings expected_files;
-	expected_files.push_back(input_dir + '/' + "B.txt");
-	expected_files.push_back(input_dir + '/' + "C/C.txt");
-	expected_files.push_back(input_dir + '/' + "C/C/C.txt");
-	expected_files.push_back(input_dir + '/' + "D/C.txt");
-	expected_files.push_back(input_dir + '/' + "A.txt");
+	expected_files.push_back("B.txt");
+	expected_files.push_back("C/C.txt");
+	expected_files.push_back("C/C/C.txt");
+	expected_files.push_back("D/C.txt");
+	expected_files.push_back("A.txt");
 	EXPECT_EQ(expected_files,found_files);
 
 	// again
@@ -112,11 +112,11 @@ TEST_F(ChdbTest,getFiles_Sorted) {
 	UsingFs dir(prms);
 	vector_of_strings found_files=dir.getFiles();
 	vector_of_strings expected_files;
-	expected_files.push_back(input_dir + '/' + "C/C/C.txt");
-	expected_files.push_back(input_dir + '/' + "D/C.txt");
-	expected_files.push_back(input_dir + '/' + "A.txt");
-	expected_files.push_back(input_dir + '/' + "B.txt");
-	expected_files.push_back(input_dir + '/' + "C/C.txt");
+	expected_files.push_back("C/C/C.txt");
+	expected_files.push_back("D/C.txt");
+	expected_files.push_back("A.txt");
+	expected_files.push_back("B.txt");
+	expected_files.push_back("C/C.txt");
 	EXPECT_EQ(expected_files,found_files);
 
 	// again
@@ -149,31 +149,31 @@ TEST_F(ChdbTest,block1) {
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "B.txt");
+	expected_block.push_back("B.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 2nd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "C/C.txt");
+	expected_block.push_back("C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 3rd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "C/C/C.txt");
+	expected_block.push_back("C/C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 4th blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "D/C.txt");
+	expected_block.push_back("D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 5th blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "A.txt");
+	expected_block.push_back("A.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -208,21 +208,21 @@ TEST_F(ChdbTest,block2) {
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "B.txt");
-	expected_block.push_back(input_dir + '/' + "C/C.txt");
+	expected_block.push_back("B.txt");
+	expected_block.push_back("C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 2nd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "C/C/C.txt");
-	expected_block.push_back(input_dir + '/' + "D/C.txt");
+	expected_block.push_back("C/C/C.txt");
+	expected_block.push_back("D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 3rd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "A.txt");
+	expected_block.push_back("A.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -258,11 +258,11 @@ TEST_F(ChdbTest,block3) {
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "B.txt");
-	expected_block.push_back(input_dir + '/' + "C/C.txt");
-	expected_block.push_back(input_dir + '/' + "C/C/C.txt");
-	expected_block.push_back(input_dir + '/' + "D/C.txt");
-	expected_block.push_back(input_dir + '/' + "A.txt");
+	expected_block.push_back("B.txt");
+	expected_block.push_back("C/C.txt");
+	expected_block.push_back("C/C/C.txt");
+	expected_block.push_back("D/C.txt");
+	expected_block.push_back("A.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -298,11 +298,11 @@ TEST_F(ChdbTest,block4) {
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back(input_dir + '/' + "B.txt");
-	expected_block.push_back(input_dir + '/' + "C/C.txt");
-	expected_block.push_back(input_dir + '/' + "C/C/C.txt");
-	expected_block.push_back(input_dir + '/' + "D/C.txt");
-	expected_block.push_back(input_dir + '/' + "A.txt");
+	expected_block.push_back("B.txt");
+	expected_block.push_back("C/C.txt");
+	expected_block.push_back("C/C/C.txt");
+	expected_block.push_back("D/C.txt");
+	expected_block.push_back("A.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -384,7 +384,7 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	vector_of_strings output_files;
 
 	cmd = "./coucou.sh";
-	ASSERT_THROW(dir.executeExternalCommand(cmd,output_files),runtime_error);
+	EXPECT_THROW(dir.executeExternalCommand(cmd,output_files),runtime_error);
 	
 	f = "/B.txt";
 	cmd = "./ext_cmd.sh " + prms.getInDir() + f + " " + prms.getOutDir() + f;

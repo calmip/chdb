@@ -87,9 +87,9 @@ usingfs.o: /usr/include/getopt.h usingfs.hpp constypes.hpp directories.hpp
 usingfs.o: parameters.hpp SimpleOpt.h /usr/include/stdlib.h
 usingfs.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
 usingfs.o: /usr/include/alloca.h /usr/include/string.h /usr/include/xlocale.h
-usingfs.o: /usr/include/dirent.h /usr/include/bits/dirent.h
-usingfs.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
-usingfs.o: /usr/include/linux/limits.h
+usingfs.o: /usr/include/libgen.h /usr/include/dirent.h
+usingfs.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
+usingfs.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
 directories.o: /usr/include/sys/types.h /usr/include/features.h
 directories.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 directories.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
@@ -102,8 +102,8 @@ directories.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
 directories.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 directories.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 directories.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
-directories.o: /usr/include/getopt.h usingfs.hpp constypes.hpp
-directories.o: directories.hpp parameters.hpp SimpleOpt.h
+directories.o: /usr/include/getopt.h /usr/include/libgen.h usingfs.hpp
+directories.o: constypes.hpp directories.hpp parameters.hpp SimpleOpt.h
 directories.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
 directories.o: /usr/include/bits/waitstatus.h /usr/include/alloca.h
 directories.o: /usr/include/string.h /usr/include/xlocale.h
@@ -158,22 +158,23 @@ scheduler.o: /usr/include/string.h /usr/include/xlocale.h directories.hpp
 scheduler.o: /usr/include/dirent.h /usr/include/bits/dirent.h
 scheduler.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
 scheduler.o: /usr/include/linux/limits.h
-basicscheduler.o: /usr/include/sys/types.h /usr/include/features.h
+basicscheduler.o: /usr/include/assert.h /usr/include/features.h
 basicscheduler.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 basicscheduler.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
-basicscheduler.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
-basicscheduler.o: /usr/include/time.h /usr/include/endian.h
-basicscheduler.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
-basicscheduler.o: /usr/include/sys/select.h /usr/include/bits/select.h
-basicscheduler.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
-basicscheduler.o: /usr/include/sys/sysmacros.h
+basicscheduler.o: /usr/include/sys/types.h /usr/include/bits/types.h
+basicscheduler.o: /usr/include/bits/typesizes.h /usr/include/time.h
+basicscheduler.o: /usr/include/endian.h /usr/include/bits/endian.h
+basicscheduler.o: /usr/include/bits/byteswap.h /usr/include/sys/select.h
+basicscheduler.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+basicscheduler.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
 basicscheduler.o: /usr/include/bits/pthreadtypes.h /usr/include/sys/stat.h
 basicscheduler.o: /usr/include/bits/stat.h /usr/include/unistd.h
 basicscheduler.o: /usr/include/bits/posix_opt.h
 basicscheduler.o: /usr/include/bits/environments.h
 basicscheduler.o: /usr/include/bits/confname.h /usr/include/getopt.h
-basicscheduler.o: scheduler.hpp constypes.hpp parameters.hpp SimpleOpt.h
-basicscheduler.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+basicscheduler.o: basicscheduler.hpp constypes.hpp scheduler.hpp
+basicscheduler.o: parameters.hpp SimpleOpt.h /usr/include/stdlib.h
+basicscheduler.o: /usr/include/bits/waitflags.h
 basicscheduler.o: /usr/include/bits/waitstatus.h /usr/include/alloca.h
 basicscheduler.o: /usr/include/string.h /usr/include/xlocale.h
 basicscheduler.o: directories.hpp /usr/include/dirent.h

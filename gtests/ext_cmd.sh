@@ -7,11 +7,11 @@
 INPUT=$1
 OUTPUT=$2
 
-while read sts text
+cat $INPUT |while read sts text
 do
-	echo "STS $sts"   > $OUTPUT || exit 10
-	echo "TXT $text"  >>$OUTPUT || exit 10
+	echo -e "STS\t$sts"   > $OUTPUT || exit 10
+	echo -e "TXT\t$text"  >>$OUTPUT || exit 10
 	break
-done <$INPUT
+done
+exit $(grep STS $OUTPUT |cut -f2)
 
-exit $sts

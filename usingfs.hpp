@@ -29,7 +29,7 @@ public:
 	friend class ChdbTest_usingFsfindOrCreateDir_Test;
 
 private:
-	void readDir(const string &) const;
+	void readDir(const string &,size_t) const;
 	void findOrCreateDir(const string &) const;
 	bool isCorrectType(const string &) const;
 	mutable set<string> found_directories;

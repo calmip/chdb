@@ -173,7 +173,7 @@ void BasicScheduler::executeCommand() {
 		string in_path = file_pathes[i];
 		dir.completeFilePath(in_path,cmd);
 		vector_of_strings out_files = prms.getOutFiles();
-		for (size_t j=0; j<out_files.size(); ++i) {
+		for (size_t j=0; j<out_files.size(); ++j) {
 			dir.completeFilePath(in_path,out_files[j]);
 		}
 		int sts = dir.executeExternalCommand(cmd,out_files);

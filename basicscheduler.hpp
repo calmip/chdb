@@ -28,6 +28,8 @@ public:
 	void finalize();
 	void errorHandle() {}; // TODO - A FAIRE !!!!!
 
+	friend class ChdbTest_ExecuteCommand_Test;
+
 private:
 	vector_of_int return_values;
 	vector_of_strings file_pathes;

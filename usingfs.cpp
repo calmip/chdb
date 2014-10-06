@@ -45,7 +45,11 @@ const vector_of_strings& UsingFs::getFiles() const {
 	
 	if (files.size()==0) {
 		// fill the files private member, OR the files_tmp global
-		readDir(top);
+		size_t head_strip=top.length();
+		if (top[head_strip-1]!='/') {
+			head_strip += 1;
+		}
+		readDir(top,head_strip);
 
 		// if sorted by size, sort the temporary and copy the names to files
 		files_tmp.sort();
@@ -88,7 +92,20 @@ bool UsingFs::isCorrectType(const string & name) const {
 		  If the entry is anything else (symlink, etc) skip it
 */
 
-void UsingFs::readDir(const string &top) const {
+/** 
+ * @brief Read the directory, and if a file with the correct type is found, push it in:
+ *             - files (private member)
+ *			   - OR files_tmp (global temporary)
+ *		  If the name is longer than FILEPATH_MAXLENGTH throw an exception
+ *        If a subdirectory is found, this function is recursively called again
+ *        If the entry is anything else (symlink, etc) skip it
+ *        The parameter head_strip may be used to strip input directory name from the file names
+ * 
+ * @param top 
+ * @param head_strip 
+ */
+
+void UsingFs::readDir(const string &top,size_t head_strip) const {
 	DIR* fd_top=opendir(top.c_str());
 	struct dirent* dir_entry=NULL;
 	do {
@@ -101,10 +118,11 @@ void UsingFs::readDir(const string &top) const {
 			if (dir_entry->d_name[0]=='.' && dir_entry->d_name[1]=='.' && dir_entry->d_name[2]=='\0') 
 				continue;
 			
-			string file_name = top + '/' + dir_entry->d_name;
-			if (file_name.length() > FILEPATH_MAXLENGTH) {
+			string file_name   = top + '/' + dir_entry->d_name;
+			string s_file_name = file_name.substr(head_strip); 
+			if (s_file_name.length() > FILEPATH_MAXLENGTH) {
 				string msg = "ERROR - Filename too long: ";
-				msg += file_name + '\t';
+				msg += s_file_name + '\t';
 				msg += "Please increase FILEPATH_MAXLENGTH and recompile";
 				throw (runtime_error(msg));
 			};
@@ -121,14 +139,14 @@ void UsingFs::readDir(const string &top) const {
 			if (S_ISREG(st_bfr.st_mode)) {
 				if (isCorrectType(file_name)) {
 					if (prms.isSizeSort()) {
-						Finfo tmp_f(file_name,st_bfr.st_size);
+						Finfo tmp_f(s_file_name,st_bfr.st_size);
 						files_tmp.push_back(tmp_f);
 					} else {
-						files.push_back(file_name);
+						files.push_back(s_file_name);
 					}
 				}
 			} else if (S_ISDIR(st_bfr.st_mode)) {
-				readDir(file_name);
+				readDir(file_name,head_strip);
 			}
 		}
 	} while ( dir_entry != NULL );
