@@ -5,6 +5,7 @@
 //#include <vector>
 //#include <string>
 //#include <stdexcept>
+#include <set>
 using namespace std;
 
 
@@ -22,10 +23,16 @@ public:
 
 	virtual const vector_of_strings& getFiles() const;
 	void filesToOutputDb(const vector_of_strings&) {};
+	int executeExternalCommand(const string&,const vector_of_strings&) const;
+	void makeOutputDir() const;
+
+	friend class ChdbTest_usingFsfindOrCreateDir_Test;
 
 private:
 	void readDir(const string &) const;
+	void findOrCreateDir(const string &) const;
 	bool isCorrectType(const string &) const;
+	mutable set<string> found_directories;
 };
 
 #endif

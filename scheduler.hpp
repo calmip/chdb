@@ -29,11 +29,13 @@ class Scheduler: private NonCopyable {
 public:
 
 	Scheduler(const Parameters& p, Directories& d);
+	int getRank() const     { return rank; };
+	int getCommSize() const { return comm_size; };
+	bool isMaster() const   { return rank==0;};
 
-	virtual void init()=0;
 	virtual void mainLoop()=0;
 	virtual void finalize()=0;
-	virtual void errorHandle(void const*,size_t msg_len)=0;
+	virtual void errorHandle()=0;
 
 	// for gtests
 	friend class SchedTestStr_vctToBfrStrings_Test;
@@ -49,6 +51,10 @@ protected:
 
 	const Parameters& prms;
 	Directories& dir;
+
+	int comm_size;
+	int rank;
+
 };
 
 #endif

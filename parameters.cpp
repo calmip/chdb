@@ -124,7 +124,7 @@ Parameters::Parameters(int argc,
 		output_directory = input_directory + ".out";
 	}
 
-	// check evrything is ok
+	// check everything is ok
 	check();
 }
 

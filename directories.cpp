@@ -10,6 +10,7 @@
 //#include <set>
 using namespace std;
 
+#include <cstdlib>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -27,6 +28,23 @@ using namespace std;
 //#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
+
+/** 
+ * @brief set the protected member rank and comm_size
+ * 
+ * @param r 
+ * @param s 
+ *
+ * @exception the rank and comm_size can be set only 1 time
+ */
+
+void Directories::setRank(int r, int s) {
+	if (rank>=0) {
+		throw(logic_error("ERROR - rank already set"));
+	}
+	rank=r;
+	comm_size=s;
+}
 
 /**
  *  @brief Return the nextblok of file names
@@ -107,6 +125,7 @@ void Directories::replaceTmpl(const string& tmpl, const string& value, string& t
 	size_t pos = 0;
 	do {
 		pos = text.find(tmpl,pos);
+
 		if (pos != string::npos) {
 			text.replace(pos,tmpl.length(),value);
 		}

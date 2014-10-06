@@ -92,6 +92,12 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	sched.bfrToVct((const void*)bfr,data_size,file_pathes);
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_file_pathes,file_pathes);
+
+	// 2nd time
+	sched.bfrToVct((const void*)bfr,data_size,file_pathes);
+	EXPECT_EQ(data_size,expected_bfr.length());
+	EXPECT_EQ(expected_file_pathes,file_pathes);
+
 	
 	FREE_ARGV(7);
 };
@@ -172,7 +178,12 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 	sched.bfrToVct(bfr,data_size,values);
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_values,values);
-	
+
+	// 2nd time
+	sched.bfrToVct(bfr,data_size,values);
+	EXPECT_EQ(data_size,expected_bfr.length());
+	EXPECT_EQ(expected_values,values);
+
 	FREE_ARGV(7);
 };
 

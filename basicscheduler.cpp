@@ -19,7 +19,9 @@ using namespace std;
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string>
+#include <sstream>
 #include <list>
+//#include <cstdlib>
 #include <cerrno>
 
 //#include "command.h"
@@ -37,71 +39,95 @@ using namespace std;
 #define CHDB_TAG_GO    1010
 #define CHDB_TAG_END   1020
 
-void BasicScheduler::init() {
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-	MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
-	is_master = (rank==0);
-}
-
 void BasicScheduler::finalize() {
 	MPI_Finalize();
 }
 
 void BasicScheduler::mainLoop() {
-	if (is_master) {
+	if (isMaster()) {
 		mainLoopMaster();
 	} else {
 		mainLoopSlave();
 	}
 }
 
+/** 
+ * @brief The main loop for the master
+ * 
+ */
 void BasicScheduler::mainLoopMaster() {
-	vector_of_strings blk;
 	MPI_Status sts;
+
+	// Create the output directory
+	dir.makeOutputDir();
 
 	// loop over the file blocks
 	// Listen to the slaves, the message is Status + File names
 	size_t bfr_size=0;
-	void* bfr=NULL;
-	allocBfr(bfr,bfr_size);
-	
-	while(true) {
-		blk = dir.nextBlock();
+	void* send_bfr=NULL;
+	void* recv_bfr=NULL;
 
-		if (blk.empty()) break;
+	allocBfr(send_bfr,bfr_size);
+	allocBfr(recv_bfr,bfr_size);
+		
+	return_values.clear();
+	file_pathes = dir.nextBlock();
+	while(!file_pathes.empty()) {
 
-		MPI_Recv((char*)bfr,(int)bfr_size, MPI_CHAR, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		// Prepare the send buffer for the next message
+		size_t send_msg_len=0;
+		writeToSndBfr(send_bfr,bfr_size,send_msg_len);
+		
+		// Listen to the slaves
+		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_CHAR, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
 		int source = sts.MPI_SOURCE;
-		size_t msg_len;
-		MPI_Get_count(&sts, MPI_CHARACTER, (int*) &msg_len);
-		errorHandle(bfr,msg_len);
+		//size_t recv_msg_len;
+		//MPI_Get_count(&sts, MPI_CHARACTER, (int*) &recv_msg_len);
 
-        // The recv bfr (bfr,msg_len) can be recycled now
-		// copy the block of file names to the send bfr
-		//vctToBfr(blk,bfr,bfr_size,msg_len);
-		writeToSndBfr(bfr, bfr_size, msg_len);
+        // Init return_values and file_pathes with the message
+		readFrmRecvBfr(recv_bfr);
+		
+		// Handle the error (abort or keep)
+		errorHandle();
 
 		// Send the block to the slave
 		int dest = source;
-		MPI_Send(bfr,msg_len,MPI_CHARACTER,dest,CHDB_TAG_GO,MPI_COMM_WORLD);
+		MPI_Send(send_bfr,send_msg_len,MPI_CHARACTER,dest,CHDB_TAG_GO,MPI_COMM_WORLD);
+
+		// Init return_values and file_pathes for next iteration
+		return_values.clear();
+		file_pathes = dir.nextBlock();
 	}
 
 	// loop over the slaves: when each slave is ready, send it a msg END
-	int working_slaves = comm_size - 1; // The master does not work
+	int working_slaves = comm_size - 1; // The master is not a slave
 	while(working_slaves>0) {
-		MPI_Recv(bfr, bfr_size, MPI_CHARACTER, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		MPI_Recv(recv_bfr, bfr_size, MPI_CHARACTER, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
 		int source = sts.MPI_SOURCE;
-		int msg_len;
-		MPI_Get_count(&sts, MPI_CHARACTER, &msg_len);
-		errorHandle(bfr,msg_len);
+		//int msg_len;
+		//MPI_Get_count(&sts, MPI_CHARACTER, &msg_len);
+
+        // Init return_values and file_pathes with the message
+		readFrmRecvBfr(recv_bfr);
+		
+		// Handle the error (abort or keep)
+		errorHandle();
 
 		// Send an empty message tagged END to the slave
 		int dest = source;
-		MPI_Send(bfr, 0, MPI_CHARACTER, dest, CHDB_TAG_END, MPI_COMM_WORLD);
+		MPI_Send(send_bfr, 0, MPI_CHARACTER, dest, CHDB_TAG_END, MPI_COMM_WORLD);
 		working_slaves--;
 	}
+
+	// free memory
+	free(send_bfr);
+	free(recv_bfr);
 }
 
+/** 
+ * @brief The main loop for the slaves
+ * 
+ */
 void BasicScheduler::mainLoopSlave() {
 	vector_of_strings blk;
 	MPI_Status sts;
@@ -113,14 +139,55 @@ void BasicScheduler::mainLoopSlave() {
 	// all msgs are sent to the master or received from him
 	int dest = 0;
 	int source = 0;
-	while(true) {
+	int tag    = CHDB_TAG_GO;
+	while(tag==CHDB_TAG_GO) {
 
-		//writeBfr(bfr,xxx);
-		MPI_Sendrecv_replace(bfr,bfr_size,MPI_CHARACTER,
-							 dest,CHDB_TAG_READY,
-							 source,MPI_ANY_TAG,
-							 MPI_COMM_WORLD,&sts);
+		// Prepare the send buffer for the next message
+		size_t send_msg_len=0;
+		writeToSndBfr(bfr,bfr_size,send_msg_len);
 
+		// Send the report+ready message to the master, receive a list of files to treat
+		MPI_Sendrecv_replace((char*)bfr,(int)bfr_size,MPI_CHARACTER,dest,CHDB_TAG_READY,source,MPI_ANY_TAG,MPI_COMM_WORLD,&sts);
+		tag = sts.MPI_TAG;
+		
+		if (tag==CHDB_TAG_GO) {
+			executeCommand();
+		}
+	}
+
+	// free memory
+	free(bfr);
+}
+
+/** 
+ * @brief Execute the command on all files of file_pathes, and store the result in return_values
+ * 
+ */
+void BasicScheduler::executeCommand() {
+	string command = prms.getExternalCommand();
+	int zero = 0;
+	return_values.assign (file_pathes.size(),zero);
+
+	for (size_t i=0; i<file_pathes.size(); ++i) {
+		string cmd = command;
+		string in_path = file_pathes[i];
+		dir.completeFilePath(in_path,cmd);
+		vector_of_strings out_files = prms.getOutFiles();
+		for (size_t j=0; j<out_files.size(); ++i) {
+			dir.completeFilePath(in_path,out_files[j]);
+		}
+		int sts = dir.executeExternalCommand(cmd,out_files);
+		// If abort on Error, throw an exception if status != 0
+		 if (prms.isAbrtOnErr() && sts!=0) {
+			 ostringstream msg;
+			 msg << "ERROR with external command\n";
+			 msg << "command    : " << cmd << '\n';
+			 msg << "exit status: " << sts << '\n';
+			 msg << "ABORTING - Try again with --on-error\n";
+			 throw(runtime_error(msg.str()));
+		 } else {
+			 return_values[i] = sts;
+		 }
 	}
 }
 
@@ -143,14 +210,6 @@ void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
 	if (bfr==NULL) {
 		throw(runtime_error("ERROR - Could not allocate memory"));
 	}
-}
-
-/** 
- * @brief The invariant is: return_values empty, OR same size as file_pathes
- *
- */
-void BasicScheduler::checkInvariant() {
-	assert(return_values.empty() || return_values.size()==file_pathes.size());
 }
 
 /** 
@@ -188,6 +247,14 @@ void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
 	bfrToVct(bfr, data_size, file_pathes);
 	checkInvariant();
 }
+
+/** 
+ * @brief The invariant is: return_values empty, OR same size as file_pathes
+ *
+ */
+void BasicScheduler::checkInvariant() {
+	assert(return_values.empty() || return_values.size()==file_pathes.size());
+}
 	
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
@@ -198,4 +265,3 @@ void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
  * The fact that you are presently reading this, and the aforementioned file, means that you have had
  * knowledge of the CeCILL-C license and that you accept its terms.
 */
-

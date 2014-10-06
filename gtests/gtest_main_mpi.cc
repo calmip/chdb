@@ -36,7 +36,7 @@ GTEST_API_ int main(int argc, char **argv) {
 
 	// Begin code with initializing mpi
 	MPI_Init(&argc,&argv);
-	printf("Running main() from gtest_main.ccXXXXXXXXXXXXXXXXXXX\n");
+	printf("Running main() from gtest_main_mpi.cc\n");
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }

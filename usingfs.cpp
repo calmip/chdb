@@ -7,6 +7,7 @@ using namespace std;
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <string>
 #include <list>
@@ -17,9 +18,9 @@ using namespace std;
 //#include "exception.h"
 //#include <unistd.h>
 //#include <errno.h>
-//#include <libgen.h>
+#include <libgen.h>
 //#include <stdlib.h>
-#include <sys/types.h>
+//#include <sys/types.h>
 #include <dirent.h>
 
 /** This struct is used for sorting the files before storing them - see readDir */
@@ -58,6 +59,13 @@ const vector_of_strings& UsingFs::getFiles() const {
 	return files;
 }
 
+/** 
+ * @brief Check the name extension versus the required extension (file type)
+ * 
+ * @param name 
+ * 
+ * @return true if the type is OK, false if not
+ */
 bool UsingFs::isCorrectType(const string & name) const {
 	string ext     = '.' + prms.getFileType();
 	size_t ext_len = ext.length();
@@ -125,8 +133,116 @@ void UsingFs::readDir(const string &top) const {
 		}
 	} while ( dir_entry != NULL );
 }
+
+/** 
+ * @brief Execute a command through system and return the exit status of the command
+ *        We pass the out_pathes vector to create the output directories if necessary
+ * 
+ * @param cmd 
+ * @param out_pathes 
+ * 
+ * @return the command exit status
+ *
+ * @exception throw a runtime_error exception if system itself produce an error
+
+ */	
+int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes) const {
+
+	// Create the subdirectories if necessary
+	for (size_t i=0; i<out_pathes.size(); ++i) {
+		findOrCreateDir(out_pathes[i]);
+	}
+	int sts = system(cmd.c_str());
+	int csts= WEXITSTATUS(sts);
+	if (sts==-1 || csts==127) {
+		string msg = "ERROR - system(";
+		msg += cmd;
+		msg += ") - ";
+		if (sts==-1) {
+			msg += "returned -1";
+		} else {
+			msg += "could not execute cmd";
+		}
+		throw(runtime_error(msg));
+	}
+	return csts;
+}
 	
-	
+void UsingFs::makeOutputDir() const {
+	string output_dir = prms.getOutDir();
+	int sts = mkdir(output_dir.c_str(), 0777);
+	if (sts != 0) {
+		string msg="ERROR - Cannot create directory ";
+		msg += output_dir;
+		msg += " - Error= ";
+		msg += strerror(errno);
+		throw(runtime_error(msg));
+	}
+}
+
+/** 
+ * @brief Find or create the directory part of the path name
+ * 
+ * @param p 
+ *
+ * @exception throw an exception if the directory cannot be created
+ */
+
+void UsingFs::findOrCreateDir(const string & p) const {
+	char* file_path = (char*) malloc(p.length()+1);
+	strcpy(file_path,p.c_str());
+	string d = dirname(file_path);
+	free(file_path);
+
+	// avoid stressing the filesystem if possible !
+	if (found_directories.find(d)!=found_directories.end()) {
+		return;
+	}
+
+	// Was not already found, search it on the fs
+	struct stat st;
+	int sts = stat(d.c_str(),&st);
+	bool exc_flg=false;
+
+	// directory found: remember for next time, and return
+	if (sts==0 && S_ISDIR(st.st_mode)) {
+		found_directories.insert(d);
+		return;
+	}
+
+	// something found but not a directory: exception !
+	if (sts==0 && !S_ISDIR(st.st_mode)) {
+		exc_flg=true;
+	}
+
+	// some component of the path does not exist: recursive call, then create directory
+	if (sts!=0) {
+		if (errno==ENOENT) {
+			findOrCreateDir(d);
+			sts = mkdir(d.c_str(),0777);
+			if (sts == 0) {
+				found_directories.insert(d);
+			}
+			// directory could not be created: exception !
+			else {
+				if (sts !=0) {
+					exc_flg=true;
+				}
+			}
+		}
+		// any other error: throw an exception
+		else {
+			exc_flg=true;
+		}
+	}
+
+	if (exc_flg) {
+		string msg="ERROR WITH ";
+		msg += d;
+		throw(runtime_error(msg));
+	}
+}
+
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
  * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx

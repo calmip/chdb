@@ -46,6 +46,11 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d) {
 	if (flg==0) {
 		throw logic_error("ERROR - MPI not yet initialized");
 	};
+	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
+
+	// Give some infos to dir
+	dir.setRank(rank,comm_size); 
 }
 
 /** 
@@ -136,6 +141,7 @@ void Scheduler::vctToBfr(const vector_of_int& values, void* bfr, size_t bfr_size
 void Scheduler::bfrToVct(void const* bfr, size_t& data_size, vector_of_int& values) {
 	int *v = (int*) bfr;
 	int sze = v[0];
+	values.clear();
 	for (int i=0; i<sze; ++i) {
 		values.push_back(v[i+1]);
 	}

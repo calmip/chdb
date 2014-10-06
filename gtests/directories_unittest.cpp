@@ -8,6 +8,61 @@
 #include <fstream>
 using namespace std;
 
+
+TEST_F(ChdbTest,usingFsmkdir) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+
+	EXPECT_NO_THROW(dir.makeOutputDir());
+	EXPECT_THROW(dir.makeOutputDir(),runtime_error);
+
+	string cmd="rm -r " + prms.getOutDir();
+	system(cmd.c_str());
+}
+
+TEST_F(ChdbTest,usingFsfindOrCreateDir) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+
+	// create the directory a/b/c/d/e, then the file f.txt
+	EXPECT_NO_THROW(dir.findOrCreateDir("a/b/c/d/e/f.txt"));
+	{ ofstream f("a/b/c/d/e/f.txt"); }
+
+	// nothing to do (the directories are already created)
+	EXPECT_NO_THROW(dir.findOrCreateDir("a/b/c/d/e/f.txt"));
+
+	// exception because f.txt exists and is not a directory
+	// Two different pathes in the function
+	EXPECT_THROW(dir.findOrCreateDir("a/b/c/d/e/f.txt/g"),runtime_error);
+	EXPECT_THROW(dir.findOrCreateDir("a/b/c/d/e/f.txt/g/h"),runtime_error);
+
+	//exception because authorization problems
+	EXPECT_THROW(dir.findOrCreateDir("/etc/something/f.txt"),runtime_error);
+
+	string cmd="rm -r a";
+	system(cmd.c_str());
+}
+
 TEST_F(ChdbTest,getFiles_Unsorted) {
 
 	// Init prms
@@ -20,7 +75,6 @@ TEST_F(ChdbTest,getFiles_Unsorted) {
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	
-	// No sort
 	Parameters prms(7,argv);
 	UsingFs dir(prms);
 	vector_of_strings found_files=dir.getFiles();
@@ -260,7 +314,6 @@ TEST_F(ChdbTest,block4) {
 
 }
 
-// Testing 
 TEST_F(ChdbTest,completeFilePath) {
 
 	// Init prms
@@ -307,144 +360,44 @@ TEST_F(ChdbTest,completeFilePath) {
 
 }
 
+TEST_F(ChdbTest,usingFsExternalCommand) {
 
-
-#ifdef AJETER		
-
-
-
-// Tests constructors
-TEST(ParametersTest, CtorExceptions1) {
+	// Init prms
 	char* argv[10];
-	INIT_ARGV(0,"parameters_unittest");
-	INIT_ARGV(1,"--in-type");
-	INIT_ARGV(2,"txt");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,"inputdir");
-	INIT_ARGV(5,"--command-line");
-	INIT_ARGV(6,"coucou");
-
-	// "no command line" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
-	ASSERT_THROW(new Parameters(6,argv),runtime_error);
-
-	// If you comment-out the following, it CANNOT BE compiled !
-	// Parameters prms1 = Parameters(7,argv);
-	// Parameters prms2 = prms1;
-}
-TEST(ParametersTest, CtorExceptions2) {
-	char* argv[10];
-	INIT_ARGV(0,"parameters_unittest");
-	INIT_ARGV(1,"--in-type");
-	INIT_ARGV(2,"txt");
-	INIT_ARGV(3,"--command-line");
-	INIT_ARGV(4,"coucou");
-	INIT_ARGV(5,"--in-dir");
-	INIT_ARGV(6,"inputdir");
-
-	// "no input directory" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
-
-	// "input directory does not exist" exception
-	system("rm -rf inputdir");
-	ASSERT_THROW(new Parameters(7,argv),runtime_error);
-
-	// creating the directory
-	system("mkdir inputdir");
-	Parameters prms(7,argv);
-	EXPECT_EQ((string)"inputdir",prms.getInDir());
-
-	FREE_ARGV(7);
-}
-TEST(ParametersTest, CtorExceptions3) {
-	char* argv[10];
-	INIT_ARGV(0,"parameters_unittest");
-	INIT_ARGV(1,"--in-type");
-	INIT_ARGV(2,"txt");
-	INIT_ARGV(3,"--command-line");
-	INIT_ARGV(4,"coucou");
-	INIT_ARGV(5,"--in-dir");
-	INIT_ARGV(6,"inputdir");
-
-    // automatically computed name
-	string outputdir = "inputdir";
-	outputdir += ".out";
-
-	// "output directory exists" exception: creating the output directory
-	string cmd = "mkdir ";
-	cmd += outputdir;
-	system(cmd.c_str());
-	ASSERT_THROW(new Parameters(7,argv),runtime_error);
-
-	cmd = "rm -r ";
-	cmd += outputdir;
-	system(cmd.c_str());
-	Parameters prms(7,argv);
-	EXPECT_EQ(outputdir,prms.getOutDir());
-
-	FREE_ARGV(7);
-}
-TEST(ParametersTest, CtorExceptions4) {
-	char* argv[10];
-	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,"inputdir");
+	INIT_ARGV(4,input_dir.c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
-
-	// "no input type" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
+	
 	Parameters prms(7,argv);
+	UsingFs dir(prms);
 
-	// empty vector_of_files
-	vector_of_strings out_files;
+	string f,cmd;
 
-	// checking the accessors
-	EXPECT_EQ("coucou",prms.getExternalCommand());
-	EXPECT_EQ(1,prms.getBlockSize());
-	EXPECT_EQ(false,prms.isSizeSort());
-	EXPECT_EQ(false,prms.isVerbose());
-	EXPECT_EQ(true,prms.isAbrtOnErr());
-	EXPECT_EQ(out_files,prms.getOutFiles());	
+	// create output directory
+	dir.makeOutputDir();
+
+	// output files
+	vector_of_strings output_files;
+
+	cmd = "./coucou.sh";
+	ASSERT_THROW(dir.executeExternalCommand(cmd,output_files),runtime_error);
+	
+	f = "/B.txt";
+	cmd = "./ext_cmd.sh " + prms.getInDir() + f + " " + prms.getOutDir() + f;
+	EXPECT_EQ(0,dir.executeExternalCommand(cmd,output_files));
+
+	f = "/D/C.txt";
+	output_files.push_back(prms.getOutDir() + f);
+	cmd = "./ext_cmd.sh " + prms.getInDir() + f + " " + prms.getOutDir() + f;
+	EXPECT_EQ(1,dir.executeExternalCommand(cmd,output_files));
 
 	FREE_ARGV(7);
-}
-TEST(ParametersTest, CtorOnError) {
-	char* argv[10];
-	INIT_ARGV(0,"parameters_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,"inputdir");
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--on-error");
-	INIT_ARGV(8,"errors.txt");
 
-	// If the switch --on-error IS NOT specified, isAbrtOnErr() returns true
-	Parameters prms1(7,argv);
-	EXPECT_EQ(true,prms1.isAbrtOnErr());
-
-	// If the switch --on-error IS specified, isAbrtOnErr() returns false
-	// "no input type" exception
-	Parameters prms2(9,argv);
-	EXPECT_EQ(false,prms2.isAbrtOnErr());
-
-	FREE_ARGV(9);
+	cmd = "rm -r " +  prms.getOutDir();
+	system(cmd.c_str());
 }
 
-// Step 3. Call RUN_ALL_TESTS() in main().
-//
-// We do this by linking in src/gtest_main.cc file, which consists of
-// a main() function which calls RUN_ALL_TESTS() for us.
-//
-// This runs all the tests you've defined, prints the result, and
-// returns 0 if successful, or 1 otherwise.
-//
-// Did you notice that we didn't register the tests?  The
-// RUN_ALL_TESTS() macro magically knows about all the tests we
-// defined.  Isn't this convenient?
-
-#endif

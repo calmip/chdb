@@ -29,16 +29,22 @@ using namespace std;
 class Directories: private NonCopyable {
 
 public:
-	Directories(const Parameters& p):prms(p){};
+	Directories(const Parameters& p):prms(p),rank(-1),comm_size(-1){};
+	void setRank(int,int);
 
+	virtual void makeOutputDir() const = 0;
 	virtual const vector_of_strings& getFiles() const = 0;
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& command);
+	virtual int executeExternalCommand(const string&,const vector_of_strings&) const = 0;
+
 	void insertOutFilesToDb(const vector_of_strings&) {};
 
 protected:
 	const Parameters& prms;
 	mutable vector_of_strings files;
+	int rank;
+	int comm_size;
 
 private:
 	vector_of_strings::iterator blk_ptr;

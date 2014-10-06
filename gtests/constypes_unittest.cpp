@@ -23,11 +23,11 @@ ChdbTest::ChdbTest(): input_dir("inputdir") {
 	vector<naco> files;
 
 	// these files will be considered by Directories
-	files.push_back(naco("A.txt","ABCDEF"));
-	files.push_back(naco("B.txt","ABCDEFGHIJKLMNO"));
-	files.push_back(naco("C/C.txt","ABCDEFGHIJKLMNOPQ"));
-	files.push_back(naco("D/C.txt","ABC"));
-	files.push_back(naco("C/C/C.txt","C"));
+	files.push_back(naco("A.txt","0\tABCDEF"));
+	files.push_back(naco("B.txt","0\tABCDEFGHIJKLMNO"));
+	files.push_back(naco("C/C.txt","0\tABCDEFGHIJKLMNOPQ"));
+	files.push_back(naco("D/C.txt","1\tABC"));
+	files.push_back(naco("C/C/C.txt","0\tC"));
 	
 	// these files will NOT be considered by Directories
 	files.push_back(naco("Atxt","ABCDEFGHIJKLMNO"));
@@ -47,6 +47,7 @@ ChdbTest::ChdbTest(): input_dir("inputdir") {
 	}
 }
 ChdbTest::~ChdbTest() {
+	// return;
 	// remove inputdir
 	string cmd = "rm -rf ";
 	cmd += input_dir;

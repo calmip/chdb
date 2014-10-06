@@ -24,21 +24,18 @@ using namespace std;
 class BasicScheduler: public Scheduler {
 public:
 	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d){};
-	void init();
 	void mainLoop();
 	void finalize();
-	void errorHandle(void const*,size_t msg_len) {}; // TODO - A FAIRE !!!!!
+	void errorHandle() {}; // TODO - A FAIRE !!!!!
 
 private:
-	int comm_size;
-	int rank;
-	bool is_master;
-
 	vector_of_int return_values;
 	vector_of_strings file_pathes;
 
 	void mainLoopMaster();
 	void mainLoopSlave();
+	void executeCommand();
+
 	void checkInvariant();
 
 	void allocBfr(void*& bfr, size_t& bfr_sze);
