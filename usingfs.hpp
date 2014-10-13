@@ -3,11 +3,10 @@
 #define USING_FS_H
 
 //#include <vector>
-//#include <string>
+#include <list>
 //#include <stdexcept>
 #include <set>
 using namespace std;
-
 
 #include "constypes.hpp"
 #include "directories.hpp"
@@ -16,7 +15,7 @@ using namespace std;
 	\brief This class manages the files contained inside the input or output directory
 	       It is used when we work with REAL directories
 */
-
+class Finfo;
 class UsingFs: public Directories {
 public:
 	UsingFs(const Parameters& p):Directories(p){};
@@ -30,8 +29,12 @@ public:
 
 private:
 	void readDir(const string &,size_t) const;
+	void readDirRecursive(const string &,size_t,list<Finfo>&,bool) const;
 	void findOrCreateDir(const string &) const;
 	bool isCorrectType(const string &) const;
+	void initInputFiles() const;
+
+	mutable set<string> input_files;
 	mutable set<string> found_directories;
 };
 

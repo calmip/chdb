@@ -26,9 +26,13 @@ public:
 	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d){};
 	void mainLoop();
 	void finalize();
-	void errorHandle() {}; // TODO - A FAIRE !!!!!
+	void errorHandle(ofstream&);
 
 	friend class ChdbTest_ExecuteCommand_Test;
+	friend class ChdbTest_ExecuteCommandWithErr_Test;
+	friend class ChdbTest_ExecuteCommandFrmList1_Test;
+	friend class ChdbTest_ExecuteCommandFrmList2_Test;
+	friend class SchedTestStrInt_readwriteToSndBfr_Test;
 
 private:
 	vector_of_int return_values;
@@ -43,8 +47,6 @@ private:
 	void allocBfr(void*& bfr, size_t& bfr_sze);
 	void writeToSndBfr(void* bfr, size_t, size_t&);
 	void readFrmRecvBfr(const void* bfr);
-
-	friend class SchedTestStrInt_readwriteToSndBfr_Test;
 };
 
 #endif

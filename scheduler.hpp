@@ -35,7 +35,7 @@ public:
 
 	virtual void mainLoop()=0;
 	virtual void finalize()=0;
-	virtual void errorHandle()=0;
+	virtual void errorHandle(ofstream&)=0;
 
 	// for gtests
 	friend class SchedTestStr_vctToBfrStrings_Test;

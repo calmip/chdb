@@ -212,6 +212,8 @@ TEST(ParametersTest, CtorOnError) {
 	Parameters prms2(9,argv);
 	EXPECT_EQ(false,prms2.isAbrtOnErr());
 
+	EXPECT_EQ("errors.txt",prms2.getErrFile());
+
 	FREE_ARGV(9);
 }
 TEST(ParametersTest, CtorFlags) {

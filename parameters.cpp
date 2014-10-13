@@ -27,6 +27,7 @@ using namespace std;
 enum { 
 	OPT_HELP=1,     // -h|--help
 	OPT_INDIR,      // --in-dir
+	OPT_INFILE,     // --in-file
 	OPT_OUTDIR,     // --out-dir
 	OPT_OUTFILES,   // --out-files
 	OPT_BLOCK_SIZE, // --block-size,
@@ -50,6 +51,7 @@ enum {
 CSimpleOpt::SOption options[] = {
 	{ OPT_HELP,          "--help",         SO_NONE    },
 	{ OPT_INDIR,         "--in-dir",       SO_REQ_SEP },
+	{ OPT_INFILE,        "--in-file",      SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
@@ -90,6 +92,9 @@ Parameters::Parameters(int argc,
 				break;
 			case OPT_INDIR:
 				input_directory = arguments.OptionArg();
+				break;
+			case OPT_INFILE:
+				input_file = arguments.OptionArg();
 				break;
 			case OPT_OUTDIR:
 				output_directory =  arguments.OptionArg();

@@ -47,7 +47,7 @@ ChdbTest::ChdbTest(): input_dir("inputdir") {
 	}
 }
 ChdbTest::~ChdbTest() {
-	// return;
+	//return;
 	// remove inputdir
 	string cmd = "rm -rf ";
 	cmd += input_dir;

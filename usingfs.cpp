@@ -2,8 +2,6 @@
 
 //#include <iostream>
 //#include <iterator>
-//#include <set>
-using namespace std;
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,6 +10,9 @@ using namespace std;
 #include <string>
 #include <list>
 #include <cerrno>
+#include <set>
+#include <fstream>
+using namespace std;
 
 //#include "command.h"
 #include "usingfs.hpp"
@@ -31,34 +32,59 @@ struct Finfo {
 };
 int operator<(const Finfo& a, const Finfo& b) { return a.st_size < b.st_size; }
 
-/* This is a temporary global variable used when we have to sort the files */
-list<Finfo> files_tmp;
+/** 
+ * @brief Fill if possible the set of files to use
+ * 
+ */
+void UsingFs::initInputFiles() const {
+	string in_file = prms.getInFile();
+	
+	if (in_file != "") {
+		ifstream in(in_file.c_str());
+		if (!in.good()) {
+			string msg = "ERROR - File could not be opened: ";
+			msg += in_file;
+			throw(runtime_error(msg));
+		}
+
+		// parse file: this should be a tsv file
+		// lines starting by # are a comment and are ignored
+		// empty lines are ignored
+		// Lines with 2 fields and more are considered: (fields 2-)
+		// Lines with 1 field are considered
+		string tmp;
+		while (in) {
+			getline(in,tmp);
+			if (tmp.size()!=0 && tmp[0]!='#') {
+				size_t p=tmp.find_first_of('\t');
+				if (p!=string::npos && p<tmp.length()-1) {
+					input_files.insert(tmp.substr(p+1));
+				} else {
+					input_files.insert(tmp);
+				}
+			}
+		}
+	}
+}
 
 /**
    \brief Retrieve the file names from the input directory and push them to files
           If files is already filled, we just return the vector
 */
-
 const vector_of_strings& UsingFs::getFiles() const {
 	string top = prms.getInDir();
 	string ext = prms.getFileType();
 	
 	if (files.size()==0) {
+		// Fill if possible the set of files to use - If empty, ALL files of correct type will be considered
+		initInputFiles();
+
 		// fill the files private member, OR the files_tmp global
 		size_t head_strip=top.length();
 		if (top[head_strip-1]!='/') {
 			head_strip += 1;
 		}
 		readDir(top,head_strip);
-
-		// if sorted by size, sort the temporary and copy the names to files
-		files_tmp.sort();
-		for (list<Finfo>::iterator i=files_tmp.begin();i!=files_tmp.end();++i) {
-			files.push_back(i->name);
-		}
-
-		// do not waste memory
-		files_tmp.clear();
 	}
 	return files;
 }
@@ -92,10 +118,22 @@ bool UsingFs::isCorrectType(const string & name) const {
 		  If the entry is anything else (symlink, etc) skip it
 */
 
+void UsingFs::readDir(const string &top,size_t head_strip) const {
+	list<Finfo> files_tmp;
+	readDirRecursive(top,head_strip,files_tmp,prms.isSizeSort());
+	if (prms.isSizeSort()) {
+		// if sorted by size, sort files_tmp and copy the names to files
+		files_tmp.sort();
+		for (list<Finfo>::iterator i=files_tmp.begin();i!=files_tmp.end();++i) {
+			files.push_back(i->name);
+		}
+	}
+}
+
 /** 
  * @brief Read the directory, and if a file with the correct type is found, push it in:
- *             - files (private member)
- *			   - OR files_tmp (global temporary)
+ *             - files        (private member)
+ *			   - OR files_tmp (passed by parameter)
  *		  If the name is longer than FILEPATH_MAXLENGTH throw an exception
  *        If a subdirectory is found, this function is recursively called again
  *        If the entry is anything else (symlink, etc) skip it
@@ -103,9 +141,11 @@ bool UsingFs::isCorrectType(const string & name) const {
  * 
  * @param top 
  * @param head_strip 
+ * @param[out] files_tmp
  */
 
-void UsingFs::readDir(const string &top,size_t head_strip) const {
+void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& files_tmp,bool is_size_sort) const {
+	bool in_files_empty=input_files.empty();
 	DIR* fd_top=opendir(top.c_str());
 	struct dirent* dir_entry=NULL;
 	do {
@@ -137,19 +177,21 @@ void UsingFs::readDir(const string &top,size_t head_strip) const {
 
             // If in size sort, we use files_tmp for temporary storage
 			if (S_ISREG(st_bfr.st_mode)) {
-				if (isCorrectType(file_name)) {
-					if (prms.isSizeSort()) {
-						Finfo tmp_f(s_file_name,st_bfr.st_size);
-						files_tmp.push_back(tmp_f);
-					} else {
-						files.push_back(s_file_name);
+				if (isCorrectType(s_file_name))
+					if (in_files_empty || input_files.find(s_file_name)!=input_files.end()) {
+						if (is_size_sort) {
+							Finfo tmp_f(s_file_name,st_bfr.st_size);
+							files_tmp.push_back(tmp_f);
+						} else {
+							files.push_back(s_file_name);
+						}
 					}
-				}
 			} else if (S_ISDIR(st_bfr.st_mode)) {
-				readDir(file_name,head_strip);
+				readDirRecursive(file_name,head_strip,files_tmp,is_size_sort);
 			}
 		}
 	} while ( dir_entry != NULL );
+	closedir(fd_top);
 }
 
 /** 

@@ -1,11 +1,12 @@
 #! /bin/bash
 
 #
-# USE: ext_cmd.sh input_file output_file
+# USE: ext_cmd.sh input_file output_file [status]
 #      
 
 INPUT=$1
 OUTPUT=$2
+STS=$3
 
 cat $INPUT |while read sts text
 do
@@ -13,5 +14,7 @@ do
 	echo -e "TXT\t$text"  >>$OUTPUT || exit 10
 	break
 done
-exit $(grep STS $OUTPUT |cut -f2)
+
+exit ${STS:-$(grep STS $OUTPUT |cut -f2)}
+
 

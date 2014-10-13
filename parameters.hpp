@@ -22,12 +22,13 @@ public:
 
 	string getInDir()    const { return input_directory; };
 	string getOutDir()   const { return output_directory; };
+	string getInFile()   const { return input_file; };
 	string getFileType() const { return file_type; };
 	bool isBdBh()        const { return is_bdbh; };
 	bool isSizeSort()    const { return is_size_sort; };
 	bool isVerbose()     const { return is_verbose; };
 	bool isAbrtOnErr()   const { return on_error==""; };
-	string onError()     const { return on_error; };
+	string getErrFile()  const { return on_error; };
 	int getBlockSize()   const { return block_size; };
 	vector_of_strings  getOutFiles() const { return output_files; };
 	string getExternalCommand()      const { return external_command; };
@@ -44,6 +45,7 @@ private:
 
 	string input_directory;
 	string output_directory;
+	string input_file;
 	string file_type;
 	bool is_bdbh;
 	bool is_size_sort;
