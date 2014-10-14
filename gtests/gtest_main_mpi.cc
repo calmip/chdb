@@ -32,11 +32,19 @@
 
 #include "gtest/gtest.h"
 
+// Running google test with mpi initialized
+// ONLY THE MASTER DOES SOMETHING, THE LUCKY SLAVES ARE JUST SLEEPING
+// 
 GTEST_API_ int main(int argc, char **argv) {
 
 	// Begin code with initializing mpi
 	MPI_Init(&argc,&argv);
-	printf("Running main() from gtest_main_mpi.cc\n");
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+	int rank;
+	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	if (rank==0) {
+		testing::InitGoogleTest(&argc, argv);
+		printf("Running main() from gtest_main_mpi.cc\n");
+		return RUN_ALL_TESTS();
+	}
+	MPI_Finalize();
 }

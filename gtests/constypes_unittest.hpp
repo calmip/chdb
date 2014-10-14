@@ -7,6 +7,8 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <map>
 #include "../constypes.hpp"
 #include "../parameters.hpp"
 #include "../usingfs.hpp"
@@ -25,14 +27,25 @@ struct naco {
 	string content;
 };
 
-void createFile(const string& d, const naco& n);
 
 // Test fixture -> used by several tests
 class ChdbTest: public ::testing::Test {
+public:
+	void createFile(const string& d, const naco& n);
+	string readFile(const string&);
+
 protected:
 	ChdbTest();
-	~ChdbTest();
 	string input_dir;
+	vector<string> expected_file_pathes;
+	map<string,string> expected_file_contents;
 };
+
+// Another text fixture -> removes the output directory, too
+class ChdbTest1 : public ChdbTest {
+public:
+	~ChdbTest1() { system ("rm -rf inputdir.out"); };
+};
+
 
 #endif

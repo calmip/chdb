@@ -41,10 +41,6 @@ using namespace std;
 #define CHDB_TAG_GO    1010
 #define CHDB_TAG_END   1020
 
-void BasicScheduler::finalize() {
-	MPI_Finalize();
-}
-
 void BasicScheduler::mainLoop() {
 	if (isMaster()) {
 		mainLoopMaster();
@@ -75,13 +71,13 @@ void BasicScheduler::mainLoopMaster() {
 
 	// Open the error file, if any
 	ofstream err_file;
-	if (prms.isAbrtOnErr()) {
+	if (!prms.isAbrtOnErr()) {
 		string err_name = prms.getErrFile();
 		err_file.open(err_name.c_str());
 		if (!err_file.good()) {
 			string msg = "ERROR - File could not be opened: ";
 			msg += err_name;
-			throw(msg);
+			throw(runtime_error(msg));
 		}
 	}
 	
@@ -95,10 +91,10 @@ void BasicScheduler::mainLoopMaster() {
 		writeToSndBfr(send_bfr,bfr_size,send_msg_len);
 		
 		// Listen to the slaves
-		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_CHAR, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
-		int source = sts.MPI_SOURCE;
+		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		int talking_slave = sts.MPI_SOURCE;
 		//size_t recv_msg_len;
-		//MPI_Get_count(&sts, MPI_CHARACTER, (int*) &recv_msg_len);
+		//MPI_Get_count(&sts, MPI_BYTE, (int*) &recv_msg_len);
 
         // Init return_values and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
@@ -107,8 +103,7 @@ void BasicScheduler::mainLoopMaster() {
 		errorHandle(err_file);
 
 		// Send the block to the slave
-		int dest = source;
-		MPI_Send(send_bfr,send_msg_len,MPI_CHARACTER,dest,CHDB_TAG_GO,MPI_COMM_WORLD);
+		MPI_Send(send_bfr,send_msg_len,MPI_BYTE,talking_slave,CHDB_TAG_GO,MPI_COMM_WORLD);
 
 		// Init return_values and file_pathes for next iteration
 		return_values.clear();
@@ -118,10 +113,10 @@ void BasicScheduler::mainLoopMaster() {
 	// loop over the slaves: when each slave is ready, send it a msg END
 	int working_slaves = comm_size - 1; // The master is not a slave
 	while(working_slaves>0) {
-		MPI_Recv(recv_bfr, bfr_size, MPI_CHARACTER, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
-		int source = sts.MPI_SOURCE;
+		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		int talking_slave = sts.MPI_SOURCE;
 		//int msg_len;
-		//MPI_Get_count(&sts, MPI_CHARACTER, &msg_len);
+		//MPI_Get_count(&sts, MPI_BYTE, &msg_len);
 
         // Init return_values and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
@@ -130,8 +125,7 @@ void BasicScheduler::mainLoopMaster() {
 		errorHandle(err_file);
 		
 		// Send an empty message tagged END to the slave
-		int dest = source;
-		MPI_Send(send_bfr, 0, MPI_CHARACTER, dest, CHDB_TAG_END, MPI_COMM_WORLD);
+		MPI_Send(send_bfr, 0, MPI_BYTE, talking_slave, CHDB_TAG_END, MPI_COMM_WORLD);
 		working_slaves--;
 	}
 
@@ -155,9 +149,8 @@ void BasicScheduler::mainLoopSlave() {
 	void* bfr=NULL;
 	allocBfr(bfr,bfr_size);
 
-	// all msgs are sent to the master or received from him
-	int dest = 0;
-	int source = 0;
+	// all msgs are sent/received to/from the master
+	const int master = 0;
 	int tag    = CHDB_TAG_GO;
 	while(tag==CHDB_TAG_GO) {
 
@@ -166,12 +159,11 @@ void BasicScheduler::mainLoopSlave() {
 		writeToSndBfr(bfr,bfr_size,send_msg_len);
 
 		// Send the report+ready message to the master, receive a list of files to treat
-		MPI_Sendrecv_replace((char*)bfr,(int)bfr_size,MPI_CHARACTER,dest,CHDB_TAG_READY,source,MPI_ANY_TAG,MPI_COMM_WORLD,&sts);
+		MPI_Sendrecv_replace((char*)bfr,(int)bfr_size,MPI_BYTE,master,CHDB_TAG_READY,master,MPI_ANY_TAG,MPI_COMM_WORLD,&sts);
 		tag = sts.MPI_TAG;
 		
-/////////////////////READ
-
-
+        // Init file_pathes with the message
+		readFrmRecvBfr(bfr);
 
 		if (tag==CHDB_TAG_GO) {
 			executeCommand();

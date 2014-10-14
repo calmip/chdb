@@ -32,7 +32,7 @@ using namespace std;
 #include <dirent.h>
 
 /** 
- * @brief throw an error if MPI not yet initialized
+ * @brief throw an error if MPI not yet initialized or if no slave 
  * 
  * @param p 
  * @param d 
@@ -40,7 +40,7 @@ using namespace std;
  * @return 
  */
 
-Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d) {
+Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start_time(-1) {
 	int flg;
 	MPI_Initialized(&flg);
 	if (flg==0) {
@@ -49,8 +49,51 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d) {
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
 
+	if (comm_size==1) {
+		throw logic_error("ERROR - YOU SHOULD HAVE AT LEAST 1 SLAVE");
+	}
+
 	// Give some infos to dir
 	dir.setRank(rank,comm_size); 
+}
+
+/** 
+ * @brief Call MPI_Abort
+ * 
+ */
+void Scheduler::abort() {
+	MPI_Abort(MPI_COMM_WORLD,1);
+}
+
+/** 
+ * @brief call MPI_init 
+ * 
+ * @param argc 
+ * @param argv 
+ */
+
+void Scheduler::init(int argc, char**argv) {
+	MPI_Init(&argc,&argv);
+}
+	
+void Scheduler::startTimer() {
+	start_time = MPI_Wtime();
+}
+
+double Scheduler::getTimer() {
+	if (start_time==-1) {
+		throw(logic_error("ERROR - Timer was not started !"));
+	}
+	return MPI_Wtime()-start_time;
+}
+
+/** 
+ * @brief Send a barrier to be sure everybody is synchronized, then finalize
+ * 
+ */
+void Scheduler::finalize() {
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Finalize();
 }
 
 /** 

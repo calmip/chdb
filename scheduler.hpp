@@ -33,9 +33,14 @@ public:
 	int getCommSize() const { return comm_size; };
 	bool isMaster() const   { return rank==0;};
 
+	static void init(int,char**);
+	static void finalize();
+	static void abort();
+
 	virtual void mainLoop()=0;
-	virtual void finalize()=0;
 	virtual void errorHandle(ofstream&)=0;
+	void startTimer();
+	double getTimer();
 
 	// for gtests
 	friend class SchedTestStr_vctToBfrStrings_Test;
@@ -54,6 +59,9 @@ protected:
 
 	int comm_size;
 	int rank;
+
+private:
+	double start_time;
 
 };
 

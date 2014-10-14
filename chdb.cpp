@@ -7,22 +7,35 @@
 =============================================================================*/
 
 #include <iostream>
+#include <stdexcept>
 using namespace std;
 
 #include "parameters.hpp"
+#include "usingfs.hpp"
+#include "basicscheduler.hpp"
 
 /*////////////// Main ///////////////*/
 int main(int argc,char* argv[])
 {
-	for(int i=0; i<argc; i++) {
-		cout << "arg " << i << " " << argv[i] << "\n";
+	Scheduler::init(argc,argv);
+	
+	try {
+		Parameters prms(argc,argv);
+		UsingFs dir(prms);
+		BasicScheduler sched(prms,dir);
+		if (sched.isMaster()) {
+			sched.startTimer();
+		}
+		sched.mainLoop();
+		if (sched.isMaster() && prms.isVerbose()) {
+			cout << "NUMBER OF SLAVES = " << sched.getCommSize()-1 << '\n';
+			cout << "ELAPSED TIME     = " << sched.getTimer() << '\n';
+		}
+	}
+	catch (exception& e) {
+		cerr << e.what() << '\n';
+		Scheduler::abort();
 	}
 
-	Parameters prms(argc,argv);
-	cout << "coucou " << prms.getExternalCommand() << "\n";
-	for(int i=0; i<argc; i++) {
-		cout << "arg " << i << " " << argv[i] << "\n";
-	}
-
-
+	Scheduler::finalize();
 }

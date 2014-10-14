@@ -25,13 +25,12 @@ class BasicScheduler: public Scheduler {
 public:
 	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d){};
 	void mainLoop();
-	void finalize();
 	void errorHandle(ofstream&);
 
-	friend class ChdbTest_ExecuteCommand_Test;
-	friend class ChdbTest_ExecuteCommandWithErr_Test;
-	friend class ChdbTest_ExecuteCommandFrmList1_Test;
-	friend class ChdbTest_ExecuteCommandFrmList2_Test;
+	friend class ChdbTest1_ExecuteCommand_Test;
+	friend class ChdbTest1_ExecuteCommandWithErr_Test;
+	friend class ChdbTest1_ExecuteCommandFrmList1_Test;
+	friend class ChdbTest1_ExecuteCommandFrmList2_Test;
 	friend class SchedTestStrInt_readwriteToSndBfr_Test;
 
 private:

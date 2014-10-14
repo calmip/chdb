@@ -51,7 +51,7 @@ enum {
 CSimpleOpt::SOption options[] = {
 	{ OPT_HELP,          "--help",         SO_NONE    },
 	{ OPT_INDIR,         "--in-dir",       SO_REQ_SEP },
-	{ OPT_INFILE,        "--in-file",      SO_REQ_SEP },
+	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
@@ -169,7 +169,7 @@ void Parameters::checkInputDirectory() {
 		msg += input_directory;
 		msg += '\n';
 		msg += strerror(errno);
-		throw runtime_error(msg);
+		throw runtime_error(runtime_error(msg));
 	}
 	else
 	{
@@ -181,7 +181,7 @@ void Parameters::checkInputDirectory() {
 			string msg = "ERROR - ";
 			msg += input_directory;
 			msg += " should be a directory, a symlink, or a bdbh file";
-			throw runtime_error(msg);
+			throw runtime_error(runtime_error(msg));
 		}
 	}
 }
@@ -198,21 +198,59 @@ void Parameters::checkOutputDirectory() {
 	}
 }
 void Parameters::usage() {
-	cerr << "Usage: chdb bla bla" << '\n';
+	cerr << "Calcul à Haut DéBit - version 0.5\n";
+	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';
+	cerr << "\n";
+	cerr << "REQUIRED PARAMETERS:\n";
+	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
+	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
+	cerr << "  --command-line '...'       : The command line to be executed on each input file\n";
+	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line\n";
+	cerr << "\n";
+	cerr << "OPTIONAL PARAMETERS:\n";
+	cerr << "  --in-files file.txt        : Only files whose path is inside file.txt are considered for input\n";
+	cerr << "                               format: One file path/line\n";
+	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
+	cerr << "                               load-balancing issues\n";
+	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
+	cerr << "                               A generated errors.txt may be specified as in-files parameter in a later execution de chdb\n";
+	cerr << "                               are stored in this file for later reference and execution\n";
+	cerr << "\n";
+	cerr << "OPTIONAL SWITCHES:\n";
+	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
+	cerr << "  --verbose                  : Some messages are printed\n";
+	cerr << "  --help                     : Print this screen and leave\n";
+	cerr << "\n";
+	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
+	cerr << "The following templates are allowed in filenames specified by outfiles and command-line:\n";
+	cerr << "\n";
+	cerr << "  #path#         The input file complete path (relative to the input or output directory)\n";
+	cerr << "  #input_path#   inputdir/#path#\n";
+	cerr << "  #output_path#  outputdir/#path#\n";
+	cerr << "  #name#         The file name with the extension (inputdir/A/B/toto.txt ==> toto.txt)\n";
+	cerr << "  #basename#     The file name without the extension (inputdir/A/B/toto.txt ==> toto)\n";
+	cerr << "  #dirname#      The directory name relative to the input or output directory (inputdir/A/B/toto.txt => A/B)\n";
 	exit(1);
 }
 
 string Parameters::getLastErrorText(const CSimpleOpt& arg) {
+	char* r=arg.OptionArg();
+	string rvl;
+	if (r!=NULL) rvl=r;
+
+	rvl += ' ';
 	switch (arg.LastError()) {
-	case SO_SUCCESS:            return "Success";
-	case SO_OPT_INVALID:        return "Unrecognized option";
-	case SO_OPT_MULTIPLE:       return "Option matched multiple strings";
-	case SO_ARG_INVALID:        return "Option does not accept argument";
-	case SO_ARG_INVALID_TYPE:   return "Invalid argument format";
-	case SO_ARG_MISSING:        return "Required argument is missing";
-	case SO_ARG_INVALID_DATA:   return "Invalid argument data";
-	default:                    return "Unknown error";
+	case SO_SUCCESS:            rvl="Success"; break;
+	case SO_OPT_INVALID:        rvl += "Unrecognized option"; break;
+	case SO_OPT_MULTIPLE:       rvl += "Option matched multiple strings"; break;
+	case SO_ARG_INVALID:        rvl += "Option does not accept argument"; break;
+	case SO_ARG_INVALID_TYPE:   rvl += "Invalid argument format"; break;
+	case SO_ARG_MISSING:        rvl += "Required argument is missing"; break;
+	case SO_ARG_INVALID_DATA:   rvl += "Invalid argument data"; break;
+	default:                    rvl += "Unknown error"; break;
 	}
+	return rvl;
 }
 
 /*

@@ -12,12 +12,6 @@ using namespace std;
 class SchedTestStr : public ChdbTest {
 public:
 	SchedTestStr() {
-		expected_file_pathes.push_back("B.txt");
-		expected_file_pathes.push_back("C/C.txt");
-		expected_file_pathes.push_back("C/C/C.txt");
-		expected_file_pathes.push_back("D/C.txt");
-		expected_file_pathes.push_back("A.txt");
-
 		int n = 5;
 		string tmp((char*) &n,sizeof(int));
 		expected_bfr  = tmp;
@@ -40,9 +34,6 @@ public:
 	~SchedTestStr() { free(bfr); };
 
 protected:
-	vector_of_strings expected_file_pathes;
-	
-	//size_t expected_length;
 	string expected_bfr;
 	void*  bfr;
 	size_t bfr_len;
@@ -102,7 +93,6 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_file_pathes,file_pathes);
 
-	
 	FREE_ARGV(7);
 };
 
@@ -283,12 +273,10 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
 	EXPECT_EQ(0,memcmp(bfr,expected_bfr_1.c_str(),data_size));
 	EXPECT_EQ(data_size,expected_bfr_1.length());
 
-	free(bfr);
-
 	FREE_ARGV(9);
 };
 
-TEST_F(ChdbTest,ExecuteCommand) {
+TEST_F(ChdbTest1,ExecuteCommand) {
 
 	// Init prms
 	char* argv[11];
@@ -315,36 +303,12 @@ TEST_F(ChdbTest,ExecuteCommand) {
 	sched.file_pathes = dir.nextBlock();
 	EXPECT_THROW(sched.executeCommand(),runtime_error);
 
-	// We check othe content of file B.txt
-	string b_out = prms.getOutDir();
-	b_out += '/';
-	b_out += "B.txt";
-
-	ifstream b(b_out.c_str());
-	EXPECT_EQ(true,b.good());
-
-	string b_inside="";
-	while(b) {
-		string tmp;
-		getline(b,tmp);
-		b_inside += tmp;
-			b_inside += '\n';
-	}
-	b.close();
-
-	string b_inside_expected = "STS\t0\nTXT\tABCDEFGHIJKLMNO\n\n";
-	EXPECT_EQ(b_inside_expected,b_inside);
-
-	// Remove output directory
-	// return;
-	string cmd = "rm -r ";
-	cmd += prms.getOutDir();
-	system(cmd.c_str());
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
 
 	FREE_ARGV(11);
 };
 
-TEST_F(ChdbTest,ExecuteCommandWithErr) {
+TEST_F(ChdbTest1,ExecuteCommandWithErr) {
 
 	// Init prms
 	char* argv[13];
@@ -384,28 +348,16 @@ TEST_F(ChdbTest,ExecuteCommandWithErr) {
 	ifstream e(e_out.c_str());
 	EXPECT_EQ(true,e.good());
 
-	string e_inside="";
-	while(e) {
-		string tmp;
-		getline(e,tmp);
-		e_inside += tmp;
-		e_inside += '\n';
-	}
-	e.close();
-	
-	string e_inside_expected = "1\tD/C.txt\n\n";
-	EXPECT_EQ(e_inside_expected,e_inside);
-   
-	// Remove output directory
-	// return;
-	string cmd = "rm -r ";
-	cmd += prms.getOutDir();
-	system(cmd.c_str());
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
 
 	FREE_ARGV(13);
 };
 
-TEST_F(ChdbTest,ExecuteCommandFrmList1) {
+TEST_F(ChdbTest1,ExecuteCommandFrmList1) {
 
 	// Init prms
 	char* argv[13];
@@ -439,12 +391,7 @@ TEST_F(ChdbTest,ExecuteCommandFrmList1) {
 	// only ONE result
 	EXPECT_EQ(1,sched.return_values.size());
 	EXPECT_EQ(1,sched.file_pathes.size());
-
-	// Remove output directory
-	// return;
-	string cmd = "rm -r ";
-	cmd += prms.getOutDir();
-	system(cmd.c_str());
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
 
 	// Remove errors.txt
 	system("rm errors.txt");
@@ -452,7 +399,7 @@ TEST_F(ChdbTest,ExecuteCommandFrmList1) {
 	FREE_ARGV(13);
 };
 
-TEST_F(ChdbTest,ExecuteCommandFrmList2) {
+TEST_F(ChdbTest1,ExecuteCommandFrmList2) {
 
 	// Init prms
 	char* argv[13];
@@ -477,6 +424,7 @@ TEST_F(ChdbTest,ExecuteCommandFrmList2) {
 	// Prepare files.txt
 	ofstream f("files.txt");
 	f << "C/C/C.txt\n";
+	f << "# some comment\n";
 	f << "A.txt\n";
 	f.close();
 
@@ -490,13 +438,8 @@ TEST_F(ChdbTest,ExecuteCommandFrmList2) {
 	// only TWO results
 	EXPECT_EQ(2,sched.return_values.size());
 	EXPECT_EQ(2,sched.file_pathes.size());
-
-   
-	// Remove output directory
-	// return;
-	string cmd = "rm -r ";
-	cmd += prms.getOutDir();
-	system(cmd.c_str());
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
 
 	// Remove files.txt
 	system("rm files.txt");

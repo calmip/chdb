@@ -48,8 +48,18 @@
 #define INIT_ARGV(I,VAL) argv[I]=(char*)malloc(strlen(VAL)+1);strcpy(argv[I],VAL);
 #define FREE_ARGV(ARGC) for(int i=0;i<ARGC;i++){free(argv[i]); argv[i]=NULL;}
 
+class ParametersTest: public ::testing::Test {
+public:
+	~ParametersTest() { system("rm -rf inputdir"); };
+};
+class ParametersTest1: public ::testing::Test {
+public:
+	ParametersTest1()  { system("mkdir inputdir"); };
+	~ParametersTest1() { system("rm -rf inputdir"); };
+};
+
 // Tests constructors
-TEST(ParametersTest, CtorExceptions1) {
+TEST_F(ParametersTest, CtorExceptions1) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
@@ -67,7 +77,7 @@ TEST(ParametersTest, CtorExceptions1) {
 	// Parameters prms1 = Parameters(7,argv);
 	// Parameters prms2 = prms1;
 }
-TEST(ParametersTest, CtorExceptions2) {
+TEST_F(ParametersTest, CtorExceptions2) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
@@ -91,7 +101,7 @@ TEST(ParametersTest, CtorExceptions2) {
 
 	FREE_ARGV(7);
 }
-TEST(ParametersTest, CtorExceptions3) {
+TEST_F(ParametersTest1, CtorExceptions3) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
@@ -119,7 +129,7 @@ TEST(ParametersTest, CtorExceptions3) {
 
 	FREE_ARGV(7);
 }
-TEST(ParametersTest, CtorExceptions4) {
+TEST_F(ParametersTest1, CtorExceptions4) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
@@ -146,7 +156,7 @@ TEST(ParametersTest, CtorExceptions4) {
 
 	FREE_ARGV(7);
 }
-TEST(ParametersTest, CtorBlockSize) {
+TEST_F(ParametersTest1, CtorBlockSize) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
@@ -191,7 +201,7 @@ TEST(ParametersTest, CtorBlockSize) {
 	FREE_ARGV(9);
 }
 
-TEST(ParametersTest, CtorOnError) {
+TEST_F(ParametersTest1, CtorOnError) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
@@ -216,7 +226,7 @@ TEST(ParametersTest, CtorOnError) {
 
 	FREE_ARGV(9);
 }
-TEST(ParametersTest, CtorFlags) {
+TEST_F(ParametersTest1, CtorFlags) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
@@ -231,6 +241,7 @@ TEST(ParametersTest, CtorFlags) {
 	Parameters prms(9,argv);
 	ASSERT_EQ(true,prms.isSizeSort());
 	ASSERT_EQ(true,prms.isVerbose());
+
 }
 
 // Step 3. Call RUN_ALL_TESTS() in main().

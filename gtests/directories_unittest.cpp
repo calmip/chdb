@@ -28,6 +28,8 @@ TEST_F(ChdbTest,usingFsmkdir) {
 
 	string cmd="rm -r " + prms.getOutDir();
 	system(cmd.c_str());
+
+	FREE_ARGV(7);
 }
 
 TEST_F(ChdbTest,usingFsfindOrCreateDir) {
@@ -61,6 +63,8 @@ TEST_F(ChdbTest,usingFsfindOrCreateDir) {
 
 	string cmd="rm -r a";
 	system(cmd.c_str());
+
+	FREE_ARGV(7);
 }
 
 TEST_F(ChdbTest,getFiles_Unsorted) {
