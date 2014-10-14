@@ -93,6 +93,26 @@ TEST_F(ChdbTest1,onerror) {
 	EXPECT_EQ("1\tD/C.txt\n\n",readFile("errors.txt"));
 };
 
+TEST_F(ChdbTest1,fiveslaves) {
+
+	string in_dir = "inputdir";
+
+	string cmd = "mpirun -n 5 ../chdb --verbose ";
+	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--out-file '#output_path#' ";
+
+	cout << "NOW CALLING " << cmd << '\n';
+	system(cmd.c_str());
+
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+};
+
+
 // Step 3. Call RUN_ALL_TESTS() in main().
 //
 // We do this by linking in src/gtest_main.cc file, which consists of

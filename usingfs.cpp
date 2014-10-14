@@ -10,6 +10,7 @@
 #include <string>
 #include <list>
 #include <cerrno>
+#include <cstring>
 #include <set>
 #include <fstream>
 using namespace std;
@@ -243,7 +244,7 @@ void UsingFs::makeOutputDir() const {
 /** 
  * @brief Find or create the directory part of the path name
  * 
- * @param p 
+ * @param p The path name
  *
  * @exception throw an exception if the directory cannot be created
  */
@@ -262,7 +263,6 @@ void UsingFs::findOrCreateDir(const string & p) const {
 	// Was not already found, search it on the fs
 	struct stat st;
 	int sts = stat(d.c_str(),&st);
-	bool exc_flg=false;
 
 	// directory found: remember for next time, and return
 	if (sts==0 && S_ISDIR(st.st_mode)) {
@@ -270,9 +270,21 @@ void UsingFs::findOrCreateDir(const string & p) const {
 		return;
 	}
 
+	bool exc_flg = false;
+
 	// something found but not a directory: exception !
 	if (sts==0 && !S_ISDIR(st.st_mode)) {
-		exc_flg=true;
+		exc_flg = true;	}
+
+	// something in the path is NOT a directory: exception !
+	if (sts!=0 && errno==ENOTDIR) {
+		exc_flg = true;
+	}
+
+	if (exc_flg) {
+		string msg="ERROR WITH DIRECTORY CREATION: ";
+		msg += d;
+		throw(runtime_error(msg));
 	}
 
 	// some component of the path does not exist: recursive call, then create directory
@@ -280,26 +292,30 @@ void UsingFs::findOrCreateDir(const string & p) const {
 		if (errno==ENOENT) {
 			findOrCreateDir(d);
 			sts = mkdir(d.c_str(),0777);
+
+			// directory successfully created
 			if (sts == 0) {
 				found_directories.insert(d);
+				return;
 			}
-			// directory could not be created: exception !
-			else {
-				if (sts !=0) {
-					exc_flg=true;
-				}
-			}
-		}
-		// any other error: throw an exception
-		else {
-			exc_flg=true;
-		}
-	}
 
-	if (exc_flg) {
-		string msg="ERROR WITH ";
-		msg += d;
-		throw(runtime_error(msg));
+			// directory already exists: if was already created by some other process
+			if (sts!=0 && errno==EEXIST) {
+				found_directories.insert(d);
+				return;
+			}
+
+			// Any other issue: throw an exception !
+			string msg="ERROR WITH DIRECTORY CREATION: ";
+			msg += d;
+			msg += " - ";
+			msg += strerror(errno);
+			throw(runtime_error(msg));
+
+			// If the directory could not be created, we just ignore the result of mkdir
+			// If probably means there is a race condition with other processes
+			// We consider it was created anyway, but we do not store the directory name
+		}
 	}
 }
 
