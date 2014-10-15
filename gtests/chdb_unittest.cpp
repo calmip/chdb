@@ -93,6 +93,29 @@ TEST_F(ChdbTest1,onerror) {
 	EXPECT_EQ("1\tD/C.txt\n\n",readFile("errors.txt"));
 };
 
+TEST_F(ChdbTest1,onefile) {
+
+    // The file errors.txt should have been created by previous test
+	string in_dir = "inputdir";
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--in-files errors.txt ";
+
+	cout << "NOW CALLING " << cmd << '\n';
+	system(cmd.c_str());
+
+	// Only ONE file created !
+	EXPECT_EQ(false,existsFile("inputdir.out/B.txt"));
+	EXPECT_EQ(false,existsFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(false,existsFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+	EXPECT_EQ(false,existsFile("inputdir.out/A.txt"));
+};
+
+
 TEST_F(ChdbTest1,fiveslaves) {
 
 	string in_dir = "inputdir";

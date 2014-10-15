@@ -35,6 +35,11 @@ string ChdbTest::readFile(const string & f) {
 	return rvl;
 }
 
+bool ChdbTest::existsFile(const string &f) {
+	ifstream in(f.c_str());
+	return in;
+}
+
 ChdbTest::ChdbTest(): input_dir("inputdir") {
 
 	// Nothing to do if inputdir already exists !

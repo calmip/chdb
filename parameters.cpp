@@ -222,6 +222,9 @@ void Parameters::checkOutputDirectory() {
 */
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version 0.5\n";
+	cerr << "Copyright license etc\n";
+	cerr << "chdb executes an external command line for every file of a given file-type found in the input directory.\n";
+	cerr << "The work is distributed among the cores using the MPI library.\n\n";
 	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';
 	cerr << "\n";
 	cerr << "REQUIRED PARAMETERS:\n";
@@ -246,14 +249,15 @@ void Parameters::usage() {
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
 	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
-	cerr << "The following templates are allowed in filenames specified by outfiles and command-line:\n";
+	cerr << "The following templates are allowed in filenames specified by outfiles and command-line.\n";
+	cerr << "They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
 	cerr << "\n";
 	cerr << "  %in-dir%       The input directory  (inputdir)\n";
 	cerr << "  %out-dir%      The output directory (inputdir.out)\n";
-	cerr << "  %path%         The input file complete path (relative to the input or output directory: A/B/toto.txt)\n";
+	cerr << "  %path%         The input file complete path (relative to the input directory: A/B/toto.txt)\n";
 	cerr << "  %name%         The file name with the extension (toto.txt)\n";
 	cerr << "  %basename%     The file name without the extension (toto)\n";
-	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B/toto.txt => A/B)\n";
+	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B)\n";
 	exit(1);
 }
 

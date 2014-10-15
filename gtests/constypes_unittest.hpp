@@ -33,6 +33,7 @@ class ChdbTest: public ::testing::Test {
 public:
 	void createFile(const string& d, const naco& n);
 	string readFile(const string&);
+	bool existsFile(const string&);
 
 protected:
 	ChdbTest();
