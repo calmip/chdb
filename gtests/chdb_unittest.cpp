@@ -14,10 +14,10 @@ TEST_F(ChdbTest1,Block1) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#'";
+	cmd += "--out-file %out-dir%/%path%";
 
 	cout << "NOW CALLING " << cmd << '\n';
 	system(cmd.c_str());
@@ -34,10 +34,10 @@ TEST_F(ChdbTest1,Block2) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#'";
+	cmd += "--out-file %out-dir%/%path%";
 	cmd += "--block-size 2";
 
 	cout << "NOW CALLING " << cmd << '\n';
@@ -55,10 +55,10 @@ TEST_F(ChdbTest1,Block5) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#'";
+	cmd += "--out-file %out-dir%/%path%";
 	cmd += "--block-size 5";
 
 	cout << "NOW CALLING " << cmd << '\n';
@@ -76,10 +76,10 @@ TEST_F(ChdbTest1,onerror) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path#' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#' ";
+	cmd += "--out-file %out-dir%/%path% ";
 	cmd += "--on-error errors.txt ";
 
 	cout << "NOW CALLING " << cmd << '\n';
@@ -98,10 +98,10 @@ TEST_F(ChdbTest1,fiveslaves) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 5 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#' ";
+	cmd += "--out-file %out-dir%/%path%";
 
 	cout << "NOW CALLING " << cmd << '\n';
 	system(cmd.c_str());
@@ -117,10 +117,10 @@ TEST_F(ChdbTest1,tenslaves) {
 	string in_dir = "inputdir";
 
 	string cmd = "mpirun -n 10 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file '#output_path#' ";
+	cmd += "--out-file %out-dir%/%path%";
 
 	cout << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());

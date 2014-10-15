@@ -248,12 +248,12 @@ void Parameters::usage() {
 	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
 	cerr << "The following templates are allowed in filenames specified by outfiles and command-line:\n";
 	cerr << "\n";
-	cerr << "  #path#         The input file complete path (relative to the input or output directory)\n";
-	cerr << "  #input_path#   inputdir/#path#\n";
-	cerr << "  #output_path#  outputdir/#path#\n";
-	cerr << "  #name#         The file name with the extension (inputdir/A/B/toto.txt ==> toto.txt)\n";
-	cerr << "  #basename#     The file name without the extension (inputdir/A/B/toto.txt ==> toto)\n";
-	cerr << "  #dirname#      The directory name relative to the input or output directory (inputdir/A/B/toto.txt => A/B)\n";
+	cerr << "  %in-dir%       The input directory  (inputdir)\n";
+	cerr << "  %out-dir%      The output directory (inputdir.out)\n";
+	cerr << "  %path%         The input file complete path (relative to the input or output directory: A/B/toto.txt)\n";
+	cerr << "  %name%         The file name with the extension (toto.txt)\n";
+	cerr << "  %basename%     The file name without the extension (toto)\n";
+	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B/toto.txt => A/B)\n";
 	exit(1);
 }
 

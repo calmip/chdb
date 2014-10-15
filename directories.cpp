@@ -98,16 +98,17 @@ void Directories::completeFilePath(const string& p, string& command) {
 		b = "";
 	}
 
-	string ip = prms.getInDir()  + '/' + p;
-	string op = prms.getOutDir() + '/' + p;
-	static string tmpl1="#input_path#";
-	static string tmpl2="#output_path#";
-	static string tmpl3="#path#";
-	static string tmpl4="#basename#";
-	static string tmpl5="#name#";
-	static string tmpl6="#dirname#";
-	replaceTmpl(tmpl1,ip,command);
-	replaceTmpl(tmpl2,op,command);
+	string id = prms.getInDir();
+	string od = prms.getOutDir();
+	static string tmpl1="%in-dir%";
+	static string tmpl2="%out-dir%";
+	static string tmpl3="%path%";
+	static string tmpl4="%basename%";
+	static string tmpl5="%name%";
+	static string tmpl6="%dirname%";
+	
+	replaceTmpl(tmpl1,id,command);
+	replaceTmpl(tmpl2,od,command);
 	replaceTmpl(tmpl3,p,command);
 	replaceTmpl(tmpl4,b,command);
 	replaceTmpl(tmpl5,n,command);

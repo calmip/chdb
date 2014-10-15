@@ -347,11 +347,11 @@ TEST_F(ChdbTest,completeFilePath) {
 
 	string f1 = "A/B/C/D.txt";
 
-	string s1 = "outputdir/#path#";
-	string s2 = "outputdir/#name#";
-	string s3 = "outputdir/#basename#.out";
-	string s4 = "outputdir/#dirname#/#basename#.out";
-	string s5 = s1 + "##" + s1 + "##" + s2 + "##" + s2 + "##" + s3 + "##" + s3;
+	string s1 = "outputdir/%path%";
+	string s2 = "outputdir/%name%";
+	string s3 = "outputdir/%basename%.out";
+	string s4 = "outputdir/%dirname%/%basename%.out";
+	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
 	dir.completeFilePath(f1,s1);
 	dir.completeFilePath(f1,s2);
 	dir.completeFilePath(f1,s3);
@@ -362,7 +362,7 @@ TEST_F(ChdbTest,completeFilePath) {
 	string expected_s2 = "outputdir/D.txt";
 	string expected_s3 = "outputdir/D.out";
 	string expected_s4 = "outputdir/A/B/C/D.out";
-	string expected_s5 = expected_s1 + "##" + expected_s1 + "##" + expected_s2 + "##" + expected_s2 + "##" + expected_s3 + "##" + expected_s3;
+	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
 	vector_of_strings block;
 	vector_of_strings expected_block;
 
