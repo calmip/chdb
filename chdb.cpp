@@ -28,8 +28,9 @@ int main(int argc,char* argv[])
 		}
 		sched.mainLoop();
 		if (sched.isMaster() && prms.isVerbose()) {
-			cout << "NUMBER OF SLAVES = " << sched.getCommSize()-1 << '\n';
+			cout << "NUMBER OF SLAVES = " << sched.getNbOfSlaves() << '\n';
 			cout << "ELAPSED TIME     = " << sched.getTimer() << '\n';
+			cout << "NB OF INPUT FILES= " << sched.getTreatedFiles() << '\n';
 		}
 	}
 	catch (exception& e) {

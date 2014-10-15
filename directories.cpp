@@ -49,18 +49,12 @@ void Directories::setRank(int r, int s) {
 /**
  *  @brief Return the nextblok of file names
  *
+ *  @pre The vector files should have been initialized
  *  @return A vector of names
  *          An empty vector if there are no more file names
 */
 
 vector_of_strings Directories::nextBlock() {
-//	getFiles();
-	if (files.empty()) {
-		getFiles();
-		blk_ptr = files.begin();
-//		throw(runtime_error("ERROR - No files in the input directory"));
-	}
-
 	vector_of_strings blk;
 	if ( blk_ptr != files.end() ) {
 

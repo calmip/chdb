@@ -112,6 +112,20 @@ TEST_F(ChdbTest1,fiveslaves) {
 	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
 };
 
+TEST_F(ChdbTest1,tenslaves) {
+
+	string in_dir = "inputdir";
+
+	string cmd = "mpirun -n 10 ../chdb --verbose ";
+	cmd += "--command-line './ext_cmd.sh #input_path# #output_path# 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--out-file '#output_path#' ";
+
+	cout << "NOW CALLING " << cmd << '\n';
+	int rvl=system(cmd.c_str());
+	EXPECT_NE(0,rvl);
+};
 
 // Step 3. Call RUN_ALL_TESTS() in main().
 //

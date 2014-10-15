@@ -11,6 +11,8 @@ using namespace std;
 #include "SimpleOpt.h"
 #include "constypes.hpp"
 
+vector_of_strings split(const string &);
+
 /** 
 	\brief This class parses and keeps in memory the command line
 */
@@ -37,7 +39,7 @@ private:
 	void check();
 	void checkEmptyMembers();
 	void checkInputDirectory();
-	void checkOutputDirectory();
+	//void checkOutputDirectory();
 	void checkBlockSize();
 
 	string getLastErrorText(const CSimpleOpt& arg);

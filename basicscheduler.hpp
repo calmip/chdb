@@ -23,10 +23,11 @@ using namespace std;
 
 class BasicScheduler: public Scheduler {
 public:
-	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d){};
+	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d),treated_files(0){};
 	void mainLoop();
 	void errorHandle(ofstream&);
-
+	size_t getTreatedFiles() const { return treated_files; };
+ 
 	friend class ChdbTest1_ExecuteCommand_Test;
 	friend class ChdbTest1_ExecuteCommandWithErr_Test;
 	friend class ChdbTest1_ExecuteCommandFrmList1_Test;
@@ -46,6 +47,8 @@ private:
 	void allocBfr(void*& bfr, size_t& bfr_sze);
 	void writeToSndBfr(void* bfr, size_t, size_t&);
 	void readFrmRecvBfr(const void* bfr);
+
+	size_t treated_files;
 };
 
 #endif

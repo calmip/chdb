@@ -8,12 +8,12 @@
  * 
  */
 
-//#include <iostream>
+#include <mpi.h>
+#include <iostream>
 //#include <iterator>
 //#include <set>
 using namespace std;
 
-#include <mpi.h>
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,6 +55,29 @@ void BasicScheduler::mainLoop() {
  */
 void BasicScheduler::mainLoopMaster() {
 	MPI_Status sts;
+/*	
+	{
+		pid_t pid = getpid();
+		ostringstream s_tmp;
+		s_tmp << "gdbserver host:2345 --attach " << pid << "&";
+		cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
+		system(s_tmp.str().c_str());
+	}
+*/
+	// read the file names
+	dir.readFiles();
+
+	// check the number of blocks versus number of slaves and throw an exception if too many slaves
+	size_t slaves_max = dir.getNbOfFiles()/prms.getBlockSize();
+	if (dir.getNbOfFiles() % prms.getBlockSize() != 0) {
+		slaves_max += 1;
+	};
+//	size_t slaves_max=100;
+	if (slaves_max<getNbOfSlaves()) {
+		ostringstream out;
+		out << "ERROR - You should NOT use more than " << slaves_max << " slaves";
+		throw(runtime_error(out.str()));
+	}
 
 	// Create the output directory
 	dir.makeOutputDir();
@@ -67,7 +90,6 @@ void BasicScheduler::mainLoopMaster() {
 
 	allocBfr(send_bfr,bfr_size);
 	allocBfr(recv_bfr,bfr_size);
-		
 
 	// Open the error file, if any
 	ofstream err_file;
@@ -99,6 +121,9 @@ void BasicScheduler::mainLoopMaster() {
         // Init return_values and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
 		
+		// counting the files
+		treated_files += file_pathes.size();
+
 		// Handle the error
 		errorHandle(err_file);
 
@@ -111,7 +136,7 @@ void BasicScheduler::mainLoopMaster() {
 	}
 
 	// loop over the slaves: when each slave is ready, send it a msg END
-	int working_slaves = comm_size - 1; // The master is not a slave
+	int working_slaves = getNbOfSlaves(); // The master is not a slave
 	while(working_slaves>0) {
 		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
 		int talking_slave = sts.MPI_SOURCE;
@@ -121,6 +146,9 @@ void BasicScheduler::mainLoopMaster() {
         // Init return_values and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
 		
+		// counting the files
+		treated_files += file_pathes.size();
+
 		// Handle the error
 		errorHandle(err_file);
 		

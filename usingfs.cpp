@@ -69,14 +69,14 @@ void UsingFs::initInputFiles() const {
 }
 
 /**
-   \brief Retrieve the file names from the input directory and push them to files
-          If files is already filled, we just return the vector
+   \brief Read the file names from the input directory and push them to files
+          If files is already filled, do nothing
 */
-const vector_of_strings& UsingFs::getFiles() const {
-	string top = prms.getInDir();
-	string ext = prms.getFileType();
-	
+void UsingFs::v_readFiles() {
 	if (files.size()==0) {
+		string top = prms.getInDir();
+		string ext = prms.getFileType();
+	
 		// Fill if possible the set of files to use - If empty, ALL files of correct type will be considered
 		initInputFiles();
 
@@ -87,7 +87,6 @@ const vector_of_strings& UsingFs::getFiles() const {
 		}
 		readDir(top,head_strip);
 	}
-	return files;
 }
 
 /** 

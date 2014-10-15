@@ -29,16 +29,31 @@ using namespace std;
 class Directories: private NonCopyable {
 
 public:
-	Directories(const Parameters& p):prms(p),rank(-1),comm_size(-1){};
+	Directories(const Parameters& p):prms(p),rank(-1),comm_size(-1),blk_ptr(files.begin()){};
 	void setRank(int,int);
 
 	virtual void makeOutputDir() const = 0;
-	virtual const vector_of_strings& getFiles() const = 0;
+
+//	void readFiles() { getFiles(); };
+//	const vector_of_strings& getFiles() { 
+//		const vector_of_strings& rvl = v_readFiles();
+//		blk_ptr=files.begin();
+//		return rvl;
+//	};
+	const vector_of_strings& getFiles() {
+		readFiles();
+		return files;
+	}
+	void readFiles() {
+		v_readFiles();
+		blk_ptr=files.begin();
+	}
+
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& command);
 	virtual int executeExternalCommand(const string&,const vector_of_strings&) const = 0;
-
-	void insertOutFilesToDb(const vector_of_strings&) {};
+	size_t getNbOfFiles() { readFiles(); return files.size(); };
+	//void insertOutFilesToDb(const vector_of_strings&) {};
 
 protected:
 	const Parameters& prms;
@@ -47,8 +62,9 @@ protected:
 	int comm_size;
 
 private:
-	vector_of_strings::iterator blk_ptr;
+	mutable vector_of_strings::iterator blk_ptr;
 	void replaceTmpl(const string& tmpl, const string& value, string& text);
+	virtual void v_readFiles() = 0;
 };
 
 #endif

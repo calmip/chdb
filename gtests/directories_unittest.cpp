@@ -150,6 +150,9 @@ TEST_F(ChdbTest,block1) {
 	vector_of_strings block;
 	vector_of_strings expected_block;
 
+	int nb_files = dir.getNbOfFiles();
+	EXPECT_EQ(5,nb_files);
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
@@ -209,6 +212,9 @@ TEST_F(ChdbTest,block2) {
 	vector_of_strings block;
 	vector_of_strings expected_block;
 
+	// Read the files
+	dir.readFiles();
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
@@ -259,6 +265,9 @@ TEST_F(ChdbTest,block3) {
 	vector_of_strings block;
 	vector_of_strings expected_block;
 
+	// Read the files
+	dir.readFiles();
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
@@ -298,6 +307,9 @@ TEST_F(ChdbTest,block4) {
 
 	vector_of_strings block;
 	vector_of_strings expected_block;
+
+	// Read the files
+	dir.readFiles();
 
 	// 1st blck
 	block = dir.nextBlock();

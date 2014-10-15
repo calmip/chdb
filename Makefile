@@ -138,7 +138,8 @@ chdb.o: /usr/include/sys/select.h /usr/include/bits/select.h
 chdb.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
 chdb.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
 chdb.o: /usr/include/alloca.h /usr/include/string.h /usr/include/xlocale.h
-chdb.o: constypes.hpp
+chdb.o: constypes.hpp usingfs.hpp directories.hpp basicscheduler.hpp
+chdb.o: scheduler.hpp
 scheduler.o: /usr/include/sys/types.h /usr/include/features.h
 scheduler.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 scheduler.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h

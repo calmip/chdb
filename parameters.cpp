@@ -19,6 +19,26 @@ using namespace std;
 //#include <stdlib.h>
 
 
+vector_of_strings split(const string& s) {
+	vector_of_strings rvl;
+	size_t opos=0;
+	size_t pos =s.find_first_of(',',opos);
+	while(pos != string::npos) {
+		rvl.push_back(s.substr(opos,pos-opos));
+		opos=pos+1;
+		// if , is the last character
+		if (opos==s.length()) break;
+		
+		// search next ,
+		pos = s.find_first_of(',',opos);
+	};
+	// if , is NOT the last character push the remaining string
+	if (opos!=s.length()) {
+		rvl.push_back(s.substr(opos));
+	}
+	return rvl;
+}
+
 /**
    \brief 
 */
@@ -63,6 +83,7 @@ CSimpleOpt::SOption options[] = {
 	SO_END_OF_OPTIONS   // END
 };
 
+
 /** The constructor
 
 	\param argc   passed to main by the system
@@ -100,7 +121,7 @@ Parameters::Parameters(int argc,
 				output_directory =  arguments.OptionArg();
 				break;
 			case OPT_OUTFILES:
-				output_files.push_back(arguments.OptionArg());
+				output_files = split(arguments.OptionArg());
 				break;
 			case OPT_BLOCK_SIZE:
 				block_size = atoi(arguments.OptionArg());
@@ -140,7 +161,7 @@ Parameters::Parameters(int argc,
 void Parameters::check() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	checkOutputDirectory();
+	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -185,6 +206,7 @@ void Parameters::checkInputDirectory() {
 		}
 	}
 }
+/*
 void Parameters::checkOutputDirectory() {
 	struct stat bfr;
 	int rvl;
@@ -197,6 +219,7 @@ void Parameters::checkOutputDirectory() {
 		throw runtime_error(msg);
 	}
 }
+*/
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version 0.5\n";
 	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';

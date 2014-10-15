@@ -101,7 +101,7 @@ TEST_F(ParametersTest, CtorExceptions2) {
 
 	FREE_ARGV(7);
 }
-TEST_F(ParametersTest1, CtorExceptions3) {
+TEST_F(ParametersTest1, Ctoroutputdir) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
@@ -119,7 +119,7 @@ TEST_F(ParametersTest1, CtorExceptions3) {
 	string cmd = "mkdir ";
 	cmd += outputdir;
 	system(cmd.c_str());
-	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+	EXPECT_NO_THROW(new Parameters(7,argv));
 
 	cmd = "rm -r ";
 	cmd += outputdir;
@@ -243,6 +243,52 @@ TEST_F(ParametersTest1, CtorFlags) {
 	ASSERT_EQ(true,prms.isVerbose());
 
 }
+
+TEST(Parameters,split) {
+	vector_of_strings v;
+	vector_of_strings expected_v;
+
+	v=split("un");
+	expected_v.push_back("un");
+	ASSERT_EQ(expected_v,v);
+
+	v=split("un,deux");
+	expected_v.clear();
+	expected_v.push_back("un");
+	expected_v.push_back("deux");
+	ASSERT_EQ(expected_v,v);
+
+	v=split("un,deux,");
+	expected_v.clear();
+	expected_v.push_back("un");
+	expected_v.push_back("deux");
+	ASSERT_EQ(expected_v,v);
+
+	v=split("");
+	expected_v.clear();
+	ASSERT_EQ(expected_v,v);
+}
+
+TEST_F(ParametersTest1, CtorOutFiles) {
+	char* argv[10];
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"txt");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,"inputdir");
+	INIT_ARGV(5,"--command-line");
+	INIT_ARGV(6,"coucou");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"out1.txt,out2.txt");
+	
+	Parameters prms(9,argv);
+
+	vector_of_strings out_files;
+	out_files.push_back("out1.txt");
+	out_files.push_back("out2.txt");
+	ASSERT_EQ(out_files,prms.getOutFiles());
+}
+
 
 // Step 3. Call RUN_ALL_TESTS() in main().
 //

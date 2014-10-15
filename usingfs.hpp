@@ -20,7 +20,6 @@ class UsingFs: public Directories {
 public:
 	UsingFs(const Parameters& p):Directories(p){};
 
-	virtual const vector_of_strings& getFiles() const;
 	void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
 	void makeOutputDir() const;
@@ -33,6 +32,7 @@ private:
 	void findOrCreateDir(const string &) const;
 	bool isCorrectType(const string &) const;
 	void initInputFiles() const;
+	virtual void v_readFiles();
 
 	mutable set<string> input_files;
 	mutable set<string> found_directories;
