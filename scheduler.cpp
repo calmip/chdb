@@ -108,7 +108,7 @@ void Scheduler::finalize() {
  * @exception A runtime_exception is thrown if the buffer is too small
  * 
  */
-void Scheduler::vctToBfr(const vector_of_strings& file_pathes, void* bfr, size_t bfr_size, size_t& data_size ) {
+void vctToBfr(const vector_of_strings& file_pathes, void* bfr, size_t bfr_size, size_t& data_size ) {
 	data_size=sizeof(int);
 	for (size_t i=0; i<file_pathes.size(); ++i) {
 		data_size += file_pathes[i].length()+1;
@@ -134,7 +134,7 @@ void Scheduler::vctToBfr(const vector_of_strings& file_pathes, void* bfr, size_t
  * @param[out] data_size   The size of data read in bfr
  * @param[out] files_names 
  */
-void Scheduler::bfrToVct(void const* bfr, size_t& data_size, vector_of_strings& file_pathes) {
+void bfrToVct(void const* bfr, size_t& data_size, vector_of_strings& file_pathes) {
 	int sze=0;
 	memcpy((void*)&sze,bfr,sizeof(int));
 	size_t l_tmp = sizeof(int);
@@ -146,51 +146,6 @@ void Scheduler::bfrToVct(void const* bfr, size_t& data_size, vector_of_strings& 
 	}
 	data_size = l_tmp;
 }
-
-/** 
- * @brief Write in a Buffer for sending a block of integers
- *        We store the number of integers, THEN the integers
- *        Storing three int, little endian: 3000xxx\0xxx\0xxx\0 
- * 
- * @param[in] values 
- * @param[in] bfr 
- * @param[in] bfr_size 
- * @param[out] data_size The length of data stored
- * @exception A runtime_exception is thrown if the buffer is too small
- *
- */
-void Scheduler::vctToBfr(const vector_of_int& values, void* bfr, size_t bfr_size, size_t& data_size ) {
-	size_t vct_sze  = values.size();
-	data_size= (vct_sze+1) * sizeof(int);
-	if (data_size > bfr_size) {
-		throw(runtime_error("ERROR - Buffer too small"));
-	}
-
-	int* v = (int*) bfr;
-	v[0] = (int) vct_sze;
-	for (size_t i=0; i<vct_sze; ++i) {
-		v[i+1] = values[i];
-	}
-}
-
-/** 
- * @brief Create a vector of int from a receive buffer
- * 
- * @param[in]  bfr         The buffer
- * @param[out] data_size   The size of data read in bfr
- * @param[out] values
- *
- */
-void Scheduler::bfrToVct(void const* bfr, size_t& data_size, vector_of_int& values) {
-	int *v = (int*) bfr;
-	int sze = v[0];
-	values.clear();
-	for (int i=0; i<sze; ++i) {
-		values.push_back(v[i+1]);
-	}
-	data_size = sizeof(int)*(values.size()+1);
-}
-	
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
  * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx

@@ -48,5 +48,133 @@ public:
 	~ChdbTest1() { system ("rm -rf inputdir.out"); };
 };
 
+// Some test fixtures used by scheduler_unittest.cpp and buffer_unittest.cpp
+class SchedTestStr : public ChdbTest {
+public:
+	SchedTestStr() {
+		int n = 5;
+		string tmp((char*) &n,sizeof(int));
+		expected_bfr  = tmp;
+		expected_bfr += "B.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "D/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "A.txt";
+		expected_bfr += '\0';
+
+		bfr_len = 5;
+		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
+		bfr = malloc(bfr_len);
+
+	};
+	~SchedTestStr() { free(bfr); };
+
+protected:
+	string expected_bfr;
+	void*  bfr;
+	size_t bfr_len;
+};
+
+class SchedTestInt : public ChdbTest {
+public:
+	SchedTestInt() {
+		expected_values.push_back(3);
+		expected_values.push_back(5);
+		expected_values.push_back(7);
+		int v[]={3,3,5,7};
+		string b((char*)v,4*sizeof(int));
+		expected_bfr = b;
+
+		bfr_len  = 4*sizeof(int);
+		bfr = malloc(bfr_len);
+	};
+	~SchedTestInt() { free(bfr); };
+
+protected:
+	vector_of_int expected_values;
+	
+	string expected_bfr;
+	void*  bfr;
+	size_t bfr_len;
+};
+
+class SchedTestDbl : public ChdbTest {
+public:
+	SchedTestDbl() {
+		expected_values.push_back(3.14);
+		expected_values.push_back(5.28);
+		expected_values.push_back(7.98);
+		double v[]={3.0,3.14,5.28,7.98};
+		string b((char*)v,4*sizeof(double));
+		expected_bfr = b;
+
+		bfr_len  = 4*sizeof(double);
+		bfr = malloc(bfr_len);
+	};
+	~SchedTestDbl() { free(bfr); };
+
+protected:
+	vector_of_double expected_values;
+	
+	string expected_bfr;
+	void*  bfr;
+	size_t bfr_len;
+};
+
+class SchedTestStrInt : public ChdbTest {
+public:
+	SchedTestStrInt() {
+		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
+		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
+
+		// no value, 5 files
+		int v[2] = {0,5};
+		expected_bfr = string((char*) &v,2*sizeof(int));
+		expected_bfr += input_dir + '/' + "B.txt" + '\0';
+		expected_bfr += input_dir + '/' + "C/C.txt" + '\0';
+		expected_bfr += input_dir + '/' + "C/C/C.txt" + '\0';
+		expected_bfr += input_dir + '/' + "D/C.txt"   + '\0';
+		expected_bfr += input_dir + '/' + "A.txt"     + '\0';
+
+		// 5 values, 5 files
+		int v_1[7] = {5,0,1,2,3,4,5};
+		expected_values_1.push_back(0);
+		expected_values_1.push_back(1);
+		expected_values_1.push_back(2);
+		expected_values_1.push_back(3);
+		expected_values_1.push_back(4);
+
+		expected_bfr_1 = string((char*) &v_1,7*sizeof(int));
+		expected_bfr_1 += input_dir + '/' + "B.txt" + '\0';
+		expected_bfr_1 += input_dir + '/' + "C/C.txt" + '\0';
+		expected_bfr_1 += input_dir + '/' + "C/C/C.txt" + '\0';
+		expected_bfr_1 += input_dir + '/' + "D/C.txt"   + '\0';
+		expected_bfr_1 += input_dir + '/' + "A.txt"     + '\0';
+		
+		bfr_len  = sizeof(int);
+		bfr_len += 5 * input_dir.length();
+		bfr_len += 10;
+		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
+		bfr = malloc(bfr_len);
+	};
+	~SchedTestStrInt() { free(bfr); };
+
+protected:
+	vector_of_strings expected_file_pathes;
+	vector_of_int expected_values_1;
+	string expected_bfr;
+	string expected_bfr_1;
+	void*  bfr;
+	size_t bfr_len;
+};
+
+
 
 #endif

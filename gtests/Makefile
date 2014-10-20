@@ -31,7 +31,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = parameters_unittest directories_unittest scheduler_unittest chdb_unittest
+TESTS = parameters_unittest directories_unittest scheduler_unittest buffer_unittest chdb_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -99,6 +99,12 @@ scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp
 scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main_mpi.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
+buffer_unittest.o : buffer_unittest.cpp ../*.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c buffer_unittest.cpp	
+
+buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main_mpi.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
 chdb_unittest.o : chdb_unittest.cpp ../scheduler.cpp 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c chdb_unittest.cpp	
 
@@ -108,6 +114,7 @@ chdb_unittest : chdb_unittest.o constypes_unittest.o gtest_main.a
 tests: parameters_unittest directories_unittest scheduler_unittest chdb_unittest
 	./parameters_unittest 
 	./directories_unittest
+	./buffer_unittest
 	mpirun -n 2 ./scheduler_unittest
 	./chdb_unittest
 
