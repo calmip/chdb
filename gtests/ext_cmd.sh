@@ -8,6 +8,16 @@ INPUT=$1
 OUTPUT=$2
 STS=$3
 
+if [[ ! -f $INPUT ]]
+then
+	exit 20
+fi
+if [[ -d $OUTPUT ]]
+then
+	exit 30
+fi
+
+
 cat $INPUT |while read sts text
 do
 	echo -e "STS\t$sts"   > $OUTPUT || exit 10

@@ -115,6 +115,29 @@ TEST_F(ChdbTest1,onefile) {
 	EXPECT_EQ(false,existsFile("inputdir.out/A.txt"));
 };
 
+TEST_F(ChdbTest1,twoslaves_blk3) {
+
+	string in_dir = "inputdir";
+
+	string cmd = "mpirun -n 3 ../chdb --verbose ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--block-size 3 ";
+	cmd += "--sort-by-size";
+
+	cout << "NOW CALLING " << cmd << '\n';
+	system(cmd.c_str());
+
+
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+};
+
 
 TEST_F(ChdbTest1,fiveslaves) {
 

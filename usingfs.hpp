@@ -11,11 +11,17 @@ using namespace std;
 #include "constypes.hpp"
 #include "directories.hpp"
 
+/** This struct is used for sorting the files before storing them - see readDir */
+struct Finfo {
+	Finfo(const string& n, off_t s): name(n),st_size(s) {};
+  string name;
+  off_t st_size;
+};
+
 /** 
 	\brief This class manages the files contained inside the input or output directory
 	       It is used when we work with REAL directories
 */
-class Finfo;
 class UsingFs: public Directories {
 public:
 	UsingFs(const Parameters& p):Directories(p){};
@@ -23,6 +29,7 @@ public:
 	void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
 	void makeOutputDir() const;
+	void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
 	friend class ChdbTest_usingFsfindOrCreateDir_Test;
 

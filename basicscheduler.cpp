@@ -122,7 +122,7 @@ void BasicScheduler::mainLoopMaster() {
 		readFrmRecvBfr(recv_bfr);
 		
 		// counting the files
-		treated_files += file_pathes.size();
+		treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
 
 		// Handle the error
 		errorHandle(err_file);
@@ -147,7 +147,7 @@ void BasicScheduler::mainLoopMaster() {
 		readFrmRecvBfr(recv_bfr);
 		
 		// counting the files
-		treated_files += file_pathes.size();
+		treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
 
 		// Handle the error
 		errorHandle(err_file);
@@ -214,6 +214,10 @@ void BasicScheduler::executeCommand() {
 	for (size_t i=0; i<file_pathes.size(); ++i) {
 		string cmd = command;
 		string in_path = file_pathes[i];
+
+		// skip input files with empty names
+		if (in_path.size()==0) continue;
+
 		dir.completeFilePath(in_path,cmd);
 		vector_of_strings out_files = prms.getOutFiles();
 		for (size_t j=0; j<out_files.size(); ++j) {
@@ -241,7 +245,6 @@ void BasicScheduler::executeCommand() {
  * 
  * @param err_file 
  */
-bool isNotNull(int i) { return (i!=0); }
 void BasicScheduler::errorHandle(ofstream& err_file) {
 
 	// If Abort On Error, just return. Abort already called if there was an error !

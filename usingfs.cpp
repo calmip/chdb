@@ -25,12 +25,6 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
-/** This struct is used for sorting the files before storing them - see readDir */
-struct Finfo {
-	Finfo(const string& n, off_t s): name(n),st_size(s) {};
-  string name;
-  off_t st_size;
-};
 int operator<(const Finfo& a, const Finfo& b) { return a.st_size < b.st_size; }
 
 /** 
@@ -108,30 +102,79 @@ bool UsingFs::isCorrectType(const string & name) const {
 	}
 }
 
-/**
-   \brief Read the directory, and if a file with the correct type is found, push it in:
-               - files (private member)
-			   - OR files_tmp (global temporary)
-		  If the name is longer than FILEPATH_MAXLENGTH throw an exception
+/** 
+ * 
+ * @brief Prepare the f vector for a balanced distribution of jobs:
+ *        1/ The f_info list is sorted from the longest to the shortest file
+ *        2/ The file names are copied to f using an interleaved algorithm
+ * 
+ * @param f_info A list of Finfo objects (used to sort the files)
+ * @param f      The final result
+ *
+ */
 
-          If a subdirectory is found, this function is recursively called again
-		  If the entry is anything else (symlink, etc) skip it
+void UsingFs::buildBlocks(list<Finfo>& f_info,vector_of_strings&f) const {
+	// sort files_tmp by sizes and copy the names to files
+	f_info.sort();
+
+	// Some parameters
+	size_t nb_files   = f_info.size();
+	size_t nb_slaves;
+	if (comm_size>1) {
+		nb_slaves = comm_size - 1;
+	} else {
+		throw(logic_error("ERROR - setRank has not been called"));
+	}
+	
+	size_t block_size = prms.getBlockSize();
+	size_t slice_size = nb_slaves*block_size;
+	size_t dim_f = 0;
+	if (nb_files%slice_size == 0) {
+		dim_f = nb_files;
+	} else {
+		dim_f = slice_size * (1 + nb_files/slice_size);
+	}
+
+	// reserve enough size for f and init to ""
+	f.clear();
+	f.reserve(dim_f);
+	f.assign(dim_f,(string)"");
+
+	// Keep the file names to the vector files, reversing the order and interleaving them
+	// Ex. 40 files, 4 slaves, block_size=5 see test usingFsSortFiles1
+	// 1st slice = | 0  4  8 12 16 | 1  5  9 13 17|  2  6 10 14 18|  3  7 11 15 19|  4 blocks
+	// 2nd slice = |20 24 28 32 36 |21 25 29 33 37| 22 26 30 34 38| 23 27 31 35 39|  4 blocks
+	
+	// Ex. 25 files, 4 slaves, block_size=5 see test usingFsSortFiles2
+	// slice_size=20, 2 slices, dim_f=40
+	// 1st slice = | 0  4  8 12 16 | 1  5  9 13 17|  2  6 10 14 18|  3  7 11 15 19|  4 blocks
+	// 2nd slice = |20 24 "" "" "" |21 "" "" "" ""| 22 "" "" "" ""| 23 "" "" "" ""|  4 blocks (with holes)
+	
+	size_t i=0;
+	for (list<Finfo>::reverse_iterator ri=f_info.rbegin();ri!=f_info.rend();++ri,++i) {
+		size_t k = slice_size * (i / slice_size); // 0, 20
+		k += block_size * (i % nb_slaves);        // k += 0, 5, 10, 15
+		k += (i%slice_size) / nb_slaves;          // k += 0, 1, 2, 3, 4
+		f[k] = ri->name;
+	}
+}
+
+/**
+   \brief Read the directory, and if a file with the correct type is found, push it in files (private member)
+          If in files sort mode, files is sorted correctly
 */
 
 void UsingFs::readDir(const string &top,size_t head_strip) const {
 	list<Finfo> files_tmp;
 	readDirRecursive(top,head_strip,files_tmp,prms.isSizeSort());
 	if (prms.isSizeSort()) {
-		// if sorted by size, sort files_tmp and copy the names to files
-		files_tmp.sort();
-		for (list<Finfo>::iterator i=files_tmp.begin();i!=files_tmp.end();++i) {
-			files.push_back(i->name);
-		}
+		files.clear();
+		buildBlocks(files_tmp,files);
 	}
 }
 
 /** 
- * @brief Read the directory, and if a file with the correct type is found, push it in:
+ * @brief Read the directory, and if a file with the correct type is found, push it in
  *             - files        (private member)
  *			   - OR files_tmp (passed by parameter)
  *		  If the name is longer than FILEPATH_MAXLENGTH throw an exception
@@ -206,12 +249,15 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
  * @exception throw a runtime_error exception if system itself produce an error
 
  */	
+//#include <iostream>
 int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes) const {
 
 	// Create the subdirectories if necessary
 	for (size_t i=0; i<out_pathes.size(); ++i) {
 		findOrCreateDir(out_pathes[i]);
 	}
+//	cerr << "COUCOU " << cmd << "\n";
+
 	int sts = system(cmd.c_str());
 	int csts= WEXITSTATUS(sts);
 	if (sts==-1 || csts==127) {

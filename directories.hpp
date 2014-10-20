@@ -16,6 +16,7 @@
 //#include <vector>
 //#include <string>
 //#include <stdexcept>
+#include <algorithm>
 using namespace std;
 
 
@@ -26,10 +27,11 @@ using namespace std;
 // The size max of a file path
 #define FILEPATH_MAXLENGTH 2000
 
+
 class Directories: private NonCopyable {
 
 public:
-	Directories(const Parameters& p):prms(p),rank(-1),comm_size(-1),blk_ptr(files.begin()){};
+	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()){};
 	void setRank(int,int);
 
 	virtual void makeOutputDir() const = 0;
@@ -46,18 +48,22 @@ public:
 	}
 	void readFiles() {
 		v_readFiles();
+		files_size = count_if(files.begin(), files.end(), isNotNullStr);
 		blk_ptr=files.begin();
 	}
 
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& command);
 	virtual int executeExternalCommand(const string&,const vector_of_strings&) const = 0;
-	size_t getNbOfFiles() { readFiles(); return files.size(); };
+	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
+
+	friend class ChdbTest_block1_Test;
 
 protected:
 	const Parameters& prms;
 	mutable vector_of_strings files;
+	mutable size_t files_size;
 	int rank;
 	int comm_size;
 

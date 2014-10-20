@@ -68,10 +68,8 @@ vector_of_strings Directories::nextBlock() {
 		blk.assign(blk_ptr,blk_next_ptr);
 		blk_ptr = blk_next_ptr;
 	}
-
 	return blk;
 }
-
 /** 
  * @brief Replace some templates in the parameter, using the file_path:
  *        file pathes: #path#, #dirname#

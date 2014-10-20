@@ -6,6 +6,9 @@
 #include "constypes_unittest.hpp"
 #include "../usingfs.hpp"
 #include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <list>
 using namespace std;
 
 
@@ -114,18 +117,20 @@ TEST_F(ChdbTest,getFiles_Sorted) {
    	// Sort by size
 	Parameters prms(8,argv);
 	UsingFs dir(prms);
+	dir.setRank(0,4);
 	vector_of_strings found_files=dir.getFiles();
-	vector_of_strings expected_files;
+	list<string> expected_files;
 	expected_files.push_back("C/C/C.txt");
 	expected_files.push_back("D/C.txt");
 	expected_files.push_back("A.txt");
 	expected_files.push_back("B.txt");
 	expected_files.push_back("C/C.txt");
-	EXPECT_EQ(expected_files,found_files);
+	expected_files.reverse();
+	EXPECT_EQ(true,equal(expected_files.begin(),expected_files.end(),found_files.begin()));
 
 	// again
 	found_files=dir.getFiles();
-	EXPECT_EQ(expected_files,found_files);
+	EXPECT_EQ(true,equal(expected_files.begin(),expected_files.end(),found_files.begin()));
 
 	FREE_ARGV(8);
 
@@ -152,6 +157,10 @@ TEST_F(ChdbTest,block1) {
 
 	int nb_files = dir.getNbOfFiles();
 	EXPECT_EQ(5,nb_files);
+
+	// Add a blank file name, it will be ignored !
+	dir.files.push_back("");
+	EXPECT_EQ(5,dir.getNbOfFiles());
 
 	// 1st blck
 	block = dir.nextBlock();
@@ -181,6 +190,12 @@ TEST_F(ChdbTest,block1) {
 	block = dir.nextBlock();
 	expected_block.clear();
 	expected_block.push_back("A.txt");
+	EXPECT_EQ(expected_block,block);
+
+	// 6th blck
+	block = dir.nextBlock();
+	expected_block.clear();
+	expected_block.push_back("");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -417,3 +432,117 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	system(cmd.c_str());
 }
 
+vector_of_strings int2strings(int* tab,size_t s) {
+	
+	vector_of_strings rvl;
+	ostringstream tmp;
+	for (size_t i=0; i<s; i++) {
+		tmp.str("");
+		if (tab[i]>=0) {
+			tmp << tab[i];
+		};
+		rvl.push_back(tmp.str());
+	}
+	return rvl;
+}
+
+void initFinfo(list<Finfo> & f_i, size_t s) {
+	ostringstream tmp;
+	off_t sze=5000;
+	for (int i=s-1; i>-1; --i) {
+		tmp.str("");
+		tmp << i;
+		f_i.push_back(Finfo(tmp.str(),sze));
+		sze += 100;
+	}
+}
+
+TEST_F(ChdbTest,usingFsSortFiles1) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--block-size");
+	INIT_ARGV(8,"5");
+
+	
+	Parameters prms(9,argv);
+	UsingFs dir(prms);
+	dir.setRank(0,5);
+
+	vector_of_strings files;
+	list<Finfo> f_info;
+	initFinfo(f_info,40);
+	dir.buildBlocks(f_info,files);
+
+	int tmp[] = {0,4,8,12,16,1,5,9,13,17,2,6,10,14,18,3,7,11,15,19,20,24,28,32,36,21,25,29,33,37,22,26,30,34,38,23,27,31,35,39};
+	vector_of_strings expected_files = int2strings(tmp,40);
+	EXPECT_EQ(expected_files,files);
+
+	FREE_ARGV(9);
+}
+
+TEST_F(ChdbTest,usingFsSortFiles3) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--block-size");
+	INIT_ARGV(8,"1");
+
+	
+	Parameters prms(9,argv);
+	UsingFs dir(prms);
+	dir.setRank(0,5);
+
+	vector_of_strings files;
+	list<Finfo> f_info;
+	initFinfo(f_info,13);
+	dir.buildBlocks(f_info,files);
+
+	int tmp[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,-1,-1,-1};
+	vector_of_strings expected_files = int2strings(tmp,16);
+	EXPECT_EQ(expected_files,files);
+
+	FREE_ARGV(9);
+}
+
+TEST_F(ChdbTest,usingFsSortFiles2) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--block-size");
+	INIT_ARGV(8,"5");
+
+	
+	Parameters prms(9,argv);
+	UsingFs dir(prms);
+	dir.setRank(0,5);
+
+	vector_of_strings files;
+	list<Finfo> f_info;
+	initFinfo(f_info,33);
+	dir.buildBlocks(f_info,files);
+
+	int tmp[] = {0,4,8,12,16,1,5,9,13,17,2,6,10,14,18,3,7,11,15,19,20,24,28,32,-1,21,25,29,-1,-1,22,26,30,-1,-1,23,27,31,-1,-1};
+	vector_of_strings expected_files = int2strings(tmp,40);
+	EXPECT_EQ(expected_files,files);
+
+	FREE_ARGV(9);
+}
