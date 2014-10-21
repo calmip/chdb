@@ -36,6 +36,9 @@ public:
 
 private:
 	vector_of_int return_values;
+	vector_of_double wall_times;
+	vector_of_double wall_time_slaves;
+	vector_of_int files_slaves;
 	vector_of_strings file_pathes;
 
 	void mainLoopMaster();
@@ -47,6 +50,10 @@ private:
 	void allocBfr(void*& bfr, size_t& bfr_sze);
 	void writeToSndBfr(void* bfr, size_t, size_t&);
 	void readFrmRecvBfr(const void* bfr);
+
+	void reportHeader(ostream &);
+	void reportBody(ostream&, int);
+	void reportSummary(ostream&);
 
 	size_t treated_files;
 };

@@ -29,8 +29,10 @@ public:
 	bool isBdBh()        const { return is_bdbh; };
 	bool isSizeSort()    const { return is_size_sort; };
 	bool isVerbose()     const { return is_verbose; };
-	bool isAbrtOnErr()   const { return on_error==""; };
+	bool isAbrtOnErr()   const { return on_error.length()==0; };
 	string getErrFile()  const { return on_error; };
+	bool isReportMode()  const { return report.length()!=0; };
+	string getReport()   const { return report; };
 	int getBlockSize()   const { return block_size; };
 	vector_of_strings  getOutFiles() const { return output_files; };
 	string getExternalCommand()      const { return external_command; };
@@ -53,6 +55,7 @@ private:
 	bool is_size_sort;
 	bool is_verbose;
 	string on_error;
+	string report;
 	int block_size;
 	vector_of_strings output_files;
 	string external_command;

@@ -23,6 +23,7 @@ using namespace std;
 #include <fstream>
 #include <list>
 #include <algorithm>
+#include <cmath>
 //#include <cstdlib>
 #include <cerrno>
 
@@ -72,7 +73,7 @@ void BasicScheduler::mainLoopMaster() {
 	if (dir.getNbOfFiles() % prms.getBlockSize() != 0) {
 		slaves_max += 1;
 	};
-//	size_t slaves_max=100;
+
 	if (slaves_max<getNbOfSlaves()) {
 		ostringstream out;
 		out << "ERROR - You should NOT use more than " << slaves_max << " slaves";
@@ -83,7 +84,7 @@ void BasicScheduler::mainLoopMaster() {
 	dir.makeOutputDir();
 
 	// loop over the file blocks
-	// Listen to the slaves, the message is Status + File names
+	// Listen to the slaves
 	size_t bfr_size=0;
 	void* send_bfr=NULL;
 	void* recv_bfr=NULL;
@@ -102,8 +103,23 @@ void BasicScheduler::mainLoopMaster() {
 			throw(runtime_error(msg));
 		}
 	}
-	
+
+	// Open the report file, if any
+	ofstream report_file;
+	if (prms.isReportMode()) {
+		string report_name = prms.getReport();
+		report_file.open(report_name.c_str());
+		if (!report_file.good()) {
+			string msg = "ERROR - File could not be opened: ";
+			msg += report_name;
+			throw(runtime_error(msg));
+		} else {
+			reportHeader(report_file);
+		}
+	}
+
 	return_values.clear();
+	wall_times.clear();
 	file_pathes = dir.nextBlock();
 
 	while(!file_pathes.empty()) {
@@ -118,7 +134,7 @@ void BasicScheduler::mainLoopMaster() {
 		//size_t recv_msg_len;
 		//MPI_Get_count(&sts, MPI_BYTE, (int*) &recv_msg_len);
 
-        // Init return_values and file_pathes with the message
+        // Init return_values, may be wall_times, and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
 		
 		// counting the files
@@ -127,11 +143,17 @@ void BasicScheduler::mainLoopMaster() {
 		// Handle the error
 		errorHandle(err_file);
 
+		// Write info to report
+		if (prms.isReportMode()) {
+			reportBody(report_file, talking_slave);
+		}
+
 		// Send the block to the slave
 		MPI_Send(send_bfr,send_msg_len,MPI_BYTE,talking_slave,CHDB_TAG_GO,MPI_COMM_WORLD);
 
 		// Init return_values and file_pathes for next iteration
 		return_values.clear();
+		wall_times.clear();
 		file_pathes = dir.nextBlock();
 	}
 
@@ -152,6 +174,11 @@ void BasicScheduler::mainLoopMaster() {
 		// Handle the error
 		errorHandle(err_file);
 		
+		// Write info to report
+		if (prms.isReportMode()) {
+			reportBody(report_file, talking_slave);
+		}
+
 		// Send an empty message tagged END to the slave
 		MPI_Send(send_bfr, 0, MPI_BYTE, talking_slave, CHDB_TAG_END, MPI_COMM_WORLD);
 		working_slaves--;
@@ -160,11 +187,90 @@ void BasicScheduler::mainLoopMaster() {
 	// close err_file
 	if (err_file.is_open()) err_file.close();
 
+	// write report summary
+	if (prms.isReportMode()) {
+		reportSummary(report_file);
+	}
+
 	// free memory
 	free(send_bfr);
 	free(recv_bfr);
 }
 
+/** 
+ * @brief Write the header in the report file
+ *        Assign the vector wall_time_slaves
+ * 
+ * @param os 
+ */
+void BasicScheduler::reportHeader(ostream& os) {
+	os << "SLAVE\tTIME(s)\tSTATUS\tINPUT PATH\n";
+	wall_time_slaves.clear();
+	wall_time_slaves.assign(getNbOfSlaves()+1,0.0);
+	files_slaves.assign(getNbOfSlaves()+1,0);
+}
+
+/** 
+ * @brief Write some report lines
+ *        Update the corresponding cell of wall_time_slaves
+ * 
+ * @param os 
+ * @param rank 
+ */
+void BasicScheduler::reportBody(ostream& os, int rank) {
+	double wall_time_slave=0;
+	int n=0;
+	for (size_t i=0; i<file_pathes.size(); ++i) {
+		if (file_pathes[i].size()!=0) {
+			os << rank << '\t';
+			os << wall_times[i] << '\t';
+			os << return_values[i] << '\t';
+			os << file_pathes[i] << '\n';
+			wall_time_slave += wall_times[i];
+			n += 1;
+		}
+	}
+	wall_time_slaves[rank] += wall_time_slave;
+	files_slaves[rank]     += n;
+}
+
+/** 
+ * @brief Write the wall_time of each slave
+ * 
+ * @param os 
+ */
+void BasicScheduler::reportSummary(ostream& os) {
+	os << "----------------------------------------------\n";
+	os << "SLAVE\tN INP\tCUMULATED TIME (s)\n";
+	size_t nb_slaves = getNbOfSlaves();
+	double min=1E6;
+	double max=0;
+	double avg=0;
+	double std=0;
+	for (size_t i=1; i<=nb_slaves; ++i) {
+		if (wall_time_slaves[i]<min) min=wall_time_slaves[i];
+		if (wall_time_slaves[i]>max) max=wall_time_slaves[i];
+		avg += wall_time_slaves[i];
+		os << i << '\t' << files_slaves[i] << '\t' << wall_time_slaves[i] << '\n';
+	}
+
+	// computing the average time and standard deviation
+	avg /= nb_slaves;
+	std =  0;
+	if (nb_slaves>1) {
+		for (size_t i=1;i<=nb_slaves; ++i) {
+			std += (wall_time_slaves[i]-avg)*(wall_time_slaves[i]-avg);
+		}
+		std = sqrt(std/(nb_slaves-1));
+	}
+
+	os << "----------------------------------------------\n";
+	os << "AVERAGE TIME (s)        = " << avg << '\n';
+	os << "STANDARD DEVIATION (s)  = " << std << '\n';
+	os << "MIN VALUE (s)           = " << min << '\n';
+	os << "MAX VALUE (s)           = " << max << '\n';
+}
+	
 /** 
  * @brief The main loop for the slaves
  * 
@@ -203,13 +309,18 @@ void BasicScheduler::mainLoopSlave() {
 }
 
 /** 
- * @brief Execute the command on all files of file_pathes, and store the result in return_values
+ * @brief Execute the command on all files of file_pathes, store the result in return_values and may be the wall time in wall_times
  * 
  */
 void BasicScheduler::executeCommand() {
 	string command = prms.getExternalCommand();
 	int zero = 0;
+	double zerod = 0.0;
 	return_values.assign (file_pathes.size(),zero);
+
+	if (prms.isReportMode()) {
+		wall_times.assign(file_pathes.size(),zerod);
+	}
 
 	for (size_t i=0; i<file_pathes.size(); ++i) {
 		string cmd = command;
@@ -223,7 +334,9 @@ void BasicScheduler::executeCommand() {
 		for (size_t j=0; j<out_files.size(); ++j) {
 			dir.completeFilePath(in_path,out_files[j]);
 		}
+		double start = MPI_Wtime();
 		int sts = dir.executeExternalCommand(cmd,out_files);
+		double end = MPI_Wtime();
 		// If abort on Error, throw an exception if status != 0
 		if (sts!=0) {
 			if (prms.isAbrtOnErr()) {
@@ -236,6 +349,11 @@ void BasicScheduler::executeCommand() {
 			} else {
 				return_values[i] = sts;
 			}
+		}
+
+		// Store the time elapsed if report mode
+		if ( prms.isReportMode() ) {
+			wall_times[i] = end - start;
 		}
 	}
 }
@@ -283,7 +401,7 @@ void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
 }
 
 /** 
- * @brief Write to a send buffer the vectors return_values and file_pathes
+ * @brief Write to a send buffer the vectors return_values, may be wall_times, and file_pathes
  * 
  * @pre The bfr should be already allocated with allocBfr
 
@@ -296,24 +414,51 @@ void BasicScheduler::writeToSndBfr(void* bfr, size_t bfr_size, size_t& data_size
 	checkInvariant();
 	size_t int_data_size=0;
 	size_t str_data_size=0;
+	size_t dbl_data_size=0;
 
+	// Mode No Report:
+	// ---------------
+	//
 	// Fill the buffer with the data from return_values, then from file_pathes
 	//      iiiiiiiiifffffffffffffffffffffffffff00000000000000000000000000000
 	//      ^        ^                          ^
 	//      0        int_data_size              int_data_size+str_data_size  ^bfr_size
-	//                               
+	//
+	// Mode --report:
+	// --------------
+	//
+	// Fill the buffer with the data from return_values, from wall_times, then from file_pathes
+	//     iiiiiiiiidddddddddfffffffffffffffffffffffffff00000000000000000000000000000
+	//     ^        ^        ^-----v                    ^-------v                   ^----------------------v
+	//     0        int_data_size  int_data_size+dbl_data_size  int_data_size+dbl_data_size+str_data_size  bfr_size
 	
 	vctToBfr(return_values,bfr,bfr_size,int_data_size);
-	bfr = (void*) ((char*) bfr + int_data_size);
+	bfr      = (void*) ((char*) bfr + int_data_size);
 	bfr_size = bfr_size - int_data_size;
+	data_size= int_data_size;
+	if (prms.isReportMode()) {
+		vctToBfr(wall_times,bfr,bfr_size,dbl_data_size);
+		bfr = (void*)((char*) bfr + dbl_data_size);
+		bfr_size = bfr_size - dbl_data_size;
+		data_size += dbl_data_size;
+	}
 	vctToBfr(file_pathes,bfr,bfr_size,str_data_size);
-	data_size = int_data_size + str_data_size;
+	data_size += str_data_size;
 }
 
+/** 
+ * @brief Read a receive buffer and initialize the vectors return_values, may be wall_times, and file_pathes
+ * 
+ * @param bfr 
+ */
 void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
 	size_t data_size;
 	bfrToVct(bfr,data_size,return_values);
 	bfr = (void*) ((char*) bfr + data_size);
+	if (prms.isReportMode()) {
+		bfrToVct(bfr,data_size,wall_times);
+		bfr = (void*) ((char*) bfr + data_size);
+	}
 	bfrToVct(bfr, data_size, file_pathes);
 	checkInvariant();
 }
@@ -324,6 +469,7 @@ void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
  */
 void BasicScheduler::checkInvariant() {
 	assert(return_values.empty() || return_values.size()==file_pathes.size());
+	assert(wall_times.empty() || wall_times.size()==file_pathes.size());
 }
 	
 /*

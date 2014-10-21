@@ -14,7 +14,7 @@ using namespace std;
 #include "usingfs.hpp"
 #include "basicscheduler.hpp"
 
-void printHeader(const Parameters& prms, Directories& dir) {
+void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sched ) {
 	cout << "CHBD - VERSION 0.5 - ";
 	system("date");
 	cout << "----------\n";
@@ -48,12 +48,16 @@ void printHeader(const Parameters& prms, Directories& dir) {
 		cout << "ABORT ON ERROR     = NO" << '\n';
 		cout << "SEE FILE           = " << prms.getErrFile() << '\n';
 	}
+	if (prms.isReportMode()) {
+		cout << "REPORT WALL TIMES  = " << prms.getReport() << '\n';
+	}
+
 	cout << "----------\n";
 	cout << "NB OF INPUT FILES  = " << dir.getNbOfFiles() << '\n';
+	cout << "NUMBER OF SLAVES   = " << sched.getNbOfSlaves() << '\n';
 }
 
 void printTrailer(Scheduler& sched) {
-	cout << "NUMBER OF SLAVES   = " << sched.getNbOfSlaves() << '\n';
 	cout << "ELAPSED TIME (s)   = " << sched.getTimer() << '\n';
 	cout << "NB OF TREATED FILES= " << sched.getTreatedFiles() << '\n';
 }
@@ -69,7 +73,7 @@ int main(int argc,char* argv[])
 		BasicScheduler sched(prms,dir);
 		if (sched.isMaster() && prms.isVerbose()) {
 			sched.startTimer();
-			printHeader(prms,dir);
+			printHeader(prms,dir,sched);
 		}
 		sched.mainLoop();
 		if (sched.isMaster() && prms.isVerbose()) {

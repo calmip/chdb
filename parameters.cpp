@@ -54,6 +54,7 @@ enum {
 	OPT_SORT_BY_SIZE,  // --sort-by-size
 	OPT_VERBOSE,       // --verbose
 	OPT_ON_ERROR,      // --on-error
+	OPT_REPORT,        // --report
 	OPT_IN_TYPE,       // --in-type
 	OPT_CMD            // --command-line
 };
@@ -78,6 +79,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_SORT_BY_SIZE,  "--sort-by-size", SO_NONE    },
 	{ OPT_VERBOSE,       "--verbose",      SO_NONE    },
 	{ OPT_ON_ERROR,      "--on-error",     SO_REQ_SEP },
+	{ OPT_REPORT,        "--report",       SO_REQ_SEP },
 	{ OPT_IN_TYPE,       "--in-type",      SO_REQ_SEP },
 	{ OPT_CMD,           "--command-line", SO_REQ_SEP },
 	SO_END_OF_OPTIONS   // END
@@ -134,6 +136,9 @@ Parameters::Parameters(int argc,
 				break;
 			case OPT_ON_ERROR:
 				on_error = arguments.OptionArg();
+				break;
+			case OPT_REPORT:
+				report = arguments.OptionArg();
 				break;
 			case OPT_IN_TYPE:
 				file_type = arguments.OptionArg();
@@ -242,6 +247,7 @@ void Parameters::usage() {
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
 	cerr << "                               A generated errors.txt may be specified as in-files parameter in a later execution de chdb\n";
 	cerr << "                               are stored in this file for later reference and execution\n";
+	cerr << "  --on-report report.txt     : Generate a report with some timing info\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
