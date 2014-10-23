@@ -22,14 +22,20 @@ struct Finfo {
 	\brief This class manages the files contained inside the input or output directory
 	       It is used when we work with REAL directories
 */
+#include <iostream>
 class UsingFs: public Directories {
 public:
 	UsingFs(const Parameters& p):Directories(p){};
+	~UsingFs() {consolidateOutput();};
 
-	void filesToOutputDb(const vector_of_strings&) {};
+	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
-	void makeOutputDir() const;
+	void makeOutputDir(bool,bool);
+	string makeTempOutDir();
+	string getTempOutDir() const {return temp_output_dir;};
+	string getOutDir() const  {return output_dir;};
 	void buildBlocks(list<Finfo>&, vector_of_strings&) const;
+	void consolidateOutput(const string& path="") const;
 
 	friend class ChdbTest_usingFsfindOrCreateDir_Test;
 
@@ -40,9 +46,10 @@ private:
 	bool isCorrectType(const string &) const;
 	void initInputFiles() const;
 	virtual void v_readFiles();
-
 	mutable set<string> input_files;
 	mutable set<string> found_directories;
+	string output_dir;
+	string temp_output_dir;
 };
 
 #endif

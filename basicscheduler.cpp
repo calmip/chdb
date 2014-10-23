@@ -51,11 +51,23 @@ void BasicScheduler::mainLoop() {
 }
 
 /** 
+ * @brief Send to the slave a message with no data and END TAG
+ * 
+ * @param slave 
+ */
+
+void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
+	// Send an END message to the slave
+	MPI_Send(send_bfr, 0, MPI_BYTE, slave, CHDB_TAG_END, MPI_COMM_WORLD);
+}
+
+/** 
  * @brief The main loop for the master
  * 
  */
 void BasicScheduler::mainLoopMaster() {
 	MPI_Status sts;
+
 /*	
 	{
 		pid_t pid = getpid();
@@ -63,8 +75,10 @@ void BasicScheduler::mainLoopMaster() {
 		s_tmp << "gdbserver host:2345 --attach " << pid << "&";
 		cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
 		system(s_tmp.str().c_str());
+		sleep(5);
 	}
 */
+
 	// read the file names
 	dir.readFiles();
 
@@ -81,7 +95,7 @@ void BasicScheduler::mainLoopMaster() {
 	}
 
 	// Create the output directory
-	dir.makeOutputDir();
+	dir.makeOutputDir(false,false);
 
 	// loop over the file blocks
 	// Listen to the slaves
@@ -140,12 +154,17 @@ void BasicScheduler::mainLoopMaster() {
 		// counting the files
 		treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
 
-		// Handle the error
-		errorHandle(err_file);
-
 		// Write info to report
 		if (prms.isReportMode()) {
 			reportBody(report_file, talking_slave);
+		}
+
+		// Handle the error, if error found and abort mode exit from the loop
+		bool err_found = errorHandle(err_file);
+		if (err_found && prms.isAbrtOnErr()) {
+			sendEndMsg(send_bfr, talking_slave);
+			break;
+
 		}
 
 		// Send the block to the slave
@@ -157,31 +176,40 @@ void BasicScheduler::mainLoopMaster() {
 		file_pathes = dir.nextBlock();
 	}
 
-	// loop over the slaves: when each slave is ready, send it a msg END
+	// loop over the slaves: when each slave is ready, send him a msg END
+	//                       and when the slave sends back a tag END, consolidate his work and forget him
 	int working_slaves = getNbOfSlaves(); // The master is not a slave
 	while(working_slaves>0) {
-		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
 		int talking_slave = sts.MPI_SOURCE;
-		//int msg_len;
-		//MPI_Get_count(&sts, MPI_BYTE, &msg_len);
+		int tag = sts.MPI_TAG;
 
-        // Init return_values and file_pathes with the message
+		// Init return_values and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
 		
-		// counting the files
-		treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
+		// We received a tag "READY": send the message END
+		if (tag==CHDB_TAG_READY) {
 
-		// Handle the error
-		errorHandle(err_file);
+			// counting the files
+			treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
+			
+			// Handle the error
+			errorHandle(err_file);
 		
-		// Write info to report
-		if (prms.isReportMode()) {
-			reportBody(report_file, talking_slave);
+			// Write info to report
+			if (prms.isReportMode()) {
+				reportBody(report_file, talking_slave);
+			}
+
+			// Send an empty message tagged END to the slave
+			sendEndMsg(send_bfr, talking_slave);
 		}
 
-		// Send an empty message tagged END to the slave
-		MPI_Send(send_bfr, 0, MPI_BYTE, talking_slave, CHDB_TAG_END, MPI_COMM_WORLD);
-		working_slaves--;
+		// We received a tag "END": consolidate data and forget this slave
+		else {
+			dir.consolidateOutput(file_pathes[0]);
+			working_slaves--;
+		}
 	}
 
 	// close err_file
@@ -205,6 +233,7 @@ void BasicScheduler::mainLoopMaster() {
  */
 void BasicScheduler::reportHeader(ostream& os) {
 	os << "SLAVE\tTIME(s)\tSTATUS\tINPUT PATH\n";
+
 	wall_time_slaves.clear();
 	wall_time_slaves.assign(getNbOfSlaves()+1,0.0);
 	files_slaves.assign(getNbOfSlaves()+1,0);
@@ -284,18 +313,18 @@ void BasicScheduler::mainLoopSlave() {
 	allocBfr(bfr,bfr_size);
 
 	// all msgs are sent/received to/from the master
-	const int master = 0;
-	int tag    = CHDB_TAG_GO;
+	const int master    = 0;
+	int tag             = CHDB_TAG_GO;
+	size_t send_msg_len = 0;
 	while(tag==CHDB_TAG_GO) {
 
 		// Prepare the send buffer for the next message
-		size_t send_msg_len=0;
 		writeToSndBfr(bfr,bfr_size,send_msg_len);
 
 		// Send the report+ready message to the master, receive a list of files to treat
 		MPI_Sendrecv_replace((char*)bfr,(int)bfr_size,MPI_BYTE,master,CHDB_TAG_READY,master,MPI_ANY_TAG,MPI_COMM_WORLD,&sts);
 		tag = sts.MPI_TAG;
-		
+
         // Init file_pathes with the message
 		readFrmRecvBfr(bfr);
 
@@ -303,6 +332,18 @@ void BasicScheduler::mainLoopSlave() {
 			executeCommand();
 		}
 	}
+
+	// END tag received: consolidate output directory and leave
+	dir.consolidateOutput();
+
+	// Send a last message to the master: tag END, name of consolidated output directory
+	file_pathes.clear();
+	return_values.clear();
+	wall_time_slaves.clear();
+	file_pathes.push_back(dir.getOutDir());
+
+	writeToSndBfr(bfr,bfr_size,send_msg_len);
+	MPI_Send(bfr, bfr_size, MPI_BYTE, master, CHDB_TAG_END, MPI_COMM_WORLD);
 
 	// free memory
 	free(bfr);
@@ -313,6 +354,18 @@ void BasicScheduler::mainLoopSlave() {
  * 
  */
 void BasicScheduler::executeCommand() {
+
+	// Create the output and temporary directories when first-time call
+	// If the output directory alredy exists, it will be removed
+	// NOTE - The creation of those directories is defferred as much as possible,
+	// so that the master can execute an MPI_Abort during initialization, without 
+	// letting temporaries on the disk !
+	if (first_execution) {
+		dir.makeOutputDir(true,true);
+		dir.makeTempOutDir();
+		first_execution = false;
+	}
+
 	string command = prms.getExternalCommand();
 	int zero = 0;
 	double zerod = 0.0;
@@ -339,16 +392,16 @@ void BasicScheduler::executeCommand() {
 		double end = MPI_Wtime();
 		// If abort on Error, throw an exception if status != 0
 		if (sts!=0) {
-			if (prms.isAbrtOnErr()) {
-				ostringstream msg;
-				msg << "ERROR with external command\n";
-				msg << "command    : " << cmd << '\n';
-				msg << "exit status: " << sts << '\n';
-				msg << "ABORTING - Try again with --on-error\n";
-				throw(runtime_error(msg.str()));
-			} else {
-				return_values[i] = sts;
-			}
+			//	if (prms.isAbrtOnErr()) {
+			//	ostringstream msg;
+			//	msg << "ERROR with external command\n";
+			//	msg << "command    : " << cmd << '\n';
+			//	msg << "exit status: " << sts << '\n';
+			//	msg << "ABORTING - Try again with --on-error\n";
+			//	throw(runtime_error(msg.str()));
+			//} else {
+			return_values[i] = sts;
+			//}
 		}
 
 		// Store the time elapsed if report mode
@@ -362,20 +415,38 @@ void BasicScheduler::executeCommand() {
  * @brief Called by the master when error mode is on
  * 
  * @param err_file 
+ *
+ * @return true = error found, false = no error
  */
-void BasicScheduler::errorHandle(ofstream& err_file) {
+bool BasicScheduler::errorHandle(ofstream& err_file) {
 
 	// If Abort On Error, just return. Abort already called if there was an error !
-	if (prms.isAbrtOnErr()) return;
+	//if (prms.isAbrtOnErr()) return;
 
-	// find the first value in error and return if none
+	// find the first value in error and return false if none
 	vector_of_int::iterator it = find_if(return_values.begin(),return_values.end(),isNotNull);
-	if (it == return_values.end()) return;
+	if (it == return_values.end()) {
+		return false;
 
-	// loop from it and write the files in error
-	for ( size_t i=it-return_values.begin(); i<return_values.size(); ++i) {
-		if (return_values[i]==0) continue;
-		err_file << *it << '\t' << file_pathes[i] << '\n';
+	} else {
+
+		// If not Abort On Error, loop from it and write the files in error
+		if (!prms.isAbrtOnErr()) {
+			for ( size_t i=it-return_values.begin(); i<return_values.size(); ++i) {
+				if (return_values[i]==0) continue;
+				err_file << *it << '\t' << file_pathes[i] << '\n';
+			}
+
+			// If Abort on Error, write a message to cerr before aborting !
+		} else {
+			cerr << "ERROR with external command - sts=";
+			cerr << *it << " ";
+			cerr << "input file=" << file_pathes[it-return_values.begin()] << '\n';
+			cerr << "ABORTING - Try again with --on-error\n";
+		}
+
+		// Error found !
+		return true;
 	}
 }
 
@@ -393,6 +464,7 @@ void BasicScheduler::errorHandle(ofstream& err_file) {
 void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
 	size_t vct_size = prms.getBlockSize();
 	bfr_size  = sizeof(int) + vct_size*sizeof(int);
+	bfr_size += sizeof(int) + vct_size*sizeof(double);
 	bfr_size += sizeof(int) + vct_size*(FILEPATH_MAXLENGTH+1);
 	bfr       = malloc(bfr_size);
 	if (bfr==NULL) {

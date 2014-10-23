@@ -43,7 +43,7 @@ public:
 	static void abort();
 
 	virtual void mainLoop()=0;
-	virtual void errorHandle(ofstream&)=0;
+	virtual bool errorHandle(ofstream&)=0;
 	virtual size_t getTreatedFiles() const=0;
 
 	void startTimer();

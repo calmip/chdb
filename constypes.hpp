@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <cstdlib>
+#include <sstream>
 using namespace std;
 
 /** 
@@ -37,5 +39,6 @@ private:
 typedef vector<string> vector_of_strings;
 typedef vector<int> vector_of_int;
 typedef vector<double> vector_of_double;
+
 
 #endif

@@ -13,9 +13,11 @@
 #include <cstring>
 #include <set>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
 //#include "command.h"
+#include "system.hpp"
 #include "usingfs.hpp"
 //#include "exception.h"
 //#include <unistd.h>
@@ -170,6 +172,8 @@ void UsingFs::readDir(const string &top,size_t head_strip) const {
 	if (prms.isSizeSort()) {
 		files.clear();
 		buildBlocks(files_tmp,files);
+	} else {
+		sort(files.begin(),files.end());
 	}
 }
 
@@ -238,7 +242,7 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 }
 
 /** 
- * @brief Execute a command through system and return the exit status of the command
+ * @brief Execute a command through executeSystem and return the exit status of the command
  *        We pass the out_pathes vector to create the output directories if necessary
  * 
  * @param cmd 
@@ -246,8 +250,6 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
  * 
  * @return the command exit status
  *
- * @exception throw a runtime_error exception if system itself produce an error
-
  */	
 //#include <iostream>
 int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes) const {
@@ -258,24 +260,33 @@ int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& o
 	}
 //	cerr << "COUCOU " << cmd << "\n";
 
-	int sts = system(cmd.c_str());
-	int csts= WEXITSTATUS(sts);
-	if (sts==-1 || csts==127) {
-		string msg = "ERROR - system(";
-		msg += cmd;
-		msg += ") - ";
-		if (sts==-1) {
-			msg += "returned -1";
-		} else {
-			msg += "could not execute cmd";
-		}
-		throw(runtime_error(msg));
-	}
-	return csts;
+	return callSystem(cmd);
 }
+
+/** 
+ * @brief Make the output directory, store the name to output_dir, throw an exception if error
+ *
+ * @param rank_flg If true, append the rank to the directory name
+ * @param rep_flg If true, remove the directory if it already exists
+ * 
+ */
+void UsingFs::makeOutputDir(bool rank_flg, bool rep_flg) {
+	output_dir = prms.getOutDir();
+	if (rank_flg) {
+		ostringstream tmp;
+		tmp << rank;
+		output_dir += '.';
+		output_dir += tmp.str();
+	}
+
+	// remove directory if rep_flg and directory already exists
+	struct stat status;
+	if (rep_flg && stat(output_dir.c_str(), &status)==0) {
+		string cmd = "rm -r ";
+		cmd += output_dir;
+		callSystem(cmd);
+	}
 	
-void UsingFs::makeOutputDir() const {
-	string output_dir = prms.getOutDir();
 	int sts = mkdir(output_dir.c_str(), 0777);
 	if (sts != 0) {
 		string msg="ERROR - Cannot create directory ";
@@ -283,6 +294,69 @@ void UsingFs::makeOutputDir() const {
 		msg += " - Error= ";
 		msg += strerror(errno);
 		throw(runtime_error(msg));
+	}
+}
+
+/** 
+ * @brief Make a temporary output directory
+ * 
+ * 
+ * @return 
+ */
+string UsingFs::makeTempOutDir() {
+	string output_dir = prms.getOutDir();
+	//return output_dir;
+	string tmp = "/tmp";
+	string tmpdir = tmp + '/' + output_dir;
+	tmpdir += "_XXXXXX";
+	char* tmpdir_c = (char*)malloc(tmpdir.length()+1);
+	strcpy(tmpdir_c,tmpdir.c_str());
+	tmpdir = mkdtemp(tmpdir_c);
+	free(tmpdir_c);
+	temp_output_dir=tmpdir;
+	return tmpdir;
+}
+
+/** 
+ * @brief Consolidate the output, ie copy to the output directory the hierarchy created in the temporary.
+ *        
+ * @note -if temporary and output directory are the same, nothing is done
+ * @note -If already called, nothing is done 
+ * 
+
+ */
+
+
+/** 
+ * @brief Consolidate output data from a temporary directory to a more permanent directory
+ *        Files are copied from the temporary and the temporary is removed
+ * 
+ * @param path Path to the directory we want to consolidate
+ *             If "", we use the temporary directory
+ *
+ */
+#include <iostream>
+void UsingFs::consolidateOutput(const string& out_dir) const {
+	string temp_out = (out_dir.length()==0) ? getTempOutDir() : out_dir;
+	string out      = getOutDir();
+
+	if (temp_out.length()!=0 && temp_out!=out) {
+		// If directory to consolidate exists
+		struct stat sts;
+		if (stat(temp_out.c_str(), &sts)==0) {
+			string cmd = "/bin/cp -a ";
+			cmd += temp_out;
+			cmd += "/* ";
+			cmd += out;
+			
+			// We do not want any exception to escape from this function !
+			callSystem(cmd,false);
+			
+			// remove temporary directory, do not ignore the error
+			cmd = "rm -r ";
+			cmd += temp_out;
+			callSystem(cmd,false);
+		}
 	}
 }
 

@@ -11,9 +11,6 @@ CXX=mpicxx
 #
 
 CXXFLAGS=$(DEBUG) -Wall -pedantic
-
-# POUR CAT UTILISER LES VARIABLES COMMENTEES
-
 LDFLAGS=$(DEBUG)
 
 # The exec
@@ -24,9 +21,9 @@ EXECFILE=chdb
 # The source files, object files, libraries and executable name.
 #
 
-SRCFILES=usingfs.cpp directories.cpp parameters.cpp chdb.cpp scheduler.cpp basicscheduler.cpp
+SRCFILES=usingfs.cpp directories.cpp parameters.cpp chdb.cpp scheduler.cpp basicscheduler.cpp system.cpp
 
-OBJFILES=usingfs.o parameters.o chdb.o directories.o scheduler.o basicscheduler.o
+OBJFILES=usingfs.o parameters.o chdb.o directories.o scheduler.o basicscheduler.o system.o
 
 LIBS=
 
@@ -44,13 +41,6 @@ all : chdb
 
 chdb : $(OBJFILES)
 	$(CXX) $(CXXFLAGS) -o $(EXECFILE) $(OBJFILES) $(LIBS) $(LDFLAGS) 
-
-
-#
-# The tests
-#
-test: random_name bdbh
-	./test.sh
 
 
 #
@@ -181,3 +171,4 @@ basicscheduler.o: /usr/include/string.h /usr/include/xlocale.h
 basicscheduler.o: directories.hpp /usr/include/dirent.h
 basicscheduler.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 basicscheduler.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+system.o: system.hpp

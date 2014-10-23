@@ -23,9 +23,9 @@ using namespace std;
 
 class BasicScheduler: public Scheduler {
 public:
-	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d),treated_files(0){};
+	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d),first_execution(true),treated_files(0){};
 	void mainLoop();
-	void errorHandle(ofstream&);
+	bool errorHandle(ofstream&);
 	size_t getTreatedFiles() const { return treated_files; };
  
 	friend class ChdbTest1_ExecuteCommand_Test;
@@ -43,7 +43,11 @@ private:
 
 	void mainLoopMaster();
 	void mainLoopSlave();
+	void sendEndMsg(void*, int);
+
+
 	void executeCommand();
+	bool first_execution;
 
 	void checkInvariant();
 

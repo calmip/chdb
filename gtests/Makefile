@@ -31,7 +31,7 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = parameters_unittest directories_unittest scheduler_unittest buffer_unittest chdb_unittest
+TESTS = parameters_unittest directories_unittest scheduler_unittest buffer_unittest chdb_unittest system_unittest
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -90,31 +90,37 @@ parameters_unittest : parameters_unittest.o ../parameters.o gtest_main.a
 directories_unittest.o : directories_unittest.cpp ../directories.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c directories_unittest.cpp	
 
-directories_unittest : directories_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o gtest_main.a
+directories_unittest : directories_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../system.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c scheduler_unittest.cpp	
 
-scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main_mpi.o gtest_main.a
+scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../system.o gtest_main_mpi.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 buffer_unittest.o : buffer_unittest.cpp ../*.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c buffer_unittest.cpp	
 
-buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o gtest_main_mpi.o gtest_main.a
+buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../system.o gtest_main_mpi.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-chdb_unittest.o : chdb_unittest.cpp ../scheduler.cpp 
+chdb_unittest.o : chdb_unittest.cpp constypes_unittest.cpp ../system.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c chdb_unittest.cpp	
 
-chdb_unittest : chdb_unittest.o constypes_unittest.o gtest_main.a
+chdb_unittest : chdb_unittest.o constypes_unittest.o ../system.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-tests: parameters_unittest directories_unittest scheduler_unittest chdb_unittest
+system_unittest.o: system_unittest.cpp ../system.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c system_unittest.cpp 
+
+system_unittest : system_unittest.o constypes_unittest.o ../system.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+tests: system_unittest parameters_unittest directories_unittest scheduler_unittest chdb_unittest
+	./system_unittest
 	./parameters_unittest 
 	./directories_unittest
 	./buffer_unittest
 	mpirun -n 2 ./scheduler_unittest
 	./chdb_unittest
-

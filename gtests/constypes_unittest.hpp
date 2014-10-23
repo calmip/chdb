@@ -27,14 +27,13 @@ struct naco {
 	string content;
 };
 
+// convenient functions
+void createFile(const string& d, const naco& n);
+string readFile(const string&);
+bool existsFile(const string&);
 
 // Test fixture -> used by several tests
 class ChdbTest: public ::testing::Test {
-public:
-	void createFile(const string& d, const naco& n);
-	string readFile(const string&);
-	bool existsFile(const string&);
-
 protected:
 	ChdbTest();
 	string input_dir;
@@ -48,6 +47,30 @@ public:
 	~ChdbTest1() { system ("rm -rf inputdir.out"); };
 };
 
+// Another test fixture, with other inputdir files
+class ChdbTest2: public ChdbTest {
+public:
+	~ChdbTest2() { system ("rm -rf inputdir.out"); };
+
+protected:
+	ChdbTest2();
+	string input_dir;
+	vector<string> expected_file_pathes;
+	map<string,string> expected_file_contents;
+};
+
+// Another test fixture, with other inputdir files
+class ChdbTest3: public ChdbTest {
+public:
+	~ChdbTest3() { system ("rm -rf inputdir.out"); };
+
+protected:
+	ChdbTest3();
+	string input_dir;
+	vector<string> expected_file_pathes;
+	map<string,string> expected_file_contents;
+};
+
 // Some test fixtures used by scheduler_unittest.cpp and buffer_unittest.cpp
 class SchedTestStr : public ChdbTest {
 public:
@@ -55,6 +78,8 @@ public:
 		int n = 5;
 		string tmp((char*) &n,sizeof(int));
 		expected_bfr  = tmp;
+		expected_bfr += "A.txt";
+		expected_bfr += '\0';
 		expected_bfr += "B.txt";
 		expected_bfr += '\0';
 		expected_bfr += "C/C.txt";
@@ -62,8 +87,6 @@ public:
 		expected_bfr += "C/C/C.txt";
 		expected_bfr += '\0';
 		expected_bfr += "D/C.txt";
-		expected_bfr += '\0';
-		expected_bfr += "A.txt";
 		expected_bfr += '\0';
 
 		bfr_len = 5;
@@ -128,20 +151,20 @@ protected:
 class SchedTestStrInt : public ChdbTest {
 public:
 	SchedTestStrInt() {
+		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
 		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
 		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
 		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
 		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
 
 		// no value, 5 files
 		int v[2] = {0,5};
 		expected_bfr = string((char*) &v,2*sizeof(int));
+		expected_bfr += input_dir + '/' + "A.txt"     + '\0';
 		expected_bfr += input_dir + '/' + "B.txt" + '\0';
 		expected_bfr += input_dir + '/' + "C/C.txt" + '\0';
 		expected_bfr += input_dir + '/' + "C/C/C.txt" + '\0';
 		expected_bfr += input_dir + '/' + "D/C.txt"   + '\0';
-		expected_bfr += input_dir + '/' + "A.txt"     + '\0';
 
 		// 5 values, 5 files
 		int v_1[7] = {5,0,1,2,3,4,5};
@@ -152,11 +175,11 @@ public:
 		expected_values_1.push_back(4);
 
 		expected_bfr_1 = string((char*) &v_1,7*sizeof(int));
+		expected_bfr_1 += input_dir + '/' + "A.txt"     + '\0';
 		expected_bfr_1 += input_dir + '/' + "B.txt" + '\0';
 		expected_bfr_1 += input_dir + '/' + "C/C.txt" + '\0';
 		expected_bfr_1 += input_dir + '/' + "C/C/C.txt" + '\0';
 		expected_bfr_1 += input_dir + '/' + "D/C.txt"   + '\0';
-		expected_bfr_1 += input_dir + '/' + "A.txt"     + '\0';
 		
 		bfr_len  = sizeof(int);
 		bfr_len += 5 * input_dir.length();
