@@ -73,8 +73,8 @@ usingfs.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
 usingfs.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 usingfs.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 usingfs.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
-usingfs.o: /usr/include/getopt.h usingfs.hpp constypes.hpp directories.hpp
-usingfs.o: parameters.hpp SimpleOpt.h /usr/include/stdlib.h
+usingfs.o: /usr/include/getopt.h system.hpp usingfs.hpp constypes.hpp
+usingfs.o: directories.hpp parameters.hpp SimpleOpt.h /usr/include/stdlib.h
 usingfs.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
 usingfs.o: /usr/include/alloca.h /usr/include/string.h /usr/include/xlocale.h
 usingfs.o: /usr/include/libgen.h /usr/include/dirent.h
@@ -92,14 +92,14 @@ directories.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
 directories.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 directories.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 directories.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
-directories.o: /usr/include/getopt.h /usr/include/libgen.h usingfs.hpp
-directories.o: constypes.hpp directories.hpp parameters.hpp SimpleOpt.h
+directories.o: /usr/include/getopt.h usingfs.hpp constypes.hpp
+directories.o: directories.hpp parameters.hpp SimpleOpt.h
 directories.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
 directories.o: /usr/include/bits/waitstatus.h /usr/include/alloca.h
 directories.o: /usr/include/string.h /usr/include/xlocale.h
 directories.o: /usr/include/dirent.h /usr/include/bits/dirent.h
 directories.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
-directories.o: /usr/include/linux/limits.h
+directories.o: /usr/include/linux/limits.h system.hpp
 parameters.o: /usr/include/sys/types.h /usr/include/features.h
 parameters.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 parameters.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
@@ -171,4 +171,6 @@ basicscheduler.o: /usr/include/string.h /usr/include/xlocale.h
 basicscheduler.o: directories.hpp /usr/include/dirent.h
 basicscheduler.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 basicscheduler.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-system.o: system.hpp
+system.o: /usr/include/libgen.h /usr/include/features.h
+system.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+system.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h system.hpp

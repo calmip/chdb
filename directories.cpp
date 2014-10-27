@@ -17,7 +17,7 @@ using namespace std;
 #include <string>
 #include <list>
 #include <cerrno>
-#include <libgen.h>
+//#include <libgen.h>
 
 //#include "command.h"
 #include "usingfs.hpp"
@@ -28,6 +28,7 @@ using namespace std;
 //#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include "system.hpp"
 
 /** 
  * @brief set the protected member rank and comm_size
@@ -80,21 +81,9 @@ vector_of_strings Directories::nextBlock() {
 void Directories::completeFilePath(const string& p, string& command) {
 
 	// We must work with a readwrite copy !
-	// p is the path (a/toto.txt), d the dirname (a), n the name (toto.txt), b the basename (toto)
-	char*  file_path = (char*) malloc(p.length()+1);
-	strcpy(file_path,p.c_str());
-	string d = dirname(file_path);
-	strcpy(file_path,p.c_str());
-	string n = basename(file_path);
-	free(file_path);
-
-	string b;
-	if (n[0] != '.') {
-		size_t dot = n.find_last_of('.');
-		b = (dot!=string::npos)?n.substr(0,dot):b;
-	} else {
-		b = "";
-	}
+	// p is the path (a/toto.txt), d the dirname (a), n the name (toto.txt), b the basename (toto), e the ext (txt)
+	string d,n,b,e;
+	parseFilePath(p,d,n,b,e);
 
 	string id = prms.getInDir();
 	string od = getTempOutDir();

@@ -4,6 +4,8 @@
 #include <iostream>
 using namespace std;
 
+#include <libgen.h>
+#include <cstring>
 #include "system.hpp"
 
 /** 
@@ -45,4 +47,38 @@ int callSystem(string cmd, bool err_flg) {
 		throw(runtime_error(err.str()));
 	}
 	return csts;
+}
+
+/** 
+ * @brief parse a file path in useful components
+ * 
+ * @param path      (/path/to/A.TXT)
+ * @param[out] dir  (/path/to)
+ * @param[out] name (A.TXT) 
+ * @param[out] base (A)
+ * @param[out] ext  (TXT)
+ */
+void parseFilePath(const string& path, string& dir, string& name, string& base, string& ext) {
+
+	char*  file_path = (char*) malloc(path.length()+1);
+	strcpy(file_path,path.c_str());
+
+	dir  = dirname(file_path);
+	strcpy(file_path,path.c_str());
+	name = basename(file_path);
+	free(file_path);
+
+	if (name.length()!=0) {
+		if (name[0] != '.') {
+			size_t dot = name.find_last_of('.');
+			base = (dot!=string::npos)?name.substr(0,dot):name;
+			ext  = (dot!=string::npos && dot!=name.length()-1)?name.substr(dot+1):"";
+		} else {
+			base = "";
+			ext  = (name.length()!=1)?name.substr(1):"";
+		}
+	} else {
+		base="";
+		ext="";
+	}
 }

@@ -369,10 +369,8 @@ void UsingFs::consolidateOutput(const string& out_dir) const {
  */
 
 void UsingFs::findOrCreateDir(const string & p) const {
-	char* file_path = (char*) malloc(p.length()+1);
-	strcpy(file_path,p.c_str());
-	string d = dirname(file_path);
-	free(file_path);
+	string d,n,b,e;
+	parseFilePath(p,d,n,b,e);
 
 	// avoid stressing the filesystem if possible !
 	if (found_directories.find(d)!=found_directories.end()) {
