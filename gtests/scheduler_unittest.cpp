@@ -71,6 +71,17 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 	INIT_ARGV(9,"--block-size");
 	INIT_ARGV(10,"5");
 
+/*
+		{
+			pid_t pid = getpid();
+			ostringstream s_tmp;
+			s_tmp << "gdbserver host:2345 --attach " << pid << "&";
+			cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
+			system(s_tmp.str().c_str());
+			sleep(5);
+		}
+*/
+
 	Parameters prms(11,argv);
 	{
 		UsingFs dir(prms);
@@ -78,9 +89,11 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 		// Read the files
 		dir.readFiles();
 
+		// Create the output directory, removing it if already exists
+		dir.makeOutputDir(false,true);
+
 		// execute command, initializing return_values and file_pathes
 		// An exception is generated for the file D/C.txt
-		// The data are created in inputdir.out.0, as this is the rank of this process and this is created by executeCommand
 		
 		BasicScheduler sched(prms,dir);
 		sched.return_values.clear();
@@ -89,8 +102,7 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 		ofstream err;
 		EXPECT_EQ(true,sched.errorHandle(err));
 	}
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out.0/B.txt"));
-	callSystem("rm -r inputdir.out.0");
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
 	
 	FREE_ARGV(11);
 };
@@ -118,7 +130,7 @@ TEST_F(ChdbTest1,ExecuteCommandWithErr) {
 	{
 		UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
-		//dir.makeOutputDir(false,true);
+		dir.makeOutputDir(false,true);
 		/*
 		{
 			pid_t pid = getpid();
@@ -151,11 +163,11 @@ TEST_F(ChdbTest1,ExecuteCommandWithErr) {
 		ifstream e(e_out.c_str());
 		EXPECT_EQ(true,e.good());
 	}
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out.0/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out.0/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out.0/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out.0/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out.0/A.txt"));
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
 
 	FREE_ARGV(13);
 };
@@ -181,7 +193,7 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList1) {
 	Parameters prms(13,argv);
 	{
 		UsingFs dir(prms);
-		//dir.makeOutputDir(true,true);
+		dir.makeOutputDir(false,true);
 
 		// Read the files
 		dir.readFiles();
@@ -199,7 +211,7 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList1) {
 		EXPECT_EQ(1,sched.return_values.size());
 		EXPECT_EQ(1,sched.file_pathes.size());
 	}
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out.0/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
 
 	// Remove errors.txt
 	system("rm errors.txt");
@@ -229,7 +241,7 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList2) {
 
 	{
 		UsingFs dir(prms);
-		//dir.makeOutputDir(false,true);
+		dir.makeOutputDir(false,true);
 
 		// Prepare files.txt
 		ofstream f("files.txt");
@@ -254,8 +266,8 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList2) {
 		EXPECT_EQ(2,sched.file_pathes.size());
 	}
 
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out.0/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out.0/A.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
 
 	// Remove files.txt
 	system("rm files.txt");

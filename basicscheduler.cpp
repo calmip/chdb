@@ -205,7 +205,7 @@ void BasicScheduler::mainLoopMaster() {
 			sendEndMsg(send_bfr, talking_slave);
 		}
 
-		// We received a tag "END": consolidate data and forget this slave
+		// We received a tag "END": consolidate data (if necessary) and forget this slave
 		else {
 			dir.consolidateOutput(file_pathes[0]);
 			working_slaves--;

@@ -265,18 +265,16 @@ int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& o
 
 /** 
  * @brief Make the output directory, store the name to output_dir, throw an exception if error
+ *        If rank_flg is true, the rank is taken into account (probably called by a slave)
  *
- * @param rank_flg If true, append the rank to the directory name
+ * @param rank_flg If true, NOTHING IS CREATED
  * @param rep_flg If true, remove the directory if it already exists
  * 
  */
 void UsingFs::makeOutputDir(bool rank_flg, bool rep_flg) {
 	output_dir = prms.getOutDir();
 	if (rank_flg) {
-		ostringstream tmp;
-		tmp << rank;
-		output_dir += '.';
-		output_dir += tmp.str();
+		return;
 	}
 
 	// remove directory if rep_flg and directory already exists
@@ -328,8 +326,8 @@ string UsingFs::makeTempOutDir() {
 
 
 /** 
- * @brief Consolidate output data from a temporary directory to a more permanent directory
- *        Files are copied from the temporary and the temporary is removed
+ * @brief Consolidate output data from a directory to the output directory
+ *        Files are copied from the source directory and it is removed
  * 
  * @param path Path to the directory we want to consolidate
  *             If "", we use the temporary directory
@@ -339,6 +337,11 @@ string UsingFs::makeTempOutDir() {
 void UsingFs::consolidateOutput(const string& out_dir) const {
 	string temp_out = (out_dir.length()==0) ? getTempOutDir() : out_dir;
 	string out      = getOutDir();
+
+	// output directory same directory as temp_out  nothing to do !
+	if (temp_out==out) {
+		return;
+	}
 
 	if (temp_out.length()!=0 && temp_out!=out) {
 		// If directory to consolidate exists

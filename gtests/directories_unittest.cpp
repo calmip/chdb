@@ -40,13 +40,9 @@ TEST_F(ChdbTest,usingFsmkdir) {
 	string cmd="rm -r " + prms.getOutDir();
 	EXPECT_NO_THROW(callSystem(cmd,true));
 
-	// create inputdir.out.-1 (rank not initialized => -1)
+	// Call with rank_flg=true ==> nothing created !
 	EXPECT_NO_THROW(dir.makeOutputDir(true,true));
-
-	// remove inputdir.out.-1
-	cmd="rm -r " + prms.getOutDir();
-	cmd += ".-1";
-	EXPECT_NO_THROW(callSystem(cmd,true));
+	EXPECT_THROW(callSystem(cmd,true),runtime_error);
 
 	FREE_ARGV(7);
 }
