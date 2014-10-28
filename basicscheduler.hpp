@@ -28,7 +28,8 @@ public:
 	bool errorHandle(ofstream&);
 	size_t getTreatedFiles() const { return treated_files; };
  
-	friend class ChdbTest1_ExecuteCommand_Test;
+	friend class ChdbTest1_ExecuteCommandNoTmp_Test;
+	friend class ChdbTest1_ExecuteCommandWithTmp_Test;
 	friend class ChdbTest1_ExecuteCommandWithErr_Test;
 	friend class ChdbTest1_ExecuteCommandFrmList1_Test;
 	friend class ChdbTest1_ExecuteCommandFrmList2_Test;

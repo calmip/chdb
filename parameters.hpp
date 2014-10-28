@@ -24,12 +24,14 @@ public:
 
 	string getInDir()    const { return input_directory; };
 	string getOutDir()   const { return output_directory; };
+	string getTmpDir()   const { return tmp_directory; };
 	string getInFile()   const { return input_file; };
 	string getFileType() const { return file_type; };
 	bool isBdBh()        const { return is_bdbh; };
 	bool isSizeSort()    const { return is_size_sort; };
 	bool isVerbose()     const { return is_verbose; };
 	bool isAbrtOnErr()   const { return on_error.length()==0; };
+	bool isTmpDir()      const { return tmp_directory.length()!=0; };
 	string getErrFile()  const { return on_error; };
 	bool isReportMode()  const { return report.length()!=0; };
 	string getReport()   const { return report; };
@@ -49,6 +51,7 @@ private:
 
 	string input_directory;
 	string output_directory;
+	string tmp_directory;
 	string input_file;
 	string file_type;
 	bool is_bdbh;

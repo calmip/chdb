@@ -296,22 +296,27 @@ void UsingFs::makeOutputDir(bool rank_flg, bool rep_flg) {
 }
 
 /** 
- * @brief Make a temporary output directory
+ * @brief Make a temporary output directory only if tmp is specified
+ *        Init temp_output_dir
+ *        If no tmp, only init temp_output_dir to output directory and return ""
  * 
- * 
- * @return 
+ * @return The tmpdir name
  */
 string UsingFs::makeTempOutDir() {
 	string output_dir = prms.getOutDir();
-	//return output_dir;
-	string tmp = "/tmp";
-	string tmpdir = tmp + '/' + output_dir;
-	tmpdir += "_XXXXXX";
-	char* tmpdir_c = (char*)malloc(tmpdir.length()+1);
-	strcpy(tmpdir_c,tmpdir.c_str());
-	tmpdir = mkdtemp(tmpdir_c);
-	free(tmpdir_c);
-	temp_output_dir=tmpdir;
+	string tmpdir="";
+	if (prms.isTmpDir()) {
+		string tmp = prms.getTmpDir();
+		tmpdir = tmp + '/' + output_dir;
+		tmpdir += "_XXXXXX";
+		char* tmpdir_c = (char*)malloc(tmpdir.length()+1);
+		strcpy(tmpdir_c,tmpdir.c_str());
+		tmpdir = mkdtemp(tmpdir_c);
+		free(tmpdir_c);
+		temp_output_dir=tmpdir;
+	} else {
+		temp_output_dir=output_dir;
+	}
 	return tmpdir;
 }
 
@@ -338,12 +343,8 @@ void UsingFs::consolidateOutput(const string& out_dir) const {
 	string temp_out = (out_dir.length()==0) ? getTempOutDir() : out_dir;
 	string out      = getOutDir();
 
-	// output directory same directory as temp_out  nothing to do !
-	if (temp_out==out) {
-		return;
-	}
-
-	if (temp_out.length()!=0 && temp_out!=out) {
+	// output directory same directory as temp_out nothing to do !
+	if (temp_out!=out) {
 		// If directory to consolidate exists
 		struct stat sts;
 		if (stat(temp_out.c_str(), &sts)==0) {

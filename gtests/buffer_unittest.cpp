@@ -48,7 +48,6 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	char const* bfr = expected_bfr.c_str();
 
 	Parameters prms(7,argv);
-	UsingFs dir(prms);
 
 	vector_of_strings file_pathes;
 	size_t  data_size;
@@ -108,7 +107,6 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 	char const* bfr = expected_bfr.c_str();
 
 	Parameters prms(7,argv);
-	UsingFs dir(prms);
 
 	vector_of_int values;
 	size_t data_size;
@@ -139,7 +137,6 @@ TEST_F(SchedTestDbl,bfrToVctDbl) {
 	char const* bfr = expected_bfr.c_str();
 
 	Parameters prms(7,argv);
-	UsingFs dir(prms);
 
 	vector_of_double values;
 	size_t data_size;

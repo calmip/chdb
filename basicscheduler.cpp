@@ -356,7 +356,7 @@ void BasicScheduler::mainLoopSlave() {
 void BasicScheduler::executeCommand() {
 
 	// Create the output and temporary directories when first-time call
-	// If the output directory alredy exists, it will be removed
+	// If the output directory already exists, it will be removed
 	// NOTE - The creation of those directories is defferred as much as possible,
 	// so that the master can execute an MPI_Abort during initialization, without 
 	// letting temporaries on the disk !

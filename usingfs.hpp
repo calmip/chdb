@@ -26,14 +26,26 @@ struct Finfo {
 class UsingFs: public Directories {
 public:
 	UsingFs(const Parameters& p):Directories(p){};
-	~UsingFs() {consolidateOutput();};
+
+	// consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
+	~UsingFs() {
+		try {
+			consolidateOutput();
+		} catch (exception& e){};
+	}
 
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
 	void makeOutputDir(bool,bool);
 	string makeTempOutDir();
-	string getTempOutDir() const {return temp_output_dir;};
-	string getOutDir() const  {return output_dir;};
+	string getTempOutDir() const {
+		if(temp_output_dir.length()!=0) return temp_output_dir;
+		else throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
+	}
+	string getOutDir() const  {
+		if(output_dir.length()!=0) return output_dir;
+		else throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
+	}
 	void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 	void consolidateOutput(const string& path="") const;
 

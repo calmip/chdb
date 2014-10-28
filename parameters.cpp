@@ -49,6 +49,7 @@ enum {
 	OPT_INDIR,      // --in-dir
 	OPT_INFILE,     // --in-file
 	OPT_OUTDIR,     // --out-dir
+	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
 	OPT_BLOCK_SIZE, // --block-size,
 	OPT_SORT_BY_SIZE,  // --sort-by-size
@@ -74,6 +75,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_INDIR,         "--in-dir",       SO_REQ_SEP },
 	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
+	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
 	{ OPT_SORT_BY_SIZE,  "--sort-by-size", SO_NONE    },
@@ -85,6 +87,9 @@ CSimpleOpt::SOption options[] = {
 	SO_END_OF_OPTIONS   // END
 };
 
+/* The default values */
+#define DEFAULT_TMP_DIRECTORY ""
+//#define DEFAULT_TMP_DIRECTORY "."
 
 /** The constructor
 
@@ -95,6 +100,7 @@ CSimpleOpt::SOption options[] = {
 
 Parameters::Parameters(int argc, 
 					   char* argv[]) throw(runtime_error) :
+    tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
 	is_size_sort(false),
 	is_verbose(false),
@@ -121,6 +127,9 @@ Parameters::Parameters(int argc,
 				break;
 			case OPT_OUTDIR:
 				output_directory =  arguments.OptionArg();
+				break;
+			case OPT_TMPDIR:
+				tmp_directory = arguments.OptionArg();
 				break;
 			case OPT_OUTFILES:
 				output_files = split(arguments.OptionArg());
@@ -245,9 +254,10 @@ void Parameters::usage() {
 	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
 	cerr << "                               load-balancing issues\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
+	cerr << "  --tmp-dir tmpdir           : If specified, computations are performed in this directory\n";
 	cerr << "                               A generated errors.txt may be specified as in-files parameter in a later execution de chdb\n";
 	cerr << "                               are stored in this file for later reference and execution\n";
-	cerr << "  --on-report report.txt     : Generate a report with some timing info\n";
+	cerr << "  --report report.txt        : Generate a report with some timing info (use only for debug !)\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";

@@ -357,7 +357,65 @@ TEST_F(ChdbTest,block4) {
 
 }
 
-TEST_F(ChdbTest,completeFilePath) {
+TEST_F(ChdbTest,getTempOutDirNoTmp) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+
+	EXPECT_THROW(dir.getTempOutDir(),logic_error);
+	dir.makeTempOutDir();
+	EXPECT_NO_THROW(dir.getTempOutDir());
+	EXPECT_EQ((string) "inputdir.out",dir.getTempOutDir());
+
+	EXPECT_THROW(dir.getOutDir(),logic_error);
+	dir.makeOutputDir(false,true);
+	EXPECT_NO_THROW(dir.getOutDir());
+	EXPECT_EQ((string) "inputdir.out", dir.getOutDir());
+
+	FREE_ARGV(7);
+}
+
+TEST_F(ChdbTest,getTempOutDirWithTmp) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,".");
+
+	Parameters prms(9,argv);
+	UsingFs dir(prms);
+
+	EXPECT_THROW(dir.getTempOutDir(),logic_error);
+	dir.makeTempOutDir();
+	EXPECT_NO_THROW(dir.getTempOutDir());
+	string tmpdir = dir.getTempOutDir();
+	EXPECT_EQ((string) "./inputdir.out_",tmpdir.substr(0,15));
+	EXPECT_NO_THROW(callSystem("rmdir inputdir.out_??????"));
+
+	EXPECT_THROW(dir.getOutDir(),logic_error);
+	dir.makeOutputDir(false,true);
+	EXPECT_NO_THROW(dir.getOutDir());
+	EXPECT_EQ((string) "inputdir.out", dir.getOutDir());
+
+	FREE_ARGV(9);
+}
+
+TEST_F(ChdbTest,completeFilePathNoTmp) {
 
 	// Init prms
 	char* argv[10];
@@ -371,13 +429,15 @@ TEST_F(ChdbTest,completeFilePath) {
 	
 	Parameters prms(7,argv);
 	UsingFs dir(prms);
+	dir.makeTempOutDir();
+	dir.makeOutputDir(true,true);
 
 	string f1 = "A/B/C/D.txt";
 
-	string s1 = "outputdir/%path%";
-	string s2 = "outputdir/%name%";
-	string s3 = "outputdir/%basename%.out";
-	string s4 = "outputdir/%dirname%/%basename%.out";
+	string s1 = "%out-dir%/%path%";
+	string s2 = "%out-dir%/%name%";
+	string s3 = "%out-dir%/%basename%.out";
+	string s4 = "%out-dir%/%dirname%/%basename%.out";
 	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
 	dir.completeFilePath(f1,s1);
 	dir.completeFilePath(f1,s2);
@@ -385,21 +445,74 @@ TEST_F(ChdbTest,completeFilePath) {
 	dir.completeFilePath(f1,s4);
 	dir.completeFilePath(f1,s5);
 
-	string expected_s1 = "outputdir/A/B/C/D.txt";
-	string expected_s2 = "outputdir/D.txt";
-	string expected_s3 = "outputdir/D.out";
-	string expected_s4 = "outputdir/A/B/C/D.out";
+	string expected_s1 = "inputdir.out/A/B/C/D.txt";
+	string expected_s2 = "inputdir.out/D.txt";
+	string expected_s3 = "inputdir.out/D.out";
+	string expected_s4 = "inputdir.out/A/B/C/D.out";
 	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
 	vector_of_strings block;
 	vector_of_strings expected_block;
 
-	EXPECT_EQ(s1,expected_s1);
-	EXPECT_EQ(s2,expected_s2);
-	EXPECT_EQ(s3,expected_s3);
-	EXPECT_EQ(s4,expected_s4);
-	EXPECT_EQ(s5,expected_s5);
+	EXPECT_EQ(expected_s1,s1);
+	EXPECT_EQ(expected_s2,s2);
+	EXPECT_EQ(expected_s3,s3);
+	EXPECT_EQ(expected_s4,s4);
+	EXPECT_EQ(expected_s5,s5);
 
 	FREE_ARGV(7);
+
+}
+
+TEST_F(ChdbTest,completeFilePathWithTmp) {
+
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,".");
+	
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+
+	dir.makeTempOutDir();
+	dir.makeOutputDir(true,true);
+
+	string f1 = "A/B/C/D.txt";
+
+	string s1 = "%out-dir%/%path%";
+	string s2 = "%out-dir%/%name%";
+	string s3 = "%out-dir%/%basename%.out";
+	string s4 = "%out-dir%/%dirname%/%basename%.out";
+	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
+	dir.completeFilePath(f1,s1);
+	dir.completeFilePath(f1,s2);
+	dir.completeFilePath(f1,s3);
+	dir.completeFilePath(f1,s4);
+	dir.completeFilePath(f1,s5);
+
+	string tmp = dir.getTempOutDir();
+
+	string expected_s1 = tmp + "/A/B/C/D.txt";
+	string expected_s2 = tmp + "/D.txt";
+	string expected_s3 = tmp + "/D.out";
+	string expected_s4 = tmp + "/A/B/C/D.out";
+	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
+	vector_of_strings block;
+	vector_of_strings expected_block;
+
+	EXPECT_EQ(expected_s1,s1);
+	EXPECT_EQ(expected_s2,s2);
+	EXPECT_EQ(expected_s3,s3);
+	EXPECT_EQ(expected_s4,s4);
+	EXPECT_EQ(expected_s5,s5);
+
+	FREE_ARGV(9);
 
 }
 
@@ -555,6 +668,64 @@ TEST_F(ChdbTest,usingFsSortFiles2) {
 	int tmp[] = {0,4,8,12,16,1,5,9,13,17,2,6,10,14,18,3,7,11,15,19,20,24,28,32,-1,21,25,29,-1,-1,22,26,30,-1,-1,23,27,31,-1,-1};
 	vector_of_strings expected_files = int2strings(tmp,40);
 	EXPECT_EQ(expected_files,files);
+
+	FREE_ARGV(9);
+}
+
+TEST(usingFs,usingFsMakeTempOutDirNoTmp) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,"inputdir");
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+
+	string blank = "";
+	string cmd = "ls -l ";
+	string out = "inputdir.out";
+	out += "_??????";
+	cmd += out;
+
+	Parameters prms(7,argv);
+	UsingFs dir(prms);
+	EXPECT_EQ(blank,dir.makeTempOutDir());
+	EXPECT_EQ(prms.getOutDir(),dir.getTempOutDir());
+	EXPECT_THROW(callSystem(cmd,true),runtime_error);
+
+	FREE_ARGV(7);
+}
+
+TEST(usingFs,usingFsMakeTempOutDirWithTmp) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,"inputdir");
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,".");
+
+	string blank = "";
+	string cmd = "ls -l ";
+	string out = "inputdir.out";
+	out += "_??????";
+	cmd += out;
+
+	Parameters prms(9,argv);
+	UsingFs dir(prms);
+	EXPECT_NE(blank,dir.makeTempOutDir());
+	string tmp_out = dir.getTempOutDir();
+	EXPECT_NE(blank,tmp_out);
+	EXPECT_NO_THROW(callSystem(cmd,true));
+	string cmd1="rmdir ";
+	cmd1 += tmp_out;
+	EXPECT_NO_THROW(callSystem(cmd1,true));
 
 	FREE_ARGV(9);
 }

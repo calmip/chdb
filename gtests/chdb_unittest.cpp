@@ -11,7 +11,7 @@
 using namespace std;
 	
 // One slave, 5 files, blocks of 1 file
-TEST_F(ChdbTest1,Block1) {
+TEST_F(ChdbTest1,Block1NoTmp) {
 
 	string in_dir = "inputdir";
 
@@ -20,6 +20,32 @@ TEST_F(ChdbTest1,Block1) {
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
 	cmd += "--out-file %out-dir%/%path%";
+	cmd += " >stdoe 2>&1";
+
+	cout << "NOW CALLING " << cmd << '\n';
+	int rvl=system(cmd.c_str());
+	EXPECT_EQ(0,rvl);
+	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
+
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
+	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+};
+
+// One slave, 5 files, blocks of 1 file, using tmpdir
+TEST_F(ChdbTest1,Block1WithTmp) {
+
+	string in_dir = "inputdir";
+
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--tmp-dir .";
 	cmd += " >stdoe 2>&1";
 
 	cout << "NOW CALLING " << cmd << '\n';

@@ -55,10 +55,10 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
 	FREE_ARGV(9);
 };
 
-TEST_F(ChdbTest1,ExecuteCommand) {
+TEST_F(ChdbTest1,ExecuteCommandNoTmp) {
 
 	// Init prms
-	char* argv[11];
+	char* argv[13];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"./ext_cmd.sh %in-dir%/%path% %out-dir%/%path%");
@@ -70,6 +70,53 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 	INIT_ARGV(8,"%out-dir%/%path%");
 	INIT_ARGV(9,"--block-size");
 	INIT_ARGV(10,"5");
+
+	Parameters prms(11,argv);
+	
+	// Inside a block to consolidate at end (see the destructor of dir)
+	{
+		UsingFs dir(prms);
+		
+		// Read the files
+		dir.readFiles();
+		
+		// Create the output directory, removing it if already exists
+		dir.makeOutputDir(false,true);
+		dir.makeTempOutDir();
+		
+		// execute command, initializing return_values and file_pathes
+		// An exception is generated for the file D/C.txt
+			
+		BasicScheduler sched(prms,dir);
+		sched.return_values.clear();
+		sched.file_pathes = dir.nextBlock();
+		EXPECT_NO_THROW(sched.executeCommand());
+		ofstream err;
+		EXPECT_EQ(true,sched.errorHandle(err));
+	}
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	system("rm -r inputdir.out");
+	
+	FREE_ARGV(11);
+};
+
+TEST_F(ChdbTest1,ExecuteCommandWithTmp) {
+
+	// Init prms
+	char* argv[13];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"./ext_cmd.sh %in-dir%/%path% %out-dir%/%path%");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
+	INIT_ARGV(9,"--block-size");
+	INIT_ARGV(10,"5");
+	INIT_ARGV(11,"--tmp-dir");
+	INIT_ARGV(12,".");
 
 /*
 		{
@@ -83,18 +130,21 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 */
 
 	Parameters prms(11,argv);
+
+	// Inside a block to consolidate at end (see the destructor of dir)
 	{
 		UsingFs dir(prms);
-
+		
 		// Read the files
 		dir.readFiles();
-
+		
 		// Create the output directory, removing it if already exists
 		dir.makeOutputDir(false,true);
-
+		dir.makeTempOutDir();
+	
 		// execute command, initializing return_values and file_pathes
 		// An exception is generated for the file D/C.txt
-		
+			
 		BasicScheduler sched(prms,dir);
 		sched.return_values.clear();
 		sched.file_pathes = dir.nextBlock();
@@ -103,8 +153,9 @@ TEST_F(ChdbTest1,ExecuteCommand) {
 		EXPECT_EQ(true,sched.errorHandle(err));
 	}
 	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
+	system("rm -r inputdir.out");
 	
-	FREE_ARGV(11);
+	FREE_ARGV(13);
 };
 
 TEST_F(ChdbTest1,ExecuteCommandWithErr) {
