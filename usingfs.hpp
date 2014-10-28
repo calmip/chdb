@@ -36,7 +36,7 @@ public:
 
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
-	void makeOutputDir(bool,bool);
+	void makeOutDir(bool,bool);
 	string makeTempOutDir();
 	string getTempOutDir() const {
 		if(temp_output_dir.length()!=0) return temp_output_dir;

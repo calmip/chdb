@@ -28,20 +28,20 @@ TEST_F(ChdbTest,usingFsmkdir) {
 	UsingFs dir(prms);
 
 	// create inputdir.out
-	EXPECT_NO_THROW(dir.makeOutputDir(false,true));
+	EXPECT_NO_THROW(dir.makeOutDir(false,true));
 
 	// replace inputdir.out
-	EXPECT_NO_THROW(dir.makeOutputDir(false,true));
+	EXPECT_NO_THROW(dir.makeOutDir(false,true));
 
 	// could not create inputdir.out (already exists)
-	EXPECT_THROW(dir.makeOutputDir(false,false),runtime_error);
+	EXPECT_THROW(dir.makeOutDir(false,false),runtime_error);
 
 	// remove inputdir.out
 	string cmd="rm -r " + prms.getOutDir();
 	EXPECT_NO_THROW(callSystem(cmd,true));
 
 	// Call with rank_flg=true ==> nothing created !
-	EXPECT_NO_THROW(dir.makeOutputDir(true,true));
+	EXPECT_NO_THROW(dir.makeOutDir(true,true));
 	EXPECT_THROW(callSystem(cmd,true),runtime_error);
 
 	FREE_ARGV(7);
@@ -377,7 +377,7 @@ TEST_F(ChdbTest,getTempOutDirNoTmp) {
 	EXPECT_EQ((string) "inputdir.out",dir.getTempOutDir());
 
 	EXPECT_THROW(dir.getOutDir(),logic_error);
-	dir.makeOutputDir(false,true);
+	dir.makeOutDir(false,true);
 	EXPECT_NO_THROW(dir.getOutDir());
 	EXPECT_EQ((string) "inputdir.out", dir.getOutDir());
 
@@ -408,7 +408,7 @@ TEST_F(ChdbTest,getTempOutDirWithTmp) {
 	EXPECT_NO_THROW(callSystem("rmdir inputdir.out_??????"));
 
 	EXPECT_THROW(dir.getOutDir(),logic_error);
-	dir.makeOutputDir(false,true);
+	dir.makeOutDir(false,true);
 	EXPECT_NO_THROW(dir.getOutDir());
 	EXPECT_EQ((string) "inputdir.out", dir.getOutDir());
 
@@ -430,7 +430,7 @@ TEST_F(ChdbTest,completeFilePathNoTmp) {
 	Parameters prms(7,argv);
 	UsingFs dir(prms);
 	dir.makeTempOutDir();
-	dir.makeOutputDir(true,true);
+	dir.makeOutDir(true,true);
 
 	string f1 = "A/B/C/D.txt";
 
@@ -481,7 +481,7 @@ TEST_F(ChdbTest,completeFilePathWithTmp) {
 	UsingFs dir(prms);
 
 	dir.makeTempOutDir();
-	dir.makeOutputDir(true,true);
+	dir.makeOutDir(true,true);
 
 	string f1 = "A/B/C/D.txt";
 
@@ -534,7 +534,7 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	string f,cmd;
 
 	// create output directory
-	dir.makeOutputDir(false,true);
+	dir.makeOutDir(false,true);
 
 	// output files
 	vector_of_strings output_files;

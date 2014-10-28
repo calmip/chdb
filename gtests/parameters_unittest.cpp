@@ -244,31 +244,6 @@ TEST_F(ParametersTest1, CtorFlags) {
 
 }
 
-TEST(Parameters,split) {
-	vector_of_strings v;
-	vector_of_strings expected_v;
-
-	v=split("un");
-	expected_v.push_back("un");
-	ASSERT_EQ(expected_v,v);
-
-	v=split("un,deux");
-	expected_v.clear();
-	expected_v.push_back("un");
-	expected_v.push_back("deux");
-	ASSERT_EQ(expected_v,v);
-
-	v=split("un,deux,");
-	expected_v.clear();
-	expected_v.push_back("un");
-	expected_v.push_back("deux");
-	ASSERT_EQ(expected_v,v);
-
-	v=split("");
-	expected_v.clear();
-	ASSERT_EQ(expected_v,v);
-}
-
 TEST_F(ParametersTest1, CtorOutFiles) {
 	char* argv[10];
 	INIT_ARGV(0,"parameters_unittest");

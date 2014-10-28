@@ -11,8 +11,6 @@ using namespace std;
 #include "SimpleOpt.h"
 #include "constypes.hpp"
 
-vector_of_strings split(const string &);
-
 /** 
 	\brief This class parses and keeps in memory the command line
 */

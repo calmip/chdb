@@ -95,7 +95,7 @@ void BasicScheduler::mainLoopMaster() {
 	}
 
 	// Create the output directory
-	dir.makeOutputDir(false,false);
+	dir.makeOutDir(false,false);
 
 	// loop over the file blocks
 	// Listen to the slaves
@@ -361,7 +361,7 @@ void BasicScheduler::executeCommand() {
 	// so that the master can execute an MPI_Abort during initialization, without 
 	// letting temporaries on the disk !
 	if (first_execution) {
-		dir.makeOutputDir(true,true);
+		dir.makeOutDir(true,true);
 		dir.makeTempOutDir();
 		first_execution = false;
 	}

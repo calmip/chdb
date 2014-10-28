@@ -84,7 +84,7 @@ constypes_unittest.o : constypes_unittest.cpp
 parameters_unittest.o : parameters_unittest.cpp ../parameters.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c parameters_unittest.cpp
 
-parameters_unittest : parameters_unittest.o ../parameters.o gtest_main.a
+parameters_unittest : parameters_unittest.o ../parameters.o ../system.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 directories_unittest.o : directories_unittest.cpp ../directories.cpp

@@ -34,7 +34,7 @@ public:
 	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()){};
 	void setRank(int,int);
 
-	virtual void   makeOutputDir(bool,bool) = 0;
+	virtual void   makeOutDir(bool,bool) = 0;
 	virtual string makeTempOutDir()  = 0;
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;

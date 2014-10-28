@@ -271,7 +271,7 @@ int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& o
  * @param rep_flg If true, remove the directory if it already exists
  * 
  */
-void UsingFs::makeOutputDir(bool rank_flg, bool rep_flg) {
+void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 	output_dir = prms.getOutDir();
 	if (rank_flg) {
 		return;

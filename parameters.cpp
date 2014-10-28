@@ -12,32 +12,12 @@ using namespace std;
 
 //#include "command.h"
 #include "parameters.hpp"
+#include "system.hpp"
 //#include "exception.h"
 //#include <unistd.h>
 //#include <errno.h>
 //#include <libgen.h>
 //#include <stdlib.h>
-
-
-vector_of_strings split(const string& s) {
-	vector_of_strings rvl;
-	size_t opos=0;
-	size_t pos =s.find_first_of(',',opos);
-	while(pos != string::npos) {
-		rvl.push_back(s.substr(opos,pos-opos));
-		opos=pos+1;
-		// if , is the last character
-		if (opos==s.length()) break;
-		
-		// search next ,
-		pos = s.find_first_of(',',opos);
-	};
-	// if , is NOT the last character push the remaining string
-	if (opos!=s.length()) {
-		rvl.push_back(s.substr(opos));
-	}
-	return rvl;
-}
 
 /**
    \brief 

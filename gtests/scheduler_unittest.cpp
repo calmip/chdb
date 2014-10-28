@@ -81,7 +81,7 @@ TEST_F(ChdbTest1,ExecuteCommandNoTmp) {
 		dir.readFiles();
 		
 		// Create the output directory, removing it if already exists
-		dir.makeOutputDir(false,true);
+		dir.makeOutDir(false,true);
 		dir.makeTempOutDir();
 		
 		// execute command, initializing return_values and file_pathes
@@ -139,7 +139,7 @@ TEST_F(ChdbTest1,ExecuteCommandWithTmp) {
 		dir.readFiles();
 		
 		// Create the output directory, removing it if already exists
-		dir.makeOutputDir(false,true);
+		dir.makeOutDir(false,true);
 		dir.makeTempOutDir();
 	
 		// execute command, initializing return_values and file_pathes
@@ -181,7 +181,7 @@ TEST_F(ChdbTest1,ExecuteCommandWithErr) {
 	{
 		UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
-		dir.makeOutputDir(false,true);
+		dir.makeOutDir(false,true);
 		/*
 		{
 			pid_t pid = getpid();
@@ -244,7 +244,7 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList1) {
 	Parameters prms(13,argv);
 	{
 		UsingFs dir(prms);
-		dir.makeOutputDir(false,true);
+		dir.makeOutDir(false,true);
 
 		// Read the files
 		dir.readFiles();
@@ -292,7 +292,7 @@ TEST_F(ChdbTest1,ExecuteCommandFrmList2) {
 
 	{
 		UsingFs dir(prms);
-		dir.makeOutputDir(false,true);
+		dir.makeOutDir(false,true);
 
 		// Prepare files.txt
 		ofstream f("files.txt");
