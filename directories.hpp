@@ -35,7 +35,7 @@ public:
 	void setRank(int,int);
 
 	virtual void   makeOutDir(bool,bool) = 0;
-	virtual string makeTempOutDir()  = 0;
+	virtual void   makeTempOutDir()  = 0;
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;
 

@@ -1,4 +1,6 @@
 #include <stdexcept>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
@@ -110,3 +112,18 @@ vector_of_strings split(const string& s) {
 	return rvl;
 }
 
+/** 
+ * @brief returns true if the file or directory exists
+ * 
+ * @param f 
+ * 
+ * @return 
+ */
+bool fileExists(const string &f) {
+	struct stat status;
+	if (stat(f.c_str(), &status)==0) {
+		return true;
+	} else {
+		return false;
+	}
+}

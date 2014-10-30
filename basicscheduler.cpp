@@ -311,7 +311,16 @@ void BasicScheduler::mainLoopSlave() {
 	size_t bfr_size=0;
 	void* bfr=NULL;
 	allocBfr(bfr,bfr_size);
-
+/*
+	{
+		pid_t pid = getpid();
+		ostringstream s_tmp;
+		s_tmp << "gdbserver host:2345 --attach " << pid << "&";
+		cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
+		system(s_tmp.str().c_str());
+		sleep(5);
+	}
+*/
 	// all msgs are sent/received to/from the master
 	const int master    = 0;
 	int tag             = CHDB_TAG_GO;
@@ -351,6 +360,7 @@ void BasicScheduler::mainLoopSlave() {
 
 /** 
  * @brief Execute the command on all files of file_pathes, store the result in return_values and may be the wall time in wall_times
+ *        This function should be called by the slaves only
  * 
  */
 void BasicScheduler::executeCommand() {

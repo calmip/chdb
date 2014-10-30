@@ -22,6 +22,17 @@ using namespace std;
 inline bool isNotNullStr (const string& s) { return (s.size()>0); }
 inline bool isNotNull(int i) { return (i!=0); }
 
+/* 
+   NOTMP => The CALMIP policy is not to use /tmp on the nodes
+            Comment out the following line to regain tmpdir functionality
+*/
+#define NOTMP
+
+/*
+   comment out to avoid creating an output directory per slave
+*/
+//#define OUTDIRPERSLAVE 1
+
 /**
    \brief To have a class non copyable, you just have to private derive from this class
 */

@@ -37,7 +37,7 @@ public:
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const string&,const vector_of_strings&) const;
 	void makeOutDir(bool,bool);
-	string makeTempOutDir();
+	void makeTempOutDir();
 	string getTempOutDir() const {
 		if(temp_output_dir.length()!=0) return temp_output_dir;
 		else throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));

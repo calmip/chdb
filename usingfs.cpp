@@ -271,6 +271,7 @@ int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& o
  * @param rep_flg If true, remove the directory if it already exists
  * 
  */
+/*
 void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 	output_dir = prms.getOutDir();
 	if (rank_flg) {
@@ -294,30 +295,80 @@ void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 		throw(runtime_error(msg));
 	}
 }
+*/
+/** 
+ * @brief Make the output directory, store the name to output_dir, throw an exception if error
+ *        The define OUTDIRPERSLAVE changes the behaviour of this function
+
+ * @param rank_flg If true: if OUTDIRPERSLAVE  append the rank to the directory name, 
+ *                          if OUTDIRPERSLAVE not defined create nothing
+ * @param rep_flg If true, remove the directory if it already exists
+ * 
+ */
+void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
+	output_dir = prms.getOutDir();
+
+#ifdef OUTDIRPERSLAVE
+	if (rank_flg) {
+		ostringstream tmp;
+		tmp << rank;
+		output_dir += '.';
+		output_dir += tmp.str();
+	}
+#else
+	if (rank_flg) {
+		return;
+	}
+#endif
+	
+	// remove directory if rep_flg and directory already exists
+	struct stat status;
+	if (rep_flg && stat(output_dir.c_str(), &status)==0) {
+		string cmd = "rm -r ";
+		cmd += output_dir;
+		callSystem(cmd);
+	}
+	
+	int sts = mkdir(output_dir.c_str(), 0777);
+	if (sts != 0) {
+		string msg="ERROR - Cannot create directory ";
+		msg += output_dir;
+		msg += " - Error= ";
+		msg += strerror(errno);
+		throw(runtime_error(msg));
+	}
+}
+
+
 
 /** 
  * @brief Make a temporary output directory only if tmp is specified
  *        Init temp_output_dir
  *        If no tmp, only init temp_output_dir to output directory and return ""
  * 
- * @return The tmpdir name
+ *
  */
-string UsingFs::makeTempOutDir() {
-	string output_dir = prms.getOutDir();
+void UsingFs::makeTempOutDir() {
+
+	// Generating an exception if outdir is not yet initialized !
+	string outdir = getOutDir();
 	string tmpdir="";
 	if (prms.isTmpDir()) {
 		string tmp = prms.getTmpDir();
-		tmpdir = tmp + '/' + output_dir;
-		tmpdir += "_XXXXXX";
-		char* tmpdir_c = (char*)malloc(tmpdir.length()+1);
-		strcpy(tmpdir_c,tmpdir.c_str());
-		tmpdir = mkdtemp(tmpdir_c);
-		free(tmpdir_c);
-		temp_output_dir=tmpdir;
+		if (fileExists(tmp)) {
+			tmpdir = tmp + '/' + output_dir;
+			tmpdir += "_XXXXXX";
+			char* tmpdir_c = (char*)malloc(tmpdir.length()+1);
+			strcpy(tmpdir_c,tmpdir.c_str());
+			tmpdir = mkdtemp(tmpdir_c);
+			free(tmpdir_c);
+			temp_output_dir=tmpdir;
+		} else {
+			temp_output_dir=outdir;
+		}
 	} else {
-		temp_output_dir=output_dir;
+		temp_output_dir=outdir;
 	}
-	return tmpdir;
 }
 
 /** 
@@ -338,7 +389,6 @@ string UsingFs::makeTempOutDir() {
  *             If "", we use the temporary directory
  *
  */
-#include <iostream>
 void UsingFs::consolidateOutput(const string& out_dir) const {
 	string temp_out = (out_dir.length()==0) ? getTempOutDir() : out_dir;
 	string out      = getOutDir();
@@ -356,7 +406,7 @@ void UsingFs::consolidateOutput(const string& out_dir) const {
 			// We do not want any exception to escape from this function !
 			callSystem(cmd,false);
 			
-			// remove temporary directory, do not ignore the error
+			// remove temporary directory, ignore the error
 			cmd = "rm -r ";
 			cmd += temp_out;
 			callSystem(cmd,false);

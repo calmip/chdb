@@ -10,5 +10,6 @@ using namespace std;
 int callSystem(string cmd, bool err_flg=false);
 void parseFilePath(const string& path, string& dir, string& name, string& base, string& ext);
 vector_of_strings split(const string &);
+bool fileExists(const string&);
 
 #endif

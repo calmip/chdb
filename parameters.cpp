@@ -67,9 +67,23 @@ CSimpleOpt::SOption options[] = {
 	SO_END_OF_OPTIONS   // END
 };
 
+/*
+  NOTMP support
+  
+  If the macro NOTMP is defined, it is not possible to modify the tmp value with the --tmp-dir switch
+  However, this switch is still recognized, for compatibility reasons
+*/
+
 /* The default values */
+#ifdef NOTMP
 #define DEFAULT_TMP_DIRECTORY ""
-//#define DEFAULT_TMP_DIRECTORY "."
+#else
+#define DEFAULT_TMP_DIRECTORY "."
+#endif
+
+#define DEFAULT_VERBOSE    false
+#define DEFAULT_SIZE_SORT  false
+#define DEFAULT_BLOCK_SIZE 1
 
 /** The constructor
 
@@ -82,9 +96,9 @@ Parameters::Parameters(int argc,
 					   char* argv[]) throw(runtime_error) :
     tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
-	is_size_sort(false),
-	is_verbose(false),
-	block_size(1) {
+	is_size_sort(DEFAULT_SIZE_SORT),
+	is_verbose(DEFAULT_VERBOSE),
+	block_size(DEFAULT_BLOCK_SIZE) {
 
 	// Searching the --command-line argument
 	CSimpleOpt arguments(argc, argv, options);
@@ -109,7 +123,9 @@ Parameters::Parameters(int argc,
 				output_directory =  arguments.OptionArg();
 				break;
 			case OPT_TMPDIR:
+#ifndef NOTMP
 				tmp_directory = arguments.OptionArg();
+#endif
 				break;
 			case OPT_OUTFILES:
 				output_files = split(arguments.OptionArg());
@@ -215,8 +231,18 @@ void Parameters::checkOutputDirectory() {
 }
 */
 void Parameters::usage() {
-	cerr << "Calcul à Haut DéBit - version 0.5\n";
+	cerr << "Calcul à Haut DéBit - version 0.6\n";
 	cerr << "Copyright license etc\n";
+#ifdef NOTMP
+	cerr << "DNOTMP ";
+#else
+	cerr << "UNOTMP ";
+#endif
+#ifdef OUTDIRPERSLAVE
+	cerr << "DOUTDIRPERSLAVE\n";
+#else
+	cerr << "UOUTDIRPERSLAVE\n";
+#endif
 	cerr << "chdb executes an external command line for every file of a given file-type found in the input directory.\n";
 	cerr << "The work is distributed among the cores using the MPI library.\n\n";
 	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';
