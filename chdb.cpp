@@ -6,6 +6,16 @@
 	 
 =============================================================================*/
 
+#define DEBUGPID
+
+#ifdef DEBUGPID
+#include <mpi.h>
+#include <fstream>
+#include <sstream>
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #include <iostream>
 #include <stdexcept>
 using namespace std;
@@ -62,15 +72,36 @@ void printTrailer(Scheduler& sched) {
 	cout << "NB OF TREATED FILES= " << sched.getTreatedFiles() << '\n';
 }
 
+#ifdef DEBUGPID
+void writePid() {
+	ostringstream tmp;
+	int rank;
+	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	tmp << "pid." << rank;
+	char* host_name = (char*) malloc(50);
+	gethostname(host_name,50);
+
+	ofstream p(tmp.str().c_str());
+	p<<"h="<<host_name<<" p="<<getpid()<<endl;
+	free(host_name);
+}
+#else
+void writePid(){};
+#endif
+
 /*////////////// Main ///////////////*/
 int main(int argc,char* argv[])
 {
 	Scheduler::init(argc,argv);
+#ifdef DEBUGPID
+	writePid();
+#endif
 	
 	try {
 		Parameters prms(argc,argv);
 		UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
+
 		if (sched.isMaster() && prms.isVerbose()) {
 			sched.startTimer();
 			printHeader(prms,dir,sched);
