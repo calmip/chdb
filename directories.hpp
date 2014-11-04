@@ -39,7 +39,7 @@ public:
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;
 
-	virtual void consolidateOutput(const string& path="") const = 0;
+	virtual void consolidateOutput(bool from_temp, const string& path="") const = 0;
 
 //	void readFiles() { getFiles(); };
 //	const vector_of_strings& getFiles() { 

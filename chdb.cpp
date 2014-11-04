@@ -6,7 +6,7 @@
 	 
 =============================================================================*/
 
-#define DEBUGPID
+//#define DEBUGPID
 
 #ifdef DEBUGPID
 #include <mpi.h>
@@ -86,7 +86,7 @@ void writePid() {
 	free(host_name);
 }
 #else
-void writePid(){};
+void writePid(){}
 #endif
 
 /*////////////// Main ///////////////*/

@@ -207,7 +207,7 @@ void BasicScheduler::mainLoopMaster() {
 
 		// We received a tag "END": consolidate data (if necessary) and forget this slave
 		else {
-			dir.consolidateOutput(file_pathes[0]);
+			dir.consolidateOutput(false,file_pathes[0]);
 			working_slaves--;
 		}
 	}
@@ -342,14 +342,22 @@ void BasicScheduler::mainLoopSlave() {
 		}
 	}
 
-	// END tag received: consolidate output directory and leave
-	dir.consolidateOutput();
+	// END tag received: consolidate output directory from temporary and leave
+	// If first_execution:
+	//    - The slave did nothing !
+	//    - The temporary diectory is NOT initialized
+	//    ---> There is nothing to consolidate, and calling consolidateOutput will throw an exception
+	if (!first_execution) {
+		dir.consolidateOutput(true);
+	}
 
 	// Send a last message to the master: tag END, name of consolidated output directory
 	file_pathes.clear();
 	return_values.clear();
 	wall_time_slaves.clear();
-	file_pathes.push_back(dir.getOutDir());
+	if (!first_execution) {
+		file_pathes.push_back(dir.getOutDir());
+	}
 
 	writeToSndBfr(bfr,bfr_size,send_msg_len);
 	MPI_Send(bfr, bfr_size, MPI_BYTE, master, CHDB_TAG_END, MPI_COMM_WORLD);

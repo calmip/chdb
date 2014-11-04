@@ -30,7 +30,7 @@ public:
 	// consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
 	~UsingFs() {
 		try {
-			consolidateOutput();
+			consolidateOutput(true);
 		} catch (exception& e){};
 	}
 
@@ -47,7 +47,7 @@ public:
 		else throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
 	}
 	void buildBlocks(list<Finfo>&, vector_of_strings&) const;
-	void consolidateOutput(const string& path="") const;
+	void consolidateOutput(bool from_temp, const string& path="") const;
 
 	friend class ChdbTest_usingFsfindOrCreateDir_Test;
 
