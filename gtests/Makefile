@@ -99,10 +99,10 @@ scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp
 scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../system.o gtest_main_mpi.o gtest_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-buffer_unittest.o : buffer_unittest.cpp ../*.cpp
+buffer_unittest.o : buffer_unittest.cpp ../system.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c buffer_unittest.cpp	
 
-buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../system.o gtest_main_mpi.o gtest_main.a
+buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../system.o gtest_main.a 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 chdb_unittest.o : chdb_unittest.cpp constypes_unittest.cpp ../system.cpp

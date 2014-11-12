@@ -5,9 +5,11 @@
 
 
 #include "constypes_unittest.hpp"
-#include "../basicscheduler.hpp"
+#include "../system.hpp"
 #include <fstream>
 using namespace std;
+#include "gtest/gtest.h"
+
 
 TEST_F(SchedTestStr,vctToBfrStrings) {
 

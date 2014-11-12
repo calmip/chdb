@@ -28,6 +28,7 @@ using namespace std;
 #include <cerrno>
 
 //#include "command.h"
+#include "system.hpp"
 #include "basicscheduler.hpp"
 //#include "exception.h"
 //#include <unistd.h>
