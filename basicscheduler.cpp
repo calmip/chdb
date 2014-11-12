@@ -43,41 +43,40 @@ using namespace std;
 #define CHDB_TAG_END   1020
 
 void BasicScheduler::mainLoop() {
+
+// May be useful for debugging with gdb
+/*	
+	{
+	pid_t pid = getpid();
+	ostringstream s_tmp;
+	s_tmp << "gdbserver host:2345 --attach " << pid << "&";
+	cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
+	system(s_tmp.str().c_str());
+	sleep(5);
+	}
+*/
+
+	// Used only by the master
+	ofstream err_file;
+	ofstream report_file;
+
+	// some initialization specific to the master
 	if (isMaster()) {
-		mainLoopMaster();
+		mainLoopProlog(err_file,report_file);
+	}
+
+	// A barrier to wait for slave initialization
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	// Enter the loop
+	if (isMaster()) {
+		mainLoopMaster(err_file,report_file);
 	} else {
 		mainLoopSlave();
 	}
 }
 
-/** 
- * @brief Send to the slave a message with no data and END TAG
- * 
- * @param slave 
- */
-
-void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
-	// Send an END message to the slave
-	MPI_Send(send_bfr, 0, MPI_BYTE, slave, CHDB_TAG_END, MPI_COMM_WORLD);
-}
-
-/** 
- * @brief The main loop for the master
- * 
- */
-void BasicScheduler::mainLoopMaster() {
-	MPI_Status sts;
-
-/*	
-	{
-		pid_t pid = getpid();
-		ostringstream s_tmp;
-		s_tmp << "gdbserver host:2345 --attach " << pid << "&";
-		cerr << "launching gdbserver as:\n" << s_tmp.str() << "\n";
-		system(s_tmp.str().c_str());
-		sleep(5);
-	}
-*/
+void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
 
 	// read the file names
 	dir.readFiles();
@@ -97,17 +96,7 @@ void BasicScheduler::mainLoopMaster() {
 	// Create the output directory
 	dir.makeOutDir(false,false);
 
-	// loop over the file blocks
-	// Listen to the slaves
-	size_t bfr_size=0;
-	void* send_bfr=NULL;
-	void* recv_bfr=NULL;
-
-	allocBfr(send_bfr,bfr_size);
-	allocBfr(recv_bfr,bfr_size);
-
 	// Open the error file, if any
-	ofstream err_file;
 	if (!prms.isAbrtOnErr()) {
 		string err_name = prms.getErrFile();
 		err_file.open(err_name.c_str());
@@ -119,7 +108,6 @@ void BasicScheduler::mainLoopMaster() {
 	}
 
 	// Open the report file, if any
-	ofstream report_file;
 	if (prms.isReportMode()) {
 		string report_name = prms.getReport();
 		report_file.open(report_name.c_str());
@@ -134,6 +122,35 @@ void BasicScheduler::mainLoopMaster() {
 
 	return_values.clear();
 	wall_times.clear();
+}
+
+/** 
+ * @brief Send to the slave a message with no data and END TAG
+ * 
+ * @param slave 
+ */
+
+void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
+	// Send an END message to the slave
+	MPI_Send(send_bfr, 0, MPI_BYTE, slave, CHDB_TAG_END, MPI_COMM_WORLD);
+}
+
+/** 
+ * @brief The main loop for the master
+ * 
+ */
+void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
+	MPI_Status sts;
+
+	// loop over the file blocks
+	// Listen to the slaves
+	size_t bfr_size=0;
+	void* send_bfr=NULL;
+	void* recv_bfr=NULL;
+
+	allocBfr(send_bfr,bfr_size);
+	allocBfr(recv_bfr,bfr_size);
+
 	file_pathes = dir.nextBlock();
 
 	while(!file_pathes.empty()) {

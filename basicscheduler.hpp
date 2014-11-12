@@ -42,7 +42,8 @@ private:
 	vector_of_int files_slaves;
 	vector_of_strings file_pathes;
 
-	void mainLoopMaster();
+	void mainLoopMaster(ofstream&, ofstream&);
+	void mainLoopProlog(ofstream&, ofstream&);
 	void mainLoopSlave();
 	void sendEndMsg(void*, int);
 
