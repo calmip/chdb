@@ -40,11 +40,13 @@ GTEST_API_ int main(int argc, char **argv) {
 	// Begin code with initializing mpi
 	MPI_Init(&argc,&argv);
 	int rank;
+	int rvl=0;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	if (rank==0) {
 		testing::InitGoogleTest(&argc, argv);
 		printf("Running main() from gtest_main_mpi.cc\n");
-		return RUN_ALL_TESTS();
+		rvl =  RUN_ALL_TESTS();
 	}
 	MPI_Finalize();
+	return rvl;
 }
