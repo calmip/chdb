@@ -62,6 +62,15 @@ private:
 	string external_command;
 };
 
+/** 
+ * @brief This exception is thrown by Parameters when --help is called
+ * 
+ */
+class ParametersHelp: public runtime_error {
+public:
+	ParametersHelp(): runtime_error("") {};
+};
+
 #endif
 
 /*

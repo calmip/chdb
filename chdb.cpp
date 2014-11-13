@@ -111,6 +111,8 @@ int main(int argc,char* argv[])
 			printTrailer(sched);
 		}
 	}
+	catch (ParametersHelp& e) {
+	}
 	catch (exception& e) {
 		cerr << e.what() << '\n';
 		Scheduler::abort();

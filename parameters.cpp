@@ -230,6 +230,7 @@ void Parameters::checkOutputDirectory() {
 	}
 }
 */
+
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version 0.6\n";
 	cerr << "Copyright license todo\n";
@@ -284,7 +285,7 @@ void Parameters::usage() {
 	cerr << "  %name%         The file name with the extension (toto.txt)\n";
 	cerr << "  %basename%     The file name without the extension (toto)\n";
 	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B)\n";
-	exit(1);
+	throw ParametersHelp();
 }
 
 string Parameters::getLastErrorText(const CSimpleOpt& arg) {
