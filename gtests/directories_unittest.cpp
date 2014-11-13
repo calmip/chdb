@@ -546,11 +546,18 @@ TEST_F(ChdbTest,completeFilePathNoTmp) {
 	string f1 = "A/B/C/D.txt";
 
 	string s1 = "%out-dir%/%path%";
+	string s1_1 = "%path%";
+	string s1_2 = s1_1;
 	string s2 = "%out-dir%/%name%";
 	string s3 = "%out-dir%/%basename%.out";
 	string s4 = "%out-dir%/%dirname%/%basename%.out";
 	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
 	dir.completeFilePath(f1,s1);
+
+	// Testing the behaviour when %out-dir% is not specified
+	dir.completeFilePath(f1,s1_1);
+	dir.completeFilePath(f1,s1_2,true);
+
 	dir.completeFilePath(f1,s2);
 	dir.completeFilePath(f1,s3);
 	dir.completeFilePath(f1,s4);
@@ -558,6 +565,8 @@ TEST_F(ChdbTest,completeFilePathNoTmp) {
 
 	string slave_outdir = SLAVEOUTDIR;
 	string expected_s1 = slave_outdir + "/A/B/C/D.txt";
+	string expected_s1_1="A/B/C/D.txt";
+	string expected_s1_2 = expected_s1;
 	string expected_s2 = slave_outdir + "/D.txt";
 	string expected_s3 = slave_outdir + "/D.out";
 	string expected_s4 = slave_outdir + "/A/B/C/D.out";
@@ -566,6 +575,8 @@ TEST_F(ChdbTest,completeFilePathNoTmp) {
 	vector_of_strings expected_block;
 
 	EXPECT_EQ(expected_s1,s1);
+	EXPECT_EQ(expected_s1_1,s1_1);
+	EXPECT_EQ(expected_s1_2,s1_2);
 	EXPECT_EQ(expected_s2,s2);
 	EXPECT_EQ(expected_s3,s3);
 	EXPECT_EQ(expected_s4,s4);

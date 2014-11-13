@@ -421,7 +421,7 @@ void BasicScheduler::executeCommand() {
 		dir.completeFilePath(in_path,cmd);
 		vector_of_strings out_files = prms.getOutFiles();
 		for (size_t j=0; j<out_files.size(); ++j) {
-			dir.completeFilePath(in_path,out_files[j]);
+			dir.completeFilePath(in_path,out_files[j],true);
 		}
 		double start = MPI_Wtime();
 		int sts = dir.executeExternalCommand(cmd,out_files);

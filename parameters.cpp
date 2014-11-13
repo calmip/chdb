@@ -232,7 +232,8 @@ void Parameters::checkOutputDirectory() {
 */
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version 0.6\n";
-	cerr << "Copyright license etc\n";
+	cerr << "Copyright license todo\n";
+/*
 #ifdef NOTMP
 	cerr << "DNOTMP ";
 #else
@@ -243,27 +244,30 @@ void Parameters::usage() {
 #else
 	cerr << "UOUTDIRPERSLAVE\n";
 #endif
-	cerr << "chdb executes an external command line for every file of a given file-type found in the input directory.\n";
+*/
+	cerr << "chdb executes an external command for every file of a given file-type found in the input hierarchy.\n";
+	cerr << "Results are saved to the output hierarchy.\n";
 	cerr << "The work is distributed among the cores using the MPI library.\n\n";
 	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';
 	cerr << "\n";
 	cerr << "REQUIRED PARAMETERS:\n";
 	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
-	cerr << "  --command-line '...'       : The command line to be executed on each input file\n";
-	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line\n";
+	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
+	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
+	cerr << "                               NOTE: if several output files are generated for each command, the names must be separated by a comma (,)\n";
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
-	cerr << "  --in-files file.txt        : Only files whose path is inside file.txt are considered for input\n";
-	cerr << "                               format: One file path/line\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
 	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
 	cerr << "                               load-balancing issues\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
-	cerr << "  --tmp-dir tmpdir           : If specified, computations are performed in this directory\n";
-	cerr << "                               A generated errors.txt may be specified as in-files parameter in a later execution de chdb\n";
 	cerr << "                               are stored in this file for later reference and execution\n";
-	cerr << "  --report report.txt        : Generate a report with some timing info (use only for debug !)\n";
+	cerr << "                               NOTE: The default is to INTERRUPT chdb when the return status is not 0\n";
+	cerr << "  --in-files file.txt        : Only files whose path is inside file.txt are considered for input\n";
+	cerr << "                               Format: One path per line\n";
+	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
+	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
@@ -271,7 +275,7 @@ void Parameters::usage() {
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
 	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
-	cerr << "The following templates are allowed in filenames specified by outfiles and command-line.\n";
+	cerr << "The following templates are allowed in filenames specified in parameters command-line and out-files.\n";
 	cerr << "They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
 	cerr << "\n";
 	cerr << "  %in-dir%       The input directory  (inputdir)\n";

@@ -75,10 +75,11 @@ vector_of_strings Directories::nextBlock() {
  * @brief Replace some templates in the parameter, using the file_path:
  *        file pathes: #path#, #dirname#
  * 
- * @param[in]    p Path used as a source for the template expansion
- * @param[out] command String to expand (generally a command line)
+ * @param[in]  p         Path used as a source for the template expansion
+ * @param[out] text      String to expand (generally a command line)
+ * @param[in]  force_out If true, output directory is forced at begininning of text
  */
-void Directories::completeFilePath(const string& p, string& command) {
+void Directories::completeFilePath(const string& p, string& text, bool force_out) {
 
 	// We must work with a readwrite copy !
 	// p is the path (a/toto.txt), d the dirname (a), n the name (toto.txt), b the basename (toto), e the ext (txt)
@@ -94,12 +95,19 @@ void Directories::completeFilePath(const string& p, string& command) {
 	static string tmpl5="%name%";
 	static string tmpl6="%dirname%";
 	
-	replaceTmpl(tmpl1,id,command);
-	replaceTmpl(tmpl2,od,command);
-	replaceTmpl(tmpl3,p,command);
-	replaceTmpl(tmpl4,b,command);
-	replaceTmpl(tmpl5,n,command);
-	replaceTmpl(tmpl6,d,command);
+	replaceTmpl(tmpl1,id,text);
+	replaceTmpl(tmpl2,od,text);
+	replaceTmpl(tmpl3,p,text);
+	replaceTmpl(tmpl4,b,text);
+	replaceTmpl(tmpl5,n,text);
+	replaceTmpl(tmpl6,d,text);
+	if (force_out) {
+		size_t od_index=text.find(od);
+		// if not found, or not found at start
+		if (od_index!=0) {
+			text = od + '/' + text;
+		}
+	}
 }
 
 /** 
