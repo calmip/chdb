@@ -26,5 +26,5 @@ export OMPI_MCA_ess=^pmi
 export OMPI_MCA_pubsub=^pmi
 export OMPI_MCA_mpi_leave_pinned=1
 
-srun --resv-ports chdb --in-dir pdb --in-type ent --out-dir ps --out-files %out-dir%/%path% --command "./molauto %in-dir%/%path% |./molscript -ps >%out-dir%/%dirname%/%basename%.ps"
+srun --resv-ports chdb --in-dir pdb --in-type ent --out-dir ps --out-files %out-dir%/%path% --sort-by-size --command "./molauto %in-dir%/%path% |./molscript -ps >%out-dir%/%dirname%/%basename%.ps"
 

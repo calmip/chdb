@@ -1,0 +1,21 @@
+Exemple d'utilisation de chdb sur eos
+-------------------------------------
+
+1/ Détarrez ce fichier sur eos
+2/ cd .../molscript
+3/ sbatch molscript.bash
+4/ find ps -type f | wc -l doit renvoyer 40
+5/ ghostscript $(find ps -type f) pour admirer le resultat
+6/ Copiez et modifiez molscript.bash pour adapter la commande chdb a votre application
+
+Pour en savoir plus sur chdb
+----------------------------
+
+module purge
+module load bullxmpi
+mpirun -n 1 chdb --help
+
+...ou http://www.calmip.univ-toulouse.fr/spip/spip.php?article455
+
+
+
