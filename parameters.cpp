@@ -232,7 +232,7 @@ void Parameters::checkOutputDirectory() {
 */
 
 void Parameters::usage() {
-	cerr << "Calcul à Haut DéBit - version 0.6\n";
+	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
 	cerr << "Copyright license todo\n";
 /*
 #ifdef NOTMP

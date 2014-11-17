@@ -666,7 +666,10 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	vector_of_strings output_files;
 
 	cmd = "./coucou.sh";
-	EXPECT_THROW(dir.executeExternalCommand(cmd,output_files),logic_error);
+	int rvl=0;
+	cerr << "10 LINES WILL BE WRITTEN TO STDERR - THIS IS NORMAL BEHAVIOUR\n";
+	EXPECT_NO_THROW(rvl=dir.executeExternalCommand(cmd,output_files));
+	EXPECT_EQ(127,rvl);
 	
 	f = "/B.txt";
 	cmd = "./ext_cmd.sh " + prms.getInDir() + f + " " + prms.getOutDir() + f;

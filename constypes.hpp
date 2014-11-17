@@ -10,6 +10,8 @@
 #include <sstream>
 using namespace std;
 
+#define CHDB_VERSION 0.61
+
 /** 
  * @brief Some predicates
  * 
@@ -32,6 +34,11 @@ inline bool isNotNull(int i) { return (i!=0); }
    comment out to avoid creating an output directory per slave
 */
 //#define OUTDIRPERSLAVE 1
+
+/*
+  number of retries executing the external command if there is an error in system()
+*/
+#define NUMBER_OF_RETRIES 5
 
 /**
    \brief To have a class non copyable, you just have to private derive from this class

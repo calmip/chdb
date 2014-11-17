@@ -20,13 +20,18 @@
 #include <stdexcept>
 using namespace std;
 
+#include "system.hpp"
 #include "parameters.hpp"
 #include "usingfs.hpp"
 #include "basicscheduler.hpp"
 
 void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sched ) {
-	cout << "CHBD - VERSION 0.5 - ";
+	cout << "CHDB - VERSION 0.6 - ";
 	system("date");
+	cout << "---------\n";
+	string host;
+	getHostName(host);
+	cout << "MASTER RUNNING ON " << host << " pid " << getpid() << '\n';
 	cout << "----------\n";
 	cout << "PARAMETERS" << '\n';
 	cout << "----------" << '\n';
@@ -76,14 +81,14 @@ void printTrailer(Scheduler& sched) {
 void writePid() {
 	ostringstream tmp;
 	int rank;
+	string host_name;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	getHostName(host_name);
+
 	tmp << "pid." << rank;
-	char* host_name = (char*) malloc(50);
-	gethostname(host_name,50);
 
 	ofstream p(tmp.str().c_str());
 	p<<"h="<<host_name<<" p="<<getpid()<<endl;
-	free(host_name);
 }
 #else
 void writePid(){}

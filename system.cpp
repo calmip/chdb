@@ -12,12 +12,13 @@ using namespace std;
 
 /** 
  * @brief Execute a command through system, return the exit status or thow an exception
+ *        If there is a fork error (sts=-1) or a not executable /bin/sh error (127), we retry NUMBER_OR_RETRIES times
+ *        before giving up, BUT we write a message to cerr
  * 
  * @param cmd 
  * @param err_flg (default=false) If true, an exception is thrown if the command returns an error
  * 
- * @return The return status of the command
- * @exception throw a logic_error exception if system itself produce an error, even when err_flg is false
+ * @return The return status of the command, OR -1 (coud not fork) OR 127 (could not execute /bin/sh)
  *
  */
 
@@ -26,29 +27,71 @@ using namespace std;
 int callSystem(string cmd, bool err_flg) {
 #ifdef DEBUG_SYSTEM
 	cerr << "DEBUG - CALLING callSystem cmd=" << cmd << '\n';
-#else
-	cmd += " 2>/dev/null";
 #endif
-	
-	int sts = system(cmd.c_str());
-	int csts= WEXITSTATUS(sts);
-	if (sts==-1 || csts==127) {
-		string msg = "ERROR - system(";
-		msg += cmd;
-		msg += ") - ";
-		if (sts==-1) {
-			msg += "returned -1";
+
+	int retry = NUMBER_OF_RETRIES;
+	bool should_retry;
+	int sts  = 0;
+	int csts = 0;
+	do {
+		sts = system(cmd.c_str());
+		csts= WEXITSTATUS(sts);
+		if (sts==-1 || csts==127) {
+			string host;
+			getHostName(host);
+			string msg = "WARNING ON ";
+			msg += host;
+			msg += " - system(";
+			msg += cmd;
+			msg += ") - ";
+			if (sts==-1) {
+				msg += "returned -1";
+				csts = sts;
+			} else {
+				msg += "could not execute cmd";
+			}
+			cerr << msg << '\n';
+			should_retry = true;
+
+			// Choose a sleep duration between 0 and 1 s
+			unsigned int duration = 1000 * (1.0 * random())/RAND_MAX;
+			sleepMs(duration);
 		} else {
-			msg += "could not execute cmd";
+			should_retry = false;
 		}
-		throw(logic_error(msg));
-	}
+		retry--;
+	} while (should_retry && retry>0);
+
 	if (csts!=0 && err_flg) {
 		ostringstream err;
 		err << "ERROR ! " << cmd << " returned an error: " << csts;
 		throw(runtime_error(err.str()));
 	}
 	return csts;
+}
+
+/** 
+ * @brief Call gethostname and put the result in a string
+ * 
+ * @param[out] h 
+ */
+void getHostName(string& h) {
+	char* host_name = (char*) malloc(50);
+	gethostname(host_name,50);
+	h = host_name;
+	free(host_name);
+}
+
+/** 
+ * @brief Sleep duration, counted in milliseconds
+ * 
+ * @param duration 
+*/
+void sleepMs(unsigned int duration) {
+	struct timespec req;
+	req.tv_sec  = 0;
+	req.tv_nsec = 1000000*duration; // 1 ms = 1000000 ns
+	nanosleep(&req,NULL);
 }
 
 /** 

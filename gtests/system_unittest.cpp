@@ -18,8 +18,11 @@ TEST_F(ChdbTest,callSystem) {
 	EXPECT_NO_THROW(callSystem("cp -a inputdir / 2>/dev/null"));
 	EXPECT_NO_THROW(callSystem("cp -a inputdir inputdir.copy"));
 	EXPECT_NO_THROW(callSystem("rm -r inputdir.copy"));
-	EXPECT_THROW(callSystem("uptimeee 2>/dev/null",false),logic_error);
-	EXPECT_THROW(callSystem("uptimeee 2>/dev/null",true),logic_error);
+	cerr << "20 LINES WILL BE WRITTEN TO STDERR - THIS IS NORMAL BEHAVIOUR\n";
+	int rvl=0;
+	EXPECT_NO_THROW(rvl=callSystem("uptimeee",false));
+	EXPECT_EQ(127,rvl);
+	EXPECT_THROW(callSystem("uptimeee",true),runtime_error);
 }
 
 TEST(Parameters,split) {
@@ -50,10 +53,10 @@ TEST(Parameters,split) {
 TEST(parseFilePath,parseFilePath) {
 	string d,n,b,e;
 	parseFilePath("/path/to/some/dir/toto.txt",d,n,b,e);
-	EXPECT_EQ(d,"/path/to/some/dir");
-	EXPECT_EQ(n,"toto.txt");
-	EXPECT_EQ(b,"toto");
-	EXPECT_EQ(e,"txt");
+	EXPECT_EQ("/path/to/some/dir",d);
+	EXPECT_EQ("toto.txt",n);
+	EXPECT_EQ("toto",b);
+	EXPECT_EQ("txt",e);
 
 	parseFilePath("/toto.txt",d,n,b,e);
 	EXPECT_EQ(d,"/");
