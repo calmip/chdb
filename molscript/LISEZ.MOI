@@ -11,11 +11,7 @@ Exemple d'utilisation de chdb sur eos
 Pour en savoir plus sur chdb
 ----------------------------
 
-module purge
-module load bullxmpi
-mpirun -n 1 chdb --help
+chdb --help
 
 ...ou http://www.calmip.univ-toulouse.fr/spip/spip.php?article455
-
-
 
