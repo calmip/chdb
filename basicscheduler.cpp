@@ -372,7 +372,7 @@ void BasicScheduler::mainLoopSlave() {
 	// Send a last message to the master: tag END, name of consolidated output directory
 	file_pathes.clear();
 	return_values.clear();
-	wall_time_slaves.clear();
+	wall_times.clear();
 	if (!first_execution) {
 		file_pathes.push_back(dir.getOutDir());
 	}
@@ -572,7 +572,9 @@ void BasicScheduler::readFrmRecvBfr	(const void* bfr) {
 }
 
 /** 
- * @brief The invariant is: return_values empty, OR same size as file_pathes
+ * @brief The invariants:
+ *              1/ return_values empty, OR same size as file_pathes
+ *              2/ wall_times empty, OR same size as file_pathes
  *
  */
 void BasicScheduler::checkInvariant() {

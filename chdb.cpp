@@ -26,7 +26,7 @@ using namespace std;
 #include "basicscheduler.hpp"
 
 void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sched ) {
-	cout << "CHDB - VERSION 0.6 - ";
+	cout << "CHDB - VERSION " << CHDB_VERSION << " - ";
 	system("date");
 	cout << "---------\n";
 	string host;
