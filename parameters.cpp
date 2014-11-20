@@ -234,18 +234,20 @@ void Parameters::checkOutputDirectory() {
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
 	cerr << "Copyright license todo\n";
-/*
+
+	if (isVerbose()) {
 #ifdef NOTMP
-	cerr << "DNOTMP ";
+		cerr << "DNOTMP ";
 #else
-	cerr << "UNOTMP ";
+		cerr << "UNOTMP ";
 #endif
 #ifdef OUTDIRPERSLAVE
-	cerr << "DOUTDIRPERSLAVE\n";
+		cerr << "DOUTDIRPERSLAVE\n";
 #else
-	cerr << "UOUTDIRPERSLAVE\n";
+		cerr << "UOUTDIRPERSLAVE\n";
 #endif
-*/
+	}
+	
 	cerr << "chdb executes an external command for every file of a given file-type found in the input hierarchy.\n";
 	cerr << "Results are saved to the output hierarchy.\n";
 	cerr << "The work is distributed among the cores using the MPI library.\n\n";

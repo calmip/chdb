@@ -19,7 +19,7 @@ TEST_F(SchedTestStr,vctToBfrStrings) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	
@@ -43,7 +43,7 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	
@@ -73,7 +73,7 @@ TEST_F(SchedTestInt,vctToBfrInt) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	
@@ -102,7 +102,7 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	
@@ -132,7 +132,7 @@ TEST_F(SchedTestDbl,bfrToVctDbl) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	

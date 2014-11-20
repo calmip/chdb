@@ -15,6 +15,7 @@
 
 //#include <vector>
 //#include <string>
+#include <list>
 //#include <stdexcept>
 #include <algorithm>
 using namespace std;
@@ -27,17 +28,26 @@ using namespace std;
 // The size max of a file path
 #define FILEPATH_MAXLENGTH 2000
 
+/** This struct is used for sorting the files before storing them - see readDir */
+struct Finfo {
+	Finfo(const string& n, off_t s): name(n),st_size(s) {};
+  string name;
+  off_t st_size;
+};
 
 class Directories: private NonCopyable {
 
 public:
 	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()){};
+	virtual ~Directories(){};
 	void setRank(int,int);
 
 	virtual void   makeOutDir(bool,bool) = 0;
 	virtual void   makeTempOutDir()  = 0;
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;
+	virtual void findOrCreateDir(const string &) const = 0;
+	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const = 0;
 
 	virtual void consolidateOutput(bool from_temp, const string& path="") const = 0;
 
@@ -63,7 +73,8 @@ public:
 	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
 
-	friend class ChdbTest_block1_Test;
+	friend class TestCase1_block1_Test;
+	friend class TestCase1_usingFsfindOrCreateDir_Test;
 
 protected:
 	const Parameters& prms;

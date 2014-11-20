@@ -12,12 +12,25 @@
 using namespace std;
 
 
-TEST_F(ChdbTest,callSystem) {
-	EXPECT_THROW(callSystem("cp -a inputdir / 2>/dev/null",true),runtime_error);
-	EXPECT_NO_THROW(callSystem("cp -a inputdir / 2>/dev/null",false));
-	EXPECT_NO_THROW(callSystem("cp -a inputdir / 2>/dev/null"));
-	EXPECT_NO_THROW(callSystem("cp -a inputdir inputdir.copy"));
-	EXPECT_NO_THROW(callSystem("rm -r inputdir.copy"));
+TEST_F(ChdbTest1,callSystem) {
+	string cmd = "cp -a ";
+	cmd += getInputDir();
+	cmd += " / 2>/dev/null";
+	EXPECT_THROW(callSystem(cmd,true),runtime_error);
+	EXPECT_NO_THROW(callSystem(cmd,false));
+	EXPECT_NO_THROW(callSystem(cmd));
+
+	cmd = "cp -a ";
+	cmd += getInputDir();
+	cmd += " ";
+	cmd += getInputDir();
+	cmd += ".copy";
+	EXPECT_NO_THROW(callSystem(cmd));
+
+	cmd = "rm -r ";
+	cmd += getInputDir();
+	cmd += ".copy";
+	EXPECT_NO_THROW(callSystem(cmd));
 	cerr << "20 LINES WILL BE WRITTEN TO STDERR - THIS IS NORMAL BEHAVIOUR\n";
 	int rvl=0;
 	EXPECT_NO_THROW(rvl=callSystem("uptimeee",false));

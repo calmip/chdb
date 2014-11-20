@@ -1,6 +1,6 @@
 
 /**
-   unit tests for the class Directories, and its subclasses
+   "unit tests" calling chdb by itself
 */
 
 
@@ -10,252 +10,215 @@
 #include <fstream>
 using namespace std;
 	
+using ::testing::TestWithParam;
+using ::testing::Values;
+
 // One slave, 5 files, blocks of 1 file
-TEST_F(ChdbTest1,Block1NoTmp) {
-
-	string in_dir = "inputdir";
-
+TEST_P(TestCase1,Block1) {
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file %out-dir%/%path%";
-	cmd += " >stdoe 2>&1";
-
-	cout << "NOW CALLING " << cmd << '\n';
-	int rvl=system(cmd.c_str());
-	EXPECT_EQ(0,rvl);
-	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
-
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
-};
-
-// One slave, 5 files, blocks of 1 file, using tmpdir
-TEST_F(ChdbTest1,Block1WithTmp) {
-
-	string in_dir = "inputdir";
-
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
-	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
-	cmd += "--tmp-dir .";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	string output_dir = getInputDir() + ".out";
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
 // One slave, blocks of 2 files, no error generated
-TEST_F(ChdbTest1,Block2) {
-
-	string in_dir = "inputdir";
-
+TEST_P(TestCase1,Block2) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file %out-dir%/%path%";
-	cmd += "--block-size 2";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--block-size 2 ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
 // One slave, One block of 5 files, no error generated
-TEST_F(ChdbTest1,Block5) {
-
-	string in_dir = "inputdir";
-
+TEST_P(TestCase1,Block5) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file %out-dir%/%path%";
-	cmd += "--block-size 5";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--block-size 5 ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
 // An error is generated at first file, but it is trapped to the file errors.txt
-TEST_F(ChdbTest1,onerror) {
-
-	string in_dir = "inputdir";
-
+TEST_P(TestCase1,onerror) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
 	cmd += "--on-error errors.txt ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 
 	// stderr should NOT have the word ABORTING in it
 	EXPECT_NE(0,callSystem("grep -q ^ABORTING stdoe"));
 
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
 	EXPECT_EQ("1\tD/C.txt\n\n",readFile("errors.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
 };
 
 // Using the errors.txt file created at previous test and limiting treatment to this file
-TEST_F(ChdbTest1,onefile) {
+// NOTE - The file is RECREATED because we are not sure of the tests execution order
+TEST_P(TestCase1,onefile) {
 
-    // The file errors.txt should have been created by previous test
-	string in_dir = "inputdir";
+	naco err("errors.txt","1\tD/C.txt\n\n");
+	createFile(".",err);
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
 	cmd += "--in-files errors.txt ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
 	// Only ONE file created !
-	EXPECT_EQ(false,existsFile("inputdir.out/B.txt"));
-	EXPECT_EQ(false,existsFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(false,existsFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_EQ(false,existsFile("inputdir.out/A.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	EXPECT_EQ(false,existsFile(output_dir+"/B.txt"));
+	EXPECT_EQ(false,existsFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(false,existsFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(false,existsFile(output_dir+"/A.txt"));
 };
 
 // two slaves, block size 3, no error
-TEST_F(ChdbTest1,twoslaves_blk3) {
-
-	string in_dir = "inputdir";
-	system("rm -r inputdir.out");
-
+TEST_P(TestCase1,twoslaves_blk3) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
 	cmd += "--block-size 3 ";
-	cmd += "--sort-by-size";
+	cmd += "--sort-by-size ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
 };
 
 // 5 files, 5 slaves, no error generated
-TEST_F(ChdbTest1,fiveslaves) {
-
-	string in_dir = "inputdir";
-	system("rm -r inputdir.out");
-
+TEST_P(TestCase1,fiveslaves) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 5 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file %out-dir%/%path%";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile("inputdir.out/A.txt"));
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile("inputdir.out/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile("inputdir.out/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile("inputdir.out/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile("inputdir.out/D/C.txt"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
+	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
 };
 
 // Trying 5 files, blocks of 1 files, 10 slaves = should refuse to start without creating inputdir.out
-TEST_F(ChdbTest1,tenslaves) {
-
-	string in_dir = "inputdir";
-
+TEST_P(TestCase1,tenslaves) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 10 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir "; cmd += in_dir; cmd += " ";
-	cmd += "--out-file %out-dir%/%path%";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--out-file %out-dir%/%path% ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_NE(0,rvl);
 	EXPECT_EQ(0,callSystem("grep -q 'ERROR - You should NOT use more than 5 slaves' stdoe"));
-	EXPECT_THROW(callSystem("rm -r /tmp/inputdir.out*",true),runtime_error);
 };
 
 // Trying 10 files, blocks of 2 files, 2 slaves, file 0 is in error
 // The blocks 0, 1, maybe 2 are treated, the blocks 4 & 5 should not be
-TEST_F(ChdbTest2,errBlock2Slaves2) {
-
+TEST_P(TestCase2,errBlock2Slaves2) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir inputdir ";
-	cmd += "--block-size 2";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--block-size 2 ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 
@@ -263,33 +226,38 @@ TEST_F(ChdbTest2,errBlock2Slaves2) {
 	EXPECT_EQ(0,callSystem("grep -q ^ABORTING stdoe"));
 
 	// files created = 0 1 2 3
-	EXPECT_EQ(expected_file_contents["0.txt"],readFile("inputdir.out/0.txt"));
-	EXPECT_EQ(expected_file_contents["1.txt"],readFile("inputdir.out/1.txt"));
-	EXPECT_EQ(expected_file_contents["2.txt"],readFile("inputdir.out/2.txt"));
-	EXPECT_EQ(expected_file_contents["3.txt"],readFile("inputdir.out/3.txt"));
+	EXPECT_EQ(expected_file_contents["0.txt"],readFile(output_dir+"/0.txt"));
+	EXPECT_EQ(expected_file_contents["1.txt"],readFile(output_dir+"/1.txt"));
+	EXPECT_EQ(expected_file_contents["2.txt"],readFile(output_dir+"/2.txt"));
+	EXPECT_EQ(expected_file_contents["3.txt"],readFile(output_dir+"/3.txt"));
+
+	cmd = "ls ";
+	cmd += output_dir;
 	// may be created, may be not (depends on timing)
-//	EXPECT_THROW(callSystem("ls inputdir.out/4.txt",true),runtime_error);
-//	EXPECT_THROW(callSystem("ls inputdir.out/5.txt",true),runtime_error);
+//	EXPECT_THROW(callSystem(cmd+"/4.txt",true),runtime_error);
+//	EXPECT_THROW(callSystem(cmd+"/5.txt",true),runtime_error);
 
 	// should not be created because of interruption
-	EXPECT_THROW(callSystem("ls inputdir.out/6.txt",true),runtime_error);
-	EXPECT_THROW(callSystem("ls inputdir.out/7.txt",true),runtime_error);
-	EXPECT_THROW(callSystem("ls inputdir.out/8.txt",true),runtime_error);
-	EXPECT_THROW(callSystem("ls inputdir.out/9.txt",true),runtime_error);
+	cerr << "4 LINES WILL BE WRITTEN TO STDERR - THIS IS NORMAL BEHAVIOUR\n";
+	EXPECT_THROW(callSystem(cmd+"/6.txt",true),runtime_error);
+	EXPECT_THROW(callSystem(cmd+"/7.txt",true),runtime_error);
+	EXPECT_THROW(callSystem(cmd+"/8.txt",true),runtime_error);
+	EXPECT_THROW(callSystem(cmd+"/9.txt",true),runtime_error);
 };
 
 // Trying 10 files, blocks of 2 files, 2 slaves, file 9 is in error
 // Every file should be created, as the error happens quite at the end
-TEST_F(ChdbTest3,errBlock2Slaves2) {
-
+TEST_P(TestCase3,errBlock2Slaves2) {
+	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
-	cmd += "--in-dir inputdir ";
-	cmd += "--block-size 2";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--block-size 2 ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir();
 	cmd += " >stdoe 2>&1";
 
-	cout << "NOW CALLING " << cmd << '\n';
+	cerr << "NOW CALLING " << cmd << '\n';
 	int rvl=system(cmd.c_str());
 	EXPECT_EQ(0,rvl);
 
@@ -297,18 +265,43 @@ TEST_F(ChdbTest3,errBlock2Slaves2) {
 	EXPECT_EQ(0,callSystem("grep -q ^ABORTING stdoe"));
 
 	// files created = 1 2 3
-	EXPECT_EQ(expected_file_contents["0.txt"],readFile("inputdir.out/0.txt"));
-	EXPECT_EQ(expected_file_contents["1.txt"],readFile("inputdir.out/1.txt"));
-	EXPECT_EQ(expected_file_contents["2.txt"],readFile("inputdir.out/2.txt"));
-	EXPECT_EQ(expected_file_contents["3.txt"],readFile("inputdir.out/3.txt"));
-	EXPECT_EQ(expected_file_contents["4.txt"],readFile("inputdir.out/4.txt"));
-	EXPECT_EQ(expected_file_contents["5.txt"],readFile("inputdir.out/5.txt"));
-	EXPECT_EQ(expected_file_contents["6.txt"],readFile("inputdir.out/6.txt"));
-	EXPECT_EQ(expected_file_contents["7.txt"],readFile("inputdir.out/7.txt"));
-	EXPECT_EQ(expected_file_contents["8.txt"],readFile("inputdir.out/8.txt"));
-	EXPECT_EQ(expected_file_contents["9.txt"],readFile("inputdir.out/9.txt"));
+	EXPECT_EQ(expected_file_contents["0.txt"],readFile(output_dir+"/0.txt"));
+	EXPECT_EQ(expected_file_contents["1.txt"],readFile(output_dir+"/1.txt"));
+	EXPECT_EQ(expected_file_contents["2.txt"],readFile(output_dir+"/2.txt"));
+	EXPECT_EQ(expected_file_contents["3.txt"],readFile(output_dir+"/3.txt"));
+	EXPECT_EQ(expected_file_contents["4.txt"],readFile(output_dir+"/4.txt"));
+	EXPECT_EQ(expected_file_contents["5.txt"],readFile(output_dir+"/5.txt"));
+	EXPECT_EQ(expected_file_contents["6.txt"],readFile(output_dir+"/6.txt"));
+	EXPECT_EQ(expected_file_contents["7.txt"],readFile(output_dir+"/7.txt"));
+	EXPECT_EQ(expected_file_contents["8.txt"],readFile(output_dir+"/8.txt"));
+	EXPECT_EQ(expected_file_contents["9.txt"],readFile(output_dir+"/9.txt"));
 };
+// Calling "none" for tmp-dir is just a trick: "none" does not exist, so there is NO tmp-dir
+// If you do NOT specify --tmp-dir, you get the default tmpdir, which may - or not - be defined
+// See parameters.cpp
+// If you create "none" with "mkdir none" you are no more "NoTmp" and the test fails !
 
+auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithParamsUsingFs("none"));
+auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
+auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
+
+
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase1,
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+);
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase2,
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+);
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase3,
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+);
 
 // Step 3. Call RUN_ALL_TESTS() in main().
 //

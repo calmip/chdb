@@ -11,29 +11,37 @@
 #include <sstream>
 #include <algorithm>
 #include <list>
+#include<memory>
 using namespace std;
 
-#define OUTDIR "inputdir.out"
+#define OUTEXT ".out"
 #ifdef OUTDIRPERSLAVE
-#define SLAVEOUTDIR "inputdir.out.1"
+#define SLAVEOUTEXT ".out.1"
 #else   
-#define SLAVEOUTDIR OUTDIR
+#define SLAVEOUTEXT OUTEXT
 #endif
 
+using ::testing::TestWithParam;
+using ::testing::Values;
+
 // testing UsingFs::makeOutDir
-TEST_F(ChdbTest,usingFsmkdir) {
+TEST_P(TestCase1,usingFsmkdir) {
 	// Init prms
 	char* argv[10];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+	//UsingFs dir(prms);
 
 	// create inputdir.out
 	EXPECT_NO_THROW(dir.makeOutDir(false,true));
@@ -48,106 +56,235 @@ TEST_F(ChdbTest,usingFsmkdir) {
 	string cmd="rm -r " + prms.getOutDir();
 	EXPECT_NO_THROW(callSystem(cmd,true));
 
-	// Call with rank_flg=true
+	// Call with rank_flg=true, directory inputdir.out.1 created... or not
 	dir.setRank(1,2);
 	EXPECT_NO_THROW(dir.makeOutDir(true,true));
+	string out_1 = getInputDir();
+#ifdef OUTDIRPERSLAVE
+	out_1 += ".out.1";
+	cmd = "ls -ld " + out_1 + " >&/dev/null";
+	EXPECT_NO_THROW(callSystem(cmd,true));
+	cmd = "rm -r " + out_1;
+	EXPECT_NO_THROW(callSystem(cmd,true));
+#else
+	out_1 += ".out";
+	cmd = "ls -ld " + out_1 + " >&/dev/null";
+	EXPECT_THROW(callSystem(cmd,true),runtime_error);
+	cmd = "rm -r " + out_1 + " >&/dev/null";;
+	EXPECT_THROW(callSystem(cmd,true),runtime_error);
+#endif
+
+	// DIRECTORY INPUTDIR.OUT not CREATED ANYWAY !
 	cmd="rm -r " + prms.getOutDir();
+	cmd += " 2>/dev/null";
 	EXPECT_THROW(callSystem(cmd,true),runtime_error);
-
-	FREE_ARGV(7);
-}
-
-// testing UsingFs::makeTempOutDir, No temporary
-TEST(usingFs,usingFsMakeTempOutDirNoTmp) {
-	// Init prms
-	char* argv[10];
-	INIT_ARGV(0,"directories_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,"inputdir");
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,"none");
-
-	// Calling "none" tmp-dir is just a trick: "none" does not exist, so there is NO tmp-dir
-	// If you do NOT specify --tmp-dir, you get the default tmpdir, which may - or not - be defined
-	// See parameters.cpp
-	// If you create "none" with "mkdir none" you are no more "NoTmp" and the test fails !
-
-	string blank = "";
-	string cmd = "ls -l ";
-	string out = "inputdir.out";
-	out += "_??????";
-	cmd += out;
-
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
-	dir.makeOutDir(false,true);
-	dir.makeTempOutDir();
-	EXPECT_EQ(prms.getOutDir(),dir.getTempOutDir());
-	EXPECT_THROW(callSystem(cmd,true),runtime_error);
-	system("rm -r inputdir.out*");
 
 	FREE_ARGV(9);
 }
 
-// testing UsingFs::makeTempOutDir, with temporary
-TEST(usingFs,usingFsMakeTempOutDirWithTmp) {
+// testing UsingFs::makeTempOutDir
+TEST_P(TestCase1,MakeTempOutDir) {
 	// Init prms
 	char* argv[10];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,"inputdir");
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,".");
-
-	string blank = "";
-	string cmd = "ls -l ";
-	string out = OUTDIR;
-	out += "_??????";
-	cmd += out;
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
 
 	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+	//UsingFs dir(prms);
+
 	dir.makeOutDir(false,true);
 	dir.makeTempOutDir();
 	string tmp_out = dir.getTempOutDir();
+
+	string blank = "";
+	string cmd = "ls -l ";
+	string output_dir = getInputDir() + OUTEXT;
+	string out = output_dir + "_??????";
+	cmd += out;
+	cmd += " &>/dev/null";
+
+	// If tmp not used callSystem should throw an exception (inputdir_????? does not exist)
+	// A msg should be logged to cerr
 #ifdef NOTMP
-	EXPECT_EQ(OUTDIR,tmp_out);
+	EXPECT_EQ(output_dir,tmp_out);
+	EXPECT_EQ(prms.getOutDir(),tmp_out);
 	EXPECT_THROW(callSystem(cmd,true),runtime_error);
 #else
-	EXPECT_NE(blank,tmp_out);
-	EXPECT_NO_THROW(callSystem(cmd,true));
-	string cmd1="rmdir ";
-	cmd1 += tmp_out;
-	EXPECT_NO_THROW(callSystem(cmd1,true));
+	if (GetParam()->getTmpDir() == "none") {
+		EXPECT_EQ(output_dir,tmp_out);
+		EXPECT_EQ(prms.getOutDir(),tmp_out);
+		EXPECT_THROW(callSystem(cmd,true),runtime_error);
+	}
+	else
+	{
+		EXPECT_NE(blank,tmp_out);
+		EXPECT_NO_THROW(callSystem(cmd,true));
+		string cmd1="rmdir ";
+		cmd1 += tmp_out;
+		EXPECT_NO_THROW(callSystem(cmd1,true));
+	}
 #endif
 	
-	system("rm -r inputdir.out*");
+	FREE_ARGV(9);
+};
+
+// testing UsingFs::getTempOutDir, with or not a temporary directory
+TEST_P(TestCase1,getTempOutDir) {
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+	//UsingFs dir(prms);
+
+	// exception tempdir not yet initialized !
+	EXPECT_THROW(dir.getTempOutDir(),logic_error);
+
+	// exception outdir not yet initialized !
+	EXPECT_THROW(dir.makeTempOutDir(),logic_error);
+	EXPECT_THROW(dir.getOutDir(),logic_error);
+
+	// making things correctly
+	EXPECT_NO_THROW(dir.makeOutDir(false,true));
+	EXPECT_NO_THROW(dir.makeTempOutDir());
+
+	EXPECT_NO_THROW(dir.getTempOutDir());
+	string tmpdir = dir.getTempOutDir();
+	
+	string output_dir = getInputDir() + OUTEXT;
+	EXPECT_EQ((string) output_dir, dir.getOutDir());
+
+	string cmd = "rmdir ";
+	cmd += output_dir;
+
+#ifdef NOTMP
+	// NOTMP => The name of the tmp directory is ALSO the name of the output directory
+	EXPECT_EQ((string) output_dir,tmpdir);
+	EXPECT_NO_THROW(callSystem(cmd));
+#else
+	if (GetParam()->getTmpDir() == "none") {
+		EXPECT_EQ((string) output_dir,tmpdir);
+		EXPECT_NO_THROW(callSystem(cmd));
+	}
+	else
+	{
+		// Temporary => Some other name
+		string s=GetParam()->getTmpDir()+'/'+output_dir+'_';
+		size_t l=s.length();
+		EXPECT_EQ(s,tmpdir.substr(0,l));
+		
+		cmd = "rmdir ";
+		cmd += s;
+		cmd += "??????";
+		EXPECT_NO_THROW(callSystem(cmd));
+	}
+#endif
+
+	FREE_ARGV(9);
+}
+
+// testing Directory::completeFilePath, with or without temporary directory
+TEST_P(TestCase1,completeFilePath) {
+
+	// Init prms
+	char* argv[10];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
+	dir.setRank(1,2);
+	dir.makeOutDir(true,true);
+	dir.makeTempOutDir();
+
+	string f1 = "A/B/C/D.txt";
+
+	string s1 = "%out-dir%/%path%";
+	string s1_1 = "%path%";
+	string s1_2 = s1_1;
+	string s2 = "%out-dir%/%name%";
+	string s3 = "%out-dir%/%basename%.out";
+	string s4 = "%out-dir%/%dirname%/%basename%.out";
+	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
+	dir.completeFilePath(f1,s1);
+
+	// Testing the behaviour when %out-dir% is not specified
+	dir.completeFilePath(f1,s1_1);
+	dir.completeFilePath(f1,s1_2,true);
+
+	dir.completeFilePath(f1,s2);
+	dir.completeFilePath(f1,s3);
+	dir.completeFilePath(f1,s4);
+	dir.completeFilePath(f1,s5);
+
+	string slave_outdir = dir.getTempOutDir();
+	string expected_s1 = slave_outdir + "/A/B/C/D.txt";
+	string expected_s1_1="A/B/C/D.txt";
+	string expected_s1_2 = expected_s1;
+	string expected_s2 = slave_outdir + "/D.txt";
+	string expected_s3 = slave_outdir + "/D.out";
+	string expected_s4 = slave_outdir + "/A/B/C/D.out";
+	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
+	vector_of_strings block;
+	vector_of_strings expected_block;
+
+	EXPECT_EQ(expected_s1,s1);
+	EXPECT_EQ(expected_s1_1,s1_1);
+	EXPECT_EQ(expected_s1_2,s1_2);
+	EXPECT_EQ(expected_s2,s2);
+	EXPECT_EQ(expected_s3,s3);
+	EXPECT_EQ(expected_s4,s4);
+	EXPECT_EQ(expected_s5,s5);
 
 	FREE_ARGV(9);
 }
 
 // testing UsingFs::findOfCreateDir (subdirectories of output dir)
-TEST_F(ChdbTest,usingFsfindOrCreateDir) {
+TEST_P(TestCase1,usingFsfindOrCreateDir) {
 	// Init prms
 	char* argv[10];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	// create the directory a/b/c/d/e, then the file f.txt
 	EXPECT_NO_THROW(dir.findOrCreateDir("a/b/c/d/e/f.txt"));
@@ -167,11 +304,11 @@ TEST_F(ChdbTest,usingFsfindOrCreateDir) {
 	string cmd="rm -r a";
 	system(cmd.c_str());
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 }
 
 // testing UsingFs::getFiles, unsorted (ie sorted in their names)
-TEST_F(ChdbTest,getFiles_Unsorted) {
+TEST_P(TestCase1,getFiles_Unsorted) {
 
 	// Init prms
 	char* argv[10];
@@ -179,12 +316,17 @@ TEST_F(ChdbTest,getFiles_Unsorted) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
+
 	vector_of_strings found_files=dir.getFiles();
 	vector_of_strings expected_files;
 	expected_files.push_back("A.txt");
@@ -198,12 +340,12 @@ TEST_F(ChdbTest,getFiles_Unsorted) {
 	found_files=dir.getFiles();
 	EXPECT_EQ(expected_files,found_files);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 
 }
 
 // testing UsingFs::getFiles, sorted in size
-TEST_F(ChdbTest,getFiles_Sorted) {
+TEST_P(TestCase1,getFiles_Sorted) {
 
 	// Init prms
 	char* argv[10];
@@ -211,14 +353,19 @@ TEST_F(ChdbTest,getFiles_Sorted) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--sort-by-size");
+	INIT_ARGV(8,"--tmp-dir");
+	INIT_ARGV(9,GetParam()->getTmpDir().c_str());
 	
    	// Sort by size
-	Parameters prms(8,argv);
-	UsingFs dir(prms);
+	Parameters prms(10,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
+
 	dir.setRank(0,4);
 	vector_of_strings found_files=dir.getFiles();
 	list<string> expected_files;
@@ -234,12 +381,12 @@ TEST_F(ChdbTest,getFiles_Sorted) {
 	found_files=dir.getFiles();
 	EXPECT_EQ(true,equal(expected_files.begin(),expected_files.end(),found_files.begin()));
 
-	FREE_ARGV(8);
+	FREE_ARGV(10);
 
 }
 
 // Testing blocks of 1 file (default)
-TEST_F(ChdbTest,block1) {
+TEST_P(TestCase1,block1) {
 
 	// Init prms
 	char* argv[10];
@@ -247,12 +394,16 @@ TEST_F(ChdbTest,block1) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
-	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	vector_of_strings block;
 	vector_of_strings expected_block;
@@ -305,26 +456,30 @@ TEST_F(ChdbTest,block1) {
 	expected_block.clear();
 	EXPECT_EQ(expected_block,block);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 
 }
 // Testing blocks of 2 files
-TEST_F(ChdbTest,block2) {
+TEST_P(TestCase1,block2) {
 
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"2");
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	vector_of_strings block;
 	vector_of_strings expected_block;
@@ -357,27 +512,31 @@ TEST_F(ChdbTest,block2) {
 	expected_block.clear();
 	EXPECT_EQ(expected_block,block);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 
 }
 
 // Testing nextBlock, block size == total number of files
-TEST_F(ChdbTest,block3) {
+TEST_P(TestCase1,block3) {
 
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"5");
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	vector_of_strings block;
 	vector_of_strings expected_block;
@@ -400,27 +559,31 @@ TEST_F(ChdbTest,block3) {
 	expected_block.clear();
 	EXPECT_EQ(expected_block,block);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 
 }
 
 // Testing nextBlock, block size > total number of files
-TEST_F(ChdbTest,block4) {
+TEST_P(TestCase1,block4) {
 
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"10");
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	vector_of_strings block;
 	vector_of_strings expected_block;
@@ -443,206 +606,13 @@ TEST_F(ChdbTest,block4) {
 	expected_block.clear();
 	EXPECT_EQ(expected_block,block);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 
 }
 
-// testing UsingFs::getTempOutDir, no temporary directory !
-TEST_F(ChdbTest,getTempOutDirNoTmp) {
-	// Init prms
-	char* argv[10];
-	INIT_ARGV(0,"directories_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,"none");
-
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
-
-	EXPECT_THROW(dir.getOutDir(),logic_error);
-	dir.makeOutDir(false,true);
-	EXPECT_NO_THROW(dir.getOutDir());
-	EXPECT_EQ((string) OUTDIR, dir.getOutDir());
-
-	EXPECT_THROW(dir.getTempOutDir(),logic_error);
-	dir.makeTempOutDir();
-	EXPECT_NO_THROW(dir.getTempOutDir());
-	EXPECT_EQ((string) OUTDIR,dir.getTempOutDir());
-
-	FREE_ARGV(9);
-}
-
-// testing UsingFs::getTempOutDir, with a temporary directory
-TEST_F(ChdbTest,getTempOutDirWithTmp) {
-	// Init prms
-	char* argv[10];
-	INIT_ARGV(0,"directories_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,".");
-
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
-
-	// exception tempdir not yet initialized !
-	EXPECT_THROW(dir.getTempOutDir(),logic_error);
-
-	// exception outdir not yet initialized !
-	EXPECT_THROW(dir.makeTempOutDir(),logic_error);
-	EXPECT_THROW(dir.getOutDir(),logic_error);
-
-	// making things correctly
-	EXPECT_NO_THROW(dir.makeOutDir(false,true));
-	EXPECT_NO_THROW(dir.makeTempOutDir());
-
-	EXPECT_NO_THROW(dir.getTempOutDir());
-	string tmpdir = dir.getTempOutDir();
-	EXPECT_EQ((string) OUTDIR ,dir.getOutDir());
-
-#ifdef NOTMP
-	// NOTMP => The name of the tmp directory is ALSO the name of the output directory
-	EXPECT_EQ((string) OUTDIR,tmpdir);
-	EXPECT_NO_THROW(callSystem("rmdir inputdir.out"));
-#else
-	// NOTMP not defined => Other name
-	EXPECT_EQ((string) "./inputdir.out_",tmpdir.substr(0,15));
-	EXPECT_NO_THROW(callSystem("rmdir inputdir.out_??????"));
-#endif
-
-	FREE_ARGV(9);
-}
-
-// testing Directory::completeFilePath, no temporary directory
-TEST_F(ChdbTest,completeFilePathNoTmp) {
-
-	// Init prms
-	char* argv[10];
-	INIT_ARGV(0,"directories_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,"none");
-	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
-	dir.setRank(1,2);
-	dir.makeOutDir(true,true);
-	dir.makeTempOutDir();
-
-	string f1 = "A/B/C/D.txt";
-
-	string s1 = "%out-dir%/%path%";
-	string s1_1 = "%path%";
-	string s1_2 = s1_1;
-	string s2 = "%out-dir%/%name%";
-	string s3 = "%out-dir%/%basename%.out";
-	string s4 = "%out-dir%/%dirname%/%basename%.out";
-	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
-	dir.completeFilePath(f1,s1);
-
-	// Testing the behaviour when %out-dir% is not specified
-	dir.completeFilePath(f1,s1_1);
-	dir.completeFilePath(f1,s1_2,true);
-
-	dir.completeFilePath(f1,s2);
-	dir.completeFilePath(f1,s3);
-	dir.completeFilePath(f1,s4);
-	dir.completeFilePath(f1,s5);
-
-	string slave_outdir = SLAVEOUTDIR;
-	string expected_s1 = slave_outdir + "/A/B/C/D.txt";
-	string expected_s1_1="A/B/C/D.txt";
-	string expected_s1_2 = expected_s1;
-	string expected_s2 = slave_outdir + "/D.txt";
-	string expected_s3 = slave_outdir + "/D.out";
-	string expected_s4 = slave_outdir + "/A/B/C/D.out";
-	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
-	vector_of_strings block;
-	vector_of_strings expected_block;
-
-	EXPECT_EQ(expected_s1,s1);
-	EXPECT_EQ(expected_s1_1,s1_1);
-	EXPECT_EQ(expected_s1_2,s1_2);
-	EXPECT_EQ(expected_s2,s2);
-	EXPECT_EQ(expected_s3,s3);
-	EXPECT_EQ(expected_s4,s4);
-	EXPECT_EQ(expected_s5,s5);
-
-	FREE_ARGV(9);
-
-}
-
-// testing Directory::completeFilePath, with a temporary directory
-TEST_F(ChdbTest,completeFilePathWithTmp) {
-
-	// Init prms
-	char* argv[10];
-	INIT_ARGV(0,"directories_unittest");
-	INIT_ARGV(1,"--command-line");
-	INIT_ARGV(2,"coucou");
-	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--tmp-dir");
-	INIT_ARGV(8,".");
-	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
-
-	dir.setRank(1,2);
-	dir.makeOutDir(true,true);
-	dir.makeTempOutDir();
-
-	string f1 = "A/B/C/D.txt";
-
-	string s1 = "%out-dir%/%path%";
-	string s2 = "%out-dir%/%name%";
-	string s3 = "%out-dir%/%basename%.out";
-	string s4 = "%out-dir%/%dirname%/%basename%.out";
-	string s5 = s1 + "%%" + s1 + "%%" + s2 + "%%" + s2 + "%%" + s3 + "%%" + s3;
-	dir.completeFilePath(f1,s1);
-	dir.completeFilePath(f1,s2);
-	dir.completeFilePath(f1,s3);
-	dir.completeFilePath(f1,s4);
-	dir.completeFilePath(f1,s5);
-
-	string tmp = dir.getTempOutDir();
-
-	string expected_s1 = tmp + "/A/B/C/D.txt";
-	string expected_s2 = tmp + "/D.txt";
-	string expected_s3 = tmp + "/D.out";
-	string expected_s4 = tmp + "/A/B/C/D.out";
-	string expected_s5 = expected_s1 + "%%" + expected_s1 + "%%" + expected_s2 + "%%" + expected_s2 + "%%" + expected_s3 + "%%" + expected_s3;
-	vector_of_strings block;
-	vector_of_strings expected_block;
-
-	EXPECT_EQ(expected_s1,s1);
-	EXPECT_EQ(expected_s2,s2);
-	EXPECT_EQ(expected_s3,s3);
-	EXPECT_EQ(expected_s4,s4);
-	EXPECT_EQ(expected_s5,s5);
-
-	FREE_ARGV(9);
-
-}
 
 // Testing usingFs::executeExternalCommand
-TEST_F(ChdbTest,usingFsExternalCommand) {
+TEST_P(TestCase1,usingFsExternalCommand) {
 
 	// Init prms
 	char* argv[10];
@@ -650,12 +620,16 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(7,argv);
-	UsingFs dir(prms);
+	Parameters prms(9,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 
 	string f,cmd;
 
@@ -680,10 +654,10 @@ TEST_F(ChdbTest,usingFsExternalCommand) {
 	cmd = "./ext_cmd.sh " + prms.getInDir() + f + " " + prms.getOutDir() + f;
 	EXPECT_EQ(1,dir.executeExternalCommand(cmd,output_files));
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 
-	cmd = "rm -r " +  prms.getOutDir();
-	system(cmd.c_str());
+//	cmd = "rm -r " +  prms.getOutDir();
+//	system(cmd.c_str());
 }
 
 /** 
@@ -721,22 +695,25 @@ void initFinfo(list<Finfo> & f_i, size_t s) {
 
 // testing UsingFs::buildBlocks
 //         distribution in blocks size 5, from a sorted array, size 40
-TEST_F(ChdbTest,usingFsSortFiles1) {
+TEST_P(TestCase1,usingFsSortFiles1) {
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"5");
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 
-	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 	dir.setRank(0,5);
 
 	vector_of_strings files;
@@ -748,27 +725,30 @@ TEST_F(ChdbTest,usingFsSortFiles1) {
 	vector_of_strings expected_files = int2strings(tmp,40);
 	EXPECT_EQ(expected_files,files);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 }
 
 // testing UsingFs::buildBlocks
 //         distribution in blocks size 1, from a sorted array, size 16
-TEST_F(ChdbTest,usingFsSortFiles3) {
+TEST_P(TestCase1,usingFsSortFiles3) {
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"1");
-
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 	dir.setRank(0,5);
 
 	vector_of_strings files;
@@ -780,27 +760,30 @@ TEST_F(ChdbTest,usingFsSortFiles3) {
 	vector_of_strings expected_files = int2strings(tmp,16);
 	EXPECT_EQ(expected_files,files);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 }
 
 // testing UsingFs::buildBlocks
 //         distribution in blocks size 5, from a sorted array, size 33
-TEST_F(ChdbTest,usingFsSortFiles2) {
+TEST_P(TestCase1,usingFsSortFiles2) {
 	// Init prms
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"directories_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
-	INIT_ARGV(4,input_dir.c_str());
+	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"5");
+	INIT_ARGV(9,"--tmp-dir");
+	INIT_ARGV(10,GetParam()->getTmpDir().c_str());
 
-	
-	Parameters prms(9,argv);
-	UsingFs dir(prms);
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+//	UsingFs dir(prms);
 	dir.setRank(0,5);
 
 	vector_of_strings files;
@@ -812,5 +795,22 @@ TEST_F(ChdbTest,usingFsSortFiles2) {
 	vector_of_strings expected_files = int2strings(tmp,40);
 	EXPECT_EQ(expected_files,files);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 }
+
+// Calling "none" for tmp-dir is just a trick: "none" does not exist, so there is NO tmp-dir
+// If you do NOT specify --tmp-dir, you get the default tmpdir, which may - or not - be defined
+// See parameters.cpp
+// If you create "none" with "mkdir none" you are no more "NoTmp" and the test fails !
+
+auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithParamsUsingFs("none"));
+auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
+auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
+
+
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase1,
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get())
+);

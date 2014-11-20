@@ -406,6 +406,7 @@ void UsingFs::consolidateOutput(bool from_tmp, const string& path) const {
 			cmd += temp_out;
 			cmd += "/* ";
 			cmd += out;
+			cmd += " 2> /dev/null";
 			
 			// We do not want any exception to escape from this function !
 			callSystem(cmd,false);

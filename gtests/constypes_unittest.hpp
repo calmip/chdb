@@ -9,8 +9,11 @@
 #include <cstring>
 #include <string>
 #include <map>
+#include <memory>
 #include "../constypes.hpp"
+#include "../system.hpp"
 #include "../parameters.hpp"
+#include "../directories.hpp"
 #include "../usingfs.hpp"
 #include "gtest/gtest.h"
 
@@ -31,69 +34,65 @@ struct naco {
 void createFile(const string& d, const naco& n);
 string readFile(const string&);
 bool existsFile(const string&);
+void removeFile(const string&);
 
-// Test fixture -> used by several tests
+// some defines: The input directory names
+#define INPUTDIR1 "inputdir1"
+#define INPUTDIR2 "inputdir2"
+#define INPUTDIR3 "inputdir3"
+
+// Comment out the following to inhibit directory cleaning (but this will make fail some tests)
+#define REMOVE_OUTPUT
+
+/***** TEST FIXTURES *****/
+
+// Test fixture base class -> used by most tests
+// getInputDir() may be overloaded by subclasses, so you may have several objects for 1 input directory
+// For instance = 1 REAL directory + the corresponding bdbh version of this directory !
 class ChdbTest: public ::testing::Test {
 protected:
-	ChdbTest();
+	ChdbTest(const string& n): input_dir(n){};
+	virtual ~ChdbTest() { removeFile(getInputDir()+".out*"); };
+	virtual string getInputDir() const { return input_dir; };
+
+private:
 	string input_dir;
-	vector<string> expected_file_pathes;
-	map<string,string> expected_file_contents;
 };
 
-// Another text fixture -> removes the output directory, too
+// ChdbTest1 = Create 5 files in 3 subdirectories of input_dir
 class ChdbTest1 : public ChdbTest {
 public:
-	~ChdbTest1() { system ("rm -rf inputdir.out"); };
+	ChdbTest1();
+
+protected:
+	vector<string> expected_file_pathes;
+	map<string,string> expected_file_contents;
 };
 
-// Another test fixture, with other inputdir files
+// ChdbTest2 = Create 10 files in the input directory, file 0.txt in error
 class ChdbTest2: public ChdbTest {
 public:
-	~ChdbTest2() { system ("rm -rf inputdir.out"); };
+	ChdbTest2();
 
 protected:
-	ChdbTest2();
-	string input_dir;
 	vector<string> expected_file_pathes;
 	map<string,string> expected_file_contents;
 };
 
-// Another test fixture, with other inputdir files
+// ChdbTest2 = Create 10 files in the input directory, file 9.txt in error
 class ChdbTest3: public ChdbTest {
 public:
-	~ChdbTest3() { system ("rm -rf inputdir.out"); };
+	ChdbTest3();
 
 protected:
-	ChdbTest3();
-	string input_dir;
 	vector<string> expected_file_pathes;
 	map<string,string> expected_file_contents;
 };
 
-// Some test fixtures used by scheduler_unittest.cpp and buffer_unittest.cpp
-class SchedTestStr : public ChdbTest {
+// Adding the mpi buffer to ChdbTest1 (names only)
+class SchedTestStr : public ChdbTest1 {
 public:
-	SchedTestStr() {
-		int n = 5;
-		string tmp((char*) &n,sizeof(int));
-		expected_bfr  = tmp;
-		expected_bfr += "A.txt";
-		expected_bfr += '\0';
-		expected_bfr += "B.txt";
-		expected_bfr += '\0';
-		expected_bfr += "C/C.txt";
-		expected_bfr += '\0';
-		expected_bfr += "C/C/C.txt";
-		expected_bfr += '\0';
-		expected_bfr += "D/C.txt";
-		expected_bfr += '\0';
-
-		bfr_len = 5;
-		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
-		bfr = malloc(bfr_len);
-
-	};
+	SchedTestStr();
 	~SchedTestStr() { free(bfr); };
 
 protected:
@@ -102,19 +101,10 @@ protected:
 	size_t bfr_len;
 };
 
-class SchedTestInt : public ChdbTest {
+// Adding the mpi buffer to ChdbTest1 (return values only)
+class SchedTestInt : public ChdbTest1 {
 public:
-	SchedTestInt() {
-		expected_values.push_back(3);
-		expected_values.push_back(5);
-		expected_values.push_back(7);
-		int v[]={3,3,5,7};
-		string b((char*)v,4*sizeof(int));
-		expected_bfr = b;
-
-		bfr_len  = 4*sizeof(int);
-		bfr = malloc(bfr_len);
-	};
+	SchedTestInt();
 	~SchedTestInt() { free(bfr); };
 
 protected:
@@ -125,19 +115,10 @@ protected:
 	size_t bfr_len;
 };
 
-class SchedTestDbl : public ChdbTest {
+// Adding the mpi buffer to ChdbTest1 (doubles for time only)
+class SchedTestDbl : public ChdbTest1 {
 public:
-	SchedTestDbl() {
-		expected_values.push_back(3.14);
-		expected_values.push_back(5.28);
-		expected_values.push_back(7.98);
-		double v[]={3.0,3.14,5.28,7.98};
-		string b((char*)v,4*sizeof(double));
-		expected_bfr = b;
-
-		bfr_len  = 4*sizeof(double);
-		bfr = malloc(bfr_len);
-	};
+	SchedTestDbl();
 	~SchedTestDbl() { free(bfr); };
 
 protected:
@@ -148,45 +129,10 @@ protected:
 	size_t bfr_len;
 };
 
-class SchedTestStrInt : public ChdbTest {
+// Adding the mpi buffer to ChdbTest1 (names + return values)
+class SchedTestStrInt : public ChdbTest1 {
 public:
-	SchedTestStrInt() {
-		expected_file_pathes.push_back(input_dir + '/' + "A.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "B.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "C/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "C/C/C.txt");
-		expected_file_pathes.push_back(input_dir + '/' + "D/C.txt");
-
-		// no value, 5 files
-		int v[2] = {0,5};
-		expected_bfr = string((char*) &v,2*sizeof(int));
-		expected_bfr += input_dir + '/' + "A.txt"     + '\0';
-		expected_bfr += input_dir + '/' + "B.txt" + '\0';
-		expected_bfr += input_dir + '/' + "C/C.txt" + '\0';
-		expected_bfr += input_dir + '/' + "C/C/C.txt" + '\0';
-		expected_bfr += input_dir + '/' + "D/C.txt"   + '\0';
-
-		// 5 values, 5 files
-		int v_1[7] = {5,0,1,2,3,4,5};
-		expected_values_1.push_back(0);
-		expected_values_1.push_back(1);
-		expected_values_1.push_back(2);
-		expected_values_1.push_back(3);
-		expected_values_1.push_back(4);
-
-		expected_bfr_1 = string((char*) &v_1,7*sizeof(int));
-		expected_bfr_1 += input_dir + '/' + "A.txt"     + '\0';
-		expected_bfr_1 += input_dir + '/' + "B.txt" + '\0';
-		expected_bfr_1 += input_dir + '/' + "C/C.txt" + '\0';
-		expected_bfr_1 += input_dir + '/' + "C/C/C.txt" + '\0';
-		expected_bfr_1 += input_dir + '/' + "D/C.txt"   + '\0';
-		
-		bfr_len  = sizeof(int);
-		bfr_len += 5 * input_dir.length();
-		bfr_len += 10;
-		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
-		bfr = malloc(bfr_len);
-	};
+	SchedTestStrInt();
 	~SchedTestStrInt() { free(bfr); };
 
 protected:
@@ -198,6 +144,72 @@ protected:
 	size_t bfr_len;
 };
 
+/**
+ * \brief Subclasses will be used as parameters
+ */
+class ChdbTestsWithParams {
+public:
+	ChdbTestsWithParams(const string& t): tmp_dir(t) {};
+	string getTmpDir() { return tmp_dir; };
+	virtual Directories* createDirectory(const Parameters&)=0;
+	// 
+	virtual void cvtInputDir(const string&) = 0;
+	virtual string cmplInputDir(const string&) = 0;
 
+private:
+	string tmp_dir;
+};
+
+/**
+ * @brief This object encapsulates the Directory creation but it NOT reponsible for the directory created !
+ */
+class ChdbTestsWithParamsUsingFs: public ChdbTestsWithParams {
+public:
+	ChdbTestsWithParamsUsingFs(const string& t): ChdbTestsWithParams(t) {};
+	virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
+	virtual string cmplInputDir(const string& n) {return n;};
+	virtual void cvtInputDir(const string&) {};
+};
+class ChdbTestsWithParamsUsingBdbh: public ChdbTestsWithParams {
+public:
+	ChdbTestsWithParamsUsingBdbh(const string& t): ChdbTestsWithParams(t) {};
+	// A CHANGER !
+	virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
+	virtual string cmplInputDir(const string& n) { string s=n+".db"; return s;};
+	// A CHANGER !
+	virtual void cvtInputDir(const string& src);
+};
+
+/** 
+ * @brief To be used with TEST_P macros
+ * 
+ */
+class TestCase1: public ChdbTest1,
+				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+public:
+	TestCase1() : ChdbTest1(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+		GetParam()->cvtInputDir(ChdbTest1::getInputDir());
+	};
+	~TestCase1() { removeFile(getInputDir()+".out*"); };
+	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest1::getInputDir()); };
+};
+class TestCase2: public ChdbTest2,
+				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+public:
+	TestCase2() : ChdbTest2(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+		GetParam()->cvtInputDir(ChdbTest2::getInputDir());
+	};
+	~TestCase2() { removeFile(getInputDir()+".out*"); };
+	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest2::getInputDir()); };
+};
+class TestCase3: public ChdbTest3,
+				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+public:
+	TestCase3() : ChdbTest3(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+		GetParam()->cvtInputDir(ChdbTest3::getInputDir());
+	};
+	~TestCase3() { removeFile(getInputDir()+".out*"); };
+	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest3::getInputDir()); };
+};
 
 #endif

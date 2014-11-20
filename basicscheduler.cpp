@@ -456,9 +456,6 @@ void BasicScheduler::executeCommand() {
  */
 bool BasicScheduler::errorHandle(ofstream& err_file) {
 
-	// If Abort On Error, just return. Abort already called if there was an error !
-	//if (prms.isAbrtOnErr()) return;
-
 	// find the first value in error and return false if none
 	vector_of_int::iterator it = find_if(return_values.begin(),return_values.end(),isNotNull);
 	if (it == return_values.end()) {

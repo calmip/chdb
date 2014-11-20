@@ -28,12 +28,13 @@ public:
 	bool errorHandle(ofstream&);
 	size_t getTreatedFiles() const { return treated_files; };
  
-	friend class ChdbTest1_ExecuteCommandNoTmp_Test;
-	friend class ChdbTest1_ExecuteCommandWithTmp_Test;
-	friend class ChdbTest1_ExecuteCommandWithErr_Test;
-	friend class ChdbTest1_ExecuteCommandFrmList1_Test;
-	friend class ChdbTest1_ExecuteCommandFrmList2_Test;
+	friend class TestCase1_ExecuteCommandFrmList1_Test;
+	friend class TestCase1_ExecuteCommandFrmList2_Test;
 	friend class SchedTestStrInt_readwriteToSndBfr_Test;
+//	friend class WithOrNoTmp_AbortOnError_Test;
+//	friend class WithOrNoTmp_ContinueOnError_Test;
+	friend class TestCase1_AbortOnError_Test;
+	friend class TestCase1_ContinueOnError_Test;
 
 private:
 	vector_of_int return_values;        // The return value of each execution of the command - maintained by the slaves

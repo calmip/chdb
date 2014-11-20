@@ -1,6 +1,7 @@
 
 #include <errno.h>
 #include "constypes_unittest.hpp"
+#include "../system.hpp"
 #include <fstream>
 using namespace std;
 
@@ -40,13 +41,24 @@ bool existsFile(const string &f) {
 	return in;
 }
 
-// The standard test fixture: create inputdir
-ChdbTest::ChdbTest(): input_dir("inputdir") {
+void removeFile(const string& f) {
+#ifdef REMOVE_OUTPUT
+	string cmd = "rm -r ";
+	cmd += f;
+	cmd += " 2>/dev/null";
+	callSystem(cmd,false);
+#endif
+}
 
-	system("rm -r inputdir");
+/** 
+ * @brief Create 5 files in 3 subdirectories of the input directory, one of them produces an error
+ * 
+ */
+ChdbTest1::ChdbTest1(): ChdbTest(INPUTDIR1) {
+
 	// Nothing to do if inputdir already exists !
 	struct stat buf;
-	int err = stat("inputdir", &buf);
+	int err = stat(getInputDir().c_str(), &buf);
 	if (err==-1 && errno==ENOENT) {
 	
 		// Create and populate inputdir
@@ -66,14 +78,17 @@ ChdbTest::ChdbTest(): input_dir("inputdir") {
 		files.push_back(naco("B.txtt","ABCDEFGHIJKLMNO"));
 	
 		// Create the hierarchy
-		mkdir("inputdir",0700);
-		mkdir("inputdir/C",0700);
-		mkdir("inputdir/C/C",0700);
-		mkdir("inputdir/D",0700);
+		mkdir(getInputDir().c_str(),0700);
+		string dir1=getInputDir() + "/C";
+		string dir2=getInputDir() + "/C/C";
+		string dir3=getInputDir() + "/D";
+		mkdir(dir1.c_str(),0700);
+		mkdir(dir2.c_str(),0700);
+		mkdir(dir3.c_str(),0700);
 	
 		// Create the files
 		for (size_t i=0;i<files.size();++i) {
-			createFile(input_dir,files[i]);
+			createFile(getInputDir(),files[i]);
 		}
 	}
 	else if (err == -1) {
@@ -95,15 +110,16 @@ ChdbTest::ChdbTest(): input_dir("inputdir") {
 	expected_file_contents["A.txt"]     = "STS\t0\nTXT\tABCDEF\n\n";
 }
 
-// Another test fixture: rm previous inputdir and create a new one
-// 10 files created, file 0 is in error
-ChdbTest2::ChdbTest2(): input_dir("inputdir") {
 
-	system("rm -r inputdir");
+/** 
+ * @brief Create 10 files in the input directory, file 0.txt produces an error
+ * 
+ */
+ChdbTest2::ChdbTest2(): ChdbTest(INPUTDIR2) {
 
 	// Nothing to do if inputdir already exists !
 	struct stat buf;
-	int err = stat("inputdir", &buf);
+	int err = stat(getInputDir().c_str(), &buf);
 	if (err==-1 && errno==ENOENT) {
 	
 		// Create and populate inputdir
@@ -123,11 +139,11 @@ ChdbTest2::ChdbTest2(): input_dir("inputdir") {
 		files.push_back(naco("9.txt","0\t9"));
 		
 		// Create the hierarchy
-		mkdir("inputdir",0700);
+		mkdir(getInputDir().c_str(),0700);
 	
 		// Create the files
 		for (size_t i=0;i<files.size();++i) {
-			createFile(input_dir,files[i]);
+			createFile(getInputDir(),files[i]);
 		}
 	}
 	else if (err == -1) {
@@ -159,15 +175,15 @@ ChdbTest2::ChdbTest2(): input_dir("inputdir") {
 	expected_file_contents["9.txt"]     = "STS\t0\nTXT\t9\n\n";
 }
 
-// Another test fixture: rm previous inputdir and create a new one
-// 10 files created, file 9 is in error
-ChdbTest3::ChdbTest3(): input_dir("inputdir") {
-
-	system("rm -r inputdir");
+/** 
+ * @brief Create 10 files in the input directory, file 9.txt produces an error
+ * 
+ */
+ChdbTest3::ChdbTest3(): ChdbTest(INPUTDIR3) {
 
 	// Nothing to do if inputdir already exists !
 	struct stat buf;
-	int err = stat("inputdir", &buf);
+	int err = stat(getInputDir().c_str(), &buf);
 	if (err==-1 && errno==ENOENT) {
 	
 		// Create and populate inputdir
@@ -187,11 +203,11 @@ ChdbTest3::ChdbTest3(): input_dir("inputdir") {
 		files.push_back(naco("9.txt","1\t9"));
 		
 		// Create the hierarchy
-		mkdir("inputdir",0700);
+		mkdir(getInputDir().c_str(),0700);
 	
 		// Create the files
 		for (size_t i=0;i<files.size();++i) {
-			createFile(input_dir,files[i]);
+			createFile(getInputDir(),files[i]);
 		}
 	}
 	else if (err == -1) {
@@ -221,4 +237,115 @@ ChdbTest3::ChdbTest3(): input_dir("inputdir") {
 	expected_file_contents["7.txt"]     = "STS\t0\nTXT\t7\n\n";
 	expected_file_contents["8.txt"]     = "STS\t0\nTXT\t8\n\n";
 	expected_file_contents["9.txt"]     = "STS\t1\nTXT\t9\n\n";
+}
+/** 
+ * @brief Adding the mpi buffer to ChdbTest1 (names only)
+ * 
+ */
+SchedTestStr::SchedTestStr(): ChdbTest1() {
+		int n = 5;
+		string tmp((char*) &n,sizeof(int));
+		expected_bfr  = tmp;
+		expected_bfr += "A.txt";
+		expected_bfr += '\0';
+		expected_bfr += "B.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "C/C/C.txt";
+		expected_bfr += '\0';
+		expected_bfr += "D/C.txt";
+		expected_bfr += '\0';
+
+		bfr_len = 5;
+		bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
+		bfr = malloc(bfr_len);
+}
+
+/** 
+ * @brief Adding the mpi buffer to ChdbTest1 (return values only)
+ * 
+ */
+SchedTestInt::SchedTestInt() : ChdbTest1() {
+	expected_values.push_back(3);
+	expected_values.push_back(5);
+	expected_values.push_back(7);
+	int v[]={3,3,5,7};
+	string b((char*)v,4*sizeof(int));
+	expected_bfr = b;
+	
+	bfr_len  = 4*sizeof(int);
+	bfr = malloc(bfr_len);
+};
+
+
+/** 
+ * @brief Adding the mpi buffer to ChdbTest1 (doubles for time only)
+ * 
+ */
+SchedTestDbl::SchedTestDbl(): ChdbTest1() {
+	expected_values.push_back(3.14);
+	expected_values.push_back(5.28);
+	expected_values.push_back(7.98);
+	double v[]={3.0,3.14,5.28,7.98};
+	string b((char*)v,4*sizeof(double));
+	expected_bfr = b;
+	
+	bfr_len  = 4*sizeof(double);
+	bfr = malloc(bfr_len);
+}
+
+/** 
+ * @brief Adding the mpi buffer to ChdbTest1 (names + return values)
+ * 
+ */
+SchedTestStrInt::SchedTestStrInt(): ChdbTest1() {
+	expected_file_pathes.push_back(getInputDir() + '/' + "A.txt");
+	expected_file_pathes.push_back(getInputDir() + '/' + "B.txt");
+	expected_file_pathes.push_back(getInputDir() + '/' + "C/C.txt");
+	expected_file_pathes.push_back(getInputDir() + '/' + "C/C/C.txt");
+	expected_file_pathes.push_back(getInputDir() + '/' + "D/C.txt");
+	
+	// no value, 5 files
+	int v[2] = {0,5};
+	expected_bfr = string((char*) &v,2*sizeof(int));
+	expected_bfr += getInputDir() + '/' + "A.txt"     + '\0';
+	expected_bfr += getInputDir() + '/' + "B.txt" + '\0';
+	expected_bfr += getInputDir() + '/' + "C/C.txt" + '\0';
+	expected_bfr += getInputDir() + '/' + "C/C/C.txt" + '\0';
+	expected_bfr += getInputDir() + '/' + "D/C.txt"   + '\0';
+	
+	// 5 values, 5 files
+	int v_1[7] = {5,0,1,2,3,4,5};
+	expected_values_1.push_back(0);
+	expected_values_1.push_back(1);
+	expected_values_1.push_back(2);
+	expected_values_1.push_back(3);
+	expected_values_1.push_back(4);
+	
+	expected_bfr_1 = string((char*) &v_1,7*sizeof(int));
+	expected_bfr_1 += getInputDir() + '/' + "A.txt"     + '\0';
+	expected_bfr_1 += getInputDir() + '/' + "B.txt" + '\0';
+	expected_bfr_1 += getInputDir() + '/' + "C/C.txt" + '\0';
+	expected_bfr_1 += getInputDir() + '/' + "C/C/C.txt" + '\0';
+	expected_bfr_1 += getInputDir() + '/' + "D/C.txt"   + '\0';
+	
+	bfr_len  = sizeof(int);
+	bfr_len += 5 * getInputDir().length();
+	bfr_len += 10;
+	bfr_len += sizeof(int) + 5 + 7 + 9 + 7 + 5;
+	bfr = malloc(bfr_len);
+}
+
+void ChdbTestsWithParamsUsingBdbh::cvtInputDir(const string& src) {
+	string dst = cmplInputDir(src);
+	struct stat buf;
+	int err = stat(dst.c_str(), &buf);
+	if (err==-1 && errno==ENOENT) {
+		string cmd="cp -a ";
+		cmd += src;
+		cmd += " ";
+		cmd += dst;
+		callSystem(cmd,true);
+	}
 }
