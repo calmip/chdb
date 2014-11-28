@@ -28,7 +28,7 @@ public:
 	}
 
 	//void filesToOutputDb(const vector_of_strings&) {};
-	int executeExternalCommand(const string&,const vector_of_strings&) const;
+	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&) const;
 	void makeOutDir(bool,bool);
 	void makeTempOutDir();
 	string getTempOutDir() const {
@@ -39,7 +39,6 @@ public:
 		if(output_dir.length()!=0) return output_dir;
 		else throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
 	}
-	void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 	void consolidateOutput(bool from_temp, const string& path="") const;
 
 //	friend class TestCase1_usingFsfindOrCreateDir_Test;
@@ -48,10 +47,7 @@ private:
 	void readDir(const string &,size_t) const;
 	void readDirRecursive(const string &,size_t,list<Finfo>&,bool) const;
 	virtual void findOrCreateDir(const string &) const;
-	bool isCorrectType(const string &) const;
-	void initInputFiles() const;
 	virtual void v_readFiles();
-	mutable set<string> input_files;
 	mutable set<string> found_directories;
 	string output_dir;
 	string temp_output_dir;

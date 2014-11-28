@@ -156,6 +156,25 @@ vector_of_strings split(const string& s) {
 }
 
 /** 
+ * @brief Returns true if string end with the extension
+ * 
+ * @param ext 
+ * 
+ * @return 
+ */
+bool isEndingWith(const string& name, const string& ext) {
+	size_t ext_len = ext.length();
+	size_t nme_len = name.length();
+	if ( ext_len < nme_len ) {
+		string nme_ext = name.substr(nme_len-ext_len);
+		return ( nme_ext == ext );
+	} else {
+		return false;
+	}
+}
+
+
+/** 
  * @brief returns true if the file or directory exists
  * 
  * @param f 

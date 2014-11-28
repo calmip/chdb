@@ -21,11 +21,11 @@ EXECFILE=chdb
 # The source files, object files, libraries and executable name.
 #
 
-SRCFILES=usingfs.cpp directories.cpp parameters.cpp chdb.cpp scheduler.cpp basicscheduler.cpp system.cpp
+SRCFILES=usingbdbh.cpp usingfs.cpp directories.cpp parameters.cpp chdb.cpp scheduler.cpp basicscheduler.cpp system.cpp
 
-OBJFILES=usingfs.o parameters.o chdb.o directories.o scheduler.o basicscheduler.o system.o
+OBJFILES=usingbdbh.o usingfs.o parameters.o chdb.o directories.o scheduler.o basicscheduler.o system.o
 
-LIBS=
+LIBS=-L bdbh -lbdbh -ldb_cxx -ldb -lz
 
 #
 # The implicit rules
@@ -61,6 +61,38 @@ depend:
 objfiles: $(OBJFILES)
 # DO NOT DELETE
 
+usingbdbh.o: /usr/include/sys/types.h /usr/include/features.h
+usingbdbh.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+usingbdbh.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
+usingbdbh.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+usingbdbh.o: /usr/include/time.h /usr/include/endian.h
+usingbdbh.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+usingbdbh.o: /usr/include/sys/select.h /usr/include/bits/select.h
+usingbdbh.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+usingbdbh.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+usingbdbh.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+usingbdbh.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+usingbdbh.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
+usingbdbh.o: /usr/include/getopt.h system.hpp constypes.hpp usingbdbh.hpp
+usingbdbh.o: directories.hpp parameters.hpp SimpleOpt.h /usr/include/stdlib.h
+usingbdbh.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+usingbdbh.o: /usr/include/alloca.h /usr/include/string.h
+usingbdbh.o: /usr/include/xlocale.h bdbh/ls.hpp bdbh/command.hpp
+usingbdbh.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
+usingbdbh.o: /usr/include/dirent.h /usr/include/bits/dirent.h
+usingbdbh.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+usingbdbh.o: /usr/include/linux/limits.h /usr/include/errno.h
+usingbdbh.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+usingbdbh.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+usingbdbh.o: /usr/include/asm-generic/errno-base.h bdbh/exception.hpp
+usingbdbh.o: /usr/include/db_cxx.h /usr/include/db.h /usr/include/inttypes.h
+usingbdbh.o: /usr/include/stdint.h /usr/include/bits/wchar.h
+usingbdbh.o: /usr/include/stdio.h /usr/include/libio.h
+usingbdbh.o: /usr/include/_G_config.h /usr/include/wchar.h
+usingbdbh.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+usingbdbh.o: /usr/include/pthread.h /usr/include/sched.h
+usingbdbh.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+usingbdbh.o: /usr/include/libgen.h
 usingfs.o: /usr/include/sys/types.h /usr/include/features.h
 usingfs.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 usingfs.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
@@ -73,7 +105,7 @@ usingfs.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
 usingfs.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 usingfs.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 usingfs.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
-usingfs.o: /usr/include/getopt.h system.hpp usingfs.hpp constypes.hpp
+usingfs.o: /usr/include/getopt.h system.hpp constypes.hpp usingfs.hpp
 usingfs.o: directories.hpp parameters.hpp SimpleOpt.h /usr/include/stdlib.h
 usingfs.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
 usingfs.o: /usr/include/alloca.h /usr/include/string.h /usr/include/xlocale.h
@@ -116,20 +148,37 @@ parameters.o: /usr/include/getopt.h parameters.hpp SimpleOpt.h
 parameters.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
 parameters.o: /usr/include/bits/waitstatus.h /usr/include/alloca.h
 parameters.o: /usr/include/string.h /usr/include/xlocale.h constypes.hpp
-chdb.o: parameters.hpp SimpleOpt.h /usr/include/stdlib.h
-chdb.o: /usr/include/features.h /usr/include/sys/cdefs.h
-chdb.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
-chdb.o: /usr/include/gnu/stubs-64.h /usr/include/bits/waitflags.h
-chdb.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
-chdb.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
-chdb.o: /usr/include/sys/types.h /usr/include/bits/types.h
-chdb.o: /usr/include/bits/typesizes.h /usr/include/time.h
-chdb.o: /usr/include/sys/select.h /usr/include/bits/select.h
-chdb.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
-chdb.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
-chdb.o: /usr/include/alloca.h /usr/include/string.h /usr/include/xlocale.h
-chdb.o: constypes.hpp usingfs.hpp directories.hpp basicscheduler.hpp
-chdb.o: scheduler.hpp
+parameters.o: system.hpp
+chdb.o: system.hpp constypes.hpp parameters.hpp SimpleOpt.h
+chdb.o: /usr/include/stdlib.h /usr/include/features.h
+chdb.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+chdb.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
+chdb.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+chdb.o: /usr/include/endian.h /usr/include/bits/endian.h
+chdb.o: /usr/include/bits/byteswap.h /usr/include/sys/types.h
+chdb.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+chdb.o: /usr/include/time.h /usr/include/sys/select.h
+chdb.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+chdb.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+chdb.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+chdb.o: /usr/include/string.h /usr/include/xlocale.h usingfs.hpp
+chdb.o: directories.hpp usingbdbh.hpp bdbh/ls.hpp bdbh/command.hpp
+chdb.o: /usr/include/sys/stat.h /usr/include/bits/stat.h /usr/include/fcntl.h
+chdb.o: /usr/include/bits/fcntl.h /usr/include/unistd.h
+chdb.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+chdb.o: /usr/include/bits/confname.h /usr/include/getopt.h
+chdb.o: /usr/include/dirent.h /usr/include/bits/dirent.h
+chdb.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+chdb.o: /usr/include/linux/limits.h /usr/include/errno.h
+chdb.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+chdb.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+chdb.o: /usr/include/asm-generic/errno-base.h bdbh/exception.hpp
+chdb.o: /usr/include/db_cxx.h /usr/include/db.h /usr/include/inttypes.h
+chdb.o: /usr/include/stdint.h /usr/include/bits/wchar.h /usr/include/stdio.h
+chdb.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
+chdb.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+chdb.o: /usr/include/pthread.h /usr/include/sched.h /usr/include/bits/sched.h
+chdb.o: /usr/include/bits/setjmp.h basicscheduler.hpp scheduler.hpp
 scheduler.o: /usr/include/sys/types.h /usr/include/features.h
 scheduler.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 scheduler.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
@@ -163,7 +212,7 @@ basicscheduler.o: /usr/include/bits/stat.h /usr/include/unistd.h
 basicscheduler.o: /usr/include/bits/posix_opt.h
 basicscheduler.o: /usr/include/bits/environments.h
 basicscheduler.o: /usr/include/bits/confname.h /usr/include/getopt.h
-basicscheduler.o: basicscheduler.hpp constypes.hpp scheduler.hpp
+basicscheduler.o: system.hpp constypes.hpp basicscheduler.hpp scheduler.hpp
 basicscheduler.o: parameters.hpp SimpleOpt.h /usr/include/stdlib.h
 basicscheduler.o: /usr/include/bits/waitflags.h
 basicscheduler.o: /usr/include/bits/waitstatus.h /usr/include/alloca.h
@@ -171,6 +220,14 @@ basicscheduler.o: /usr/include/string.h /usr/include/xlocale.h
 basicscheduler.o: directories.hpp /usr/include/dirent.h
 basicscheduler.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 basicscheduler.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-system.o: /usr/include/libgen.h /usr/include/features.h
+system.o: /usr/include/sys/types.h /usr/include/features.h
 system.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
-system.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h system.hpp
+system.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-64.h
+system.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+system.o: /usr/include/time.h /usr/include/endian.h
+system.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+system.o: /usr/include/sys/select.h /usr/include/bits/select.h
+system.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+system.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+system.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+system.o: /usr/include/libgen.h system.hpp constypes.hpp

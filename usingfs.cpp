@@ -27,43 +27,6 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
-int operator<(const Finfo& a, const Finfo& b) { return a.st_size < b.st_size; }
-
-/** 
- * @brief Fill if possible the set of files to use
- * 
- */
-void UsingFs::initInputFiles() const {
-	string in_file = prms.getInFile();
-	
-	if (in_file != "") {
-		ifstream in(in_file.c_str());
-		if (!in.good()) {
-			string msg = "ERROR - File could not be opened: ";
-			msg += in_file;
-			throw(runtime_error(msg));
-		}
-
-		// parse file: this should be a tsv file
-		// lines starting by # are a comment and are ignored
-		// empty lines are ignored
-		// Lines with 2 fields and more are considered: (fields 2-)
-		// Lines with 1 field are considered
-		string tmp;
-		while (in) {
-			getline(in,tmp);
-			if (tmp.size()!=0 && tmp[0]!='#') {
-				size_t p=tmp.find_first_of('\t');
-				if (p!=string::npos && p<tmp.length()-1) {
-					input_files.insert(tmp.substr(p+1));
-				} else {
-					input_files.insert(tmp);
-				}
-			}
-		}
-	}
-}
-
 /**
    \brief Read the file names from the input directory and push them to files
           If files is already filled, do nothing
@@ -76,88 +39,11 @@ void UsingFs::v_readFiles() {
 		// Fill if possible the set of files to use - If empty, ALL files of correct type will be considered
 		initInputFiles();
 
-		// fill the files private member, OR the files_tmp global
 		size_t head_strip=top.length();
 		if (top[head_strip-1]!='/') {
 			head_strip += 1;
 		}
 		readDir(top,head_strip);
-	}
-}
-
-/** 
- * @brief Check the name extension versus the required extension (file type)
- * 
- * @param name 
- * 
- * @return true if the type is OK, false if not
- */
-bool UsingFs::isCorrectType(const string & name) const {
-	string ext     = '.' + prms.getFileType();
-	size_t ext_len = ext.length();
-	size_t nme_len = name.length();
-	if ( ext_len < nme_len ) {
-		string nme_ext = name.substr(nme_len-ext_len);
-		return ( nme_ext == ext );
-	} else {
-		return false;
-	}
-}
-
-/** 
- * 
- * @brief Prepare the f vector for a balanced distribution of jobs:
- *        1/ The f_info list is sorted from the longest to the shortest file
- *        2/ The file names are copied to f using an interleaved algorithm
- * 
- * @param f_info A list of Finfo objects (used to sort the files)
- * @param f      The final result
- *
- */
-
-void UsingFs::buildBlocks(list<Finfo>& f_info,vector_of_strings&f) const {
-	// sort files_tmp by sizes and copy the names to files
-	f_info.sort();
-
-	// Some parameters
-	size_t nb_files   = f_info.size();
-	size_t nb_slaves;
-	if (comm_size>1) {
-		nb_slaves = comm_size - 1;
-	} else {
-		throw(logic_error("ERROR - setRank has not been called"));
-	}
-	
-	size_t block_size = prms.getBlockSize();
-	size_t slice_size = nb_slaves*block_size;
-	size_t dim_f = 0;
-	if (nb_files%slice_size == 0) {
-		dim_f = nb_files;
-	} else {
-		dim_f = slice_size * (1 + nb_files/slice_size);
-	}
-
-	// reserve enough size for f and init to ""
-	f.clear();
-	f.reserve(dim_f);
-	f.assign(dim_f,(string)"");
-
-	// Keep the file names to the vector files, reversing the order and interleaving them
-	// Ex. 40 files, 4 slaves, block_size=5 see test usingFsSortFiles1
-	// 1st slice = | 0  4  8 12 16 | 1  5  9 13 17|  2  6 10 14 18|  3  7 11 15 19|  4 blocks
-	// 2nd slice = |20 24 28 32 36 |21 25 29 33 37| 22 26 30 34 38| 23 27 31 35 39|  4 blocks
-	
-	// Ex. 25 files, 4 slaves, block_size=5 see test usingFsSortFiles2
-	// slice_size=20, 2 slices, dim_f=40
-	// 1st slice = | 0  4  8 12 16 | 1  5  9 13 17|  2  6 10 14 18|  3  7 11 15 19|  4 blocks
-	// 2nd slice = |20 24 "" "" "" |21 "" "" "" ""| 22 "" "" "" ""| 23 "" "" "" ""|  4 blocks (with holes)
-	
-	size_t i=0;
-	for (list<Finfo>::reverse_iterator ri=f_info.rbegin();ri!=f_info.rend();++ri,++i) {
-		size_t k = slice_size * (i / slice_size); // 0, 20
-		k += block_size * (i % nb_slaves);        // k += 0, 5, 10, 15
-		k += (i%slice_size) / nb_slaves;          // k += 0, 1, 2, 3, 4
-		f[k] = ri->name;
 	}
 }
 
@@ -244,7 +130,9 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 /** 
  * @brief Execute a command through executeSystem and return the exit status of the command
  *        We pass the out_pathes vector to create the output directories if necessary
+ *        The vector in_pathes is not used in this version
  * 
+ * @param in_pathes
  * @param cmd 
  * @param out_pathes 
  * 
@@ -252,7 +140,7 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
  *
  */	
 //#include <iostream>
-int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes) const {
+int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes) const {
 
 	// Create the subdirectories if necessary
 	for (size_t i=0; i<out_pathes.size(); ++i) {
@@ -338,8 +226,6 @@ void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 		throw(runtime_error(msg));
 	}
 }
-
-
 
 /** 
  * @brief Make a temporary output directory only if tmp is specified

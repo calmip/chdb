@@ -18,6 +18,7 @@
 #include <list>
 //#include <stdexcept>
 #include <algorithm>
+#include <set>
 using namespace std;
 
 
@@ -47,16 +48,10 @@ public:
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;
 	virtual void findOrCreateDir(const string &) const = 0;
-	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const = 0;
+	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
 	virtual void consolidateOutput(bool from_temp, const string& path="") const = 0;
 
-//	void readFiles() { getFiles(); };
-//	const vector_of_strings& getFiles() { 
-//		const vector_of_strings& rvl = v_readFiles();
-//		blk_ptr=files.begin();
-//		return rvl;
-//	};
 	const vector_of_strings& getFiles() {
 		readFiles();
 		return files;
@@ -64,12 +59,15 @@ public:
 	void readFiles() {
 		v_readFiles();
 		files_size = count_if(files.begin(), files.end(), isNotNullStr);
-		blk_ptr=files.begin();
+		if ( ! files.empty()) {
+			blk_ptr=files.begin();
+		}
 	}
 
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);
-	virtual int executeExternalCommand(const string&,const vector_of_strings&) const = 0;
+	// input files, cmd, output files
+	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&) const = 0;
 	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
 
@@ -77,9 +75,13 @@ public:
 	friend class TestCase1_usingFsfindOrCreateDir_Test;
 
 protected:
+	void initInputFiles() const;
+	bool isCorrectType(const string &) const;
+
 	const Parameters& prms;
 	mutable vector_of_strings files;
 	mutable size_t files_size;
+	mutable set<string> input_files;
 	int rank;
 	int comm_size;
 

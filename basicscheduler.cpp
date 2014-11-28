@@ -424,7 +424,11 @@ void BasicScheduler::executeCommand() {
 			dir.completeFilePath(in_path,out_files[j],true);
 		}
 		double start = MPI_Wtime();
-		int sts = dir.executeExternalCommand(cmd,out_files);
+
+		// We have only one input file yet, but this could change in the future
+		vector_of_strings in_pathes;
+		in_pathes.push_back(in_path);
+		int sts = dir.executeExternalCommand(in_pathes,cmd,out_files);
 		double end = MPI_Wtime();
 		// If abort on Error, throw an exception if status != 0
 		if (sts!=0) {

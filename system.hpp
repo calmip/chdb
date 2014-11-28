@@ -13,6 +13,7 @@ void getHostName(string& h);
 void sleepMs(unsigned int);
 int callSystem(string cmd, bool err_flg=false);
 void parseFilePath(const string& path, string& dir, string& name, string& base, string& ext);
+bool isEndingWith(const string& name, const string& ext);
 vector_of_strings split(const string &);
 bool fileExists(const string&);
 
