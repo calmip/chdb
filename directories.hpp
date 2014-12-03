@@ -47,10 +47,11 @@ public:
 	virtual void   makeTempOutDir()  = 0;
 	virtual string getOutDir() const = 0;
 	virtual string getTempOutDir() const = 0;
-	virtual void findOrCreateDir(const string &) const = 0;
+	virtual string getTempInDir() const = 0;
+	virtual void findOrCreateDir(const string &) = 0;
 	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
-	virtual void consolidateOutput(bool from_temp, const string& path="") const = 0;
+	virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
 
 	const vector_of_strings& getFiles() {
 		readFiles();
@@ -67,7 +68,7 @@ public:
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);
 	// input files, cmd, output files
-	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&) const = 0;
+	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&) = 0;
 	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
 

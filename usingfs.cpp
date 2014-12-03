@@ -108,6 +108,7 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 				throw(runtime_error(msg));
 			}
 
+			// Select the file only if in input_files... or if input_files is empty, select it anyway
             // If in size sort, we use files_tmp for temporary storage
 			if (S_ISREG(st_bfr.st_mode)) {
 				if (isCorrectType(s_file_name))
@@ -140,11 +141,45 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
  *
  */	
 //#include <iostream>
-int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes) const {
+/** 
+ * @brief Execute the external command, using complete in_pathes as input and complete out_pathes as output
+ * 
+ * @pre The cmd is ready to be executed (templates subsititution already done)
+ * @param in_pathes input pathes, relative to the input directory (ie inputdir/A/B.txt ==> A/B.txt)
+ * @param cmd 
+ * @param out_pathes output pathes, relative to the output directory (ie outputdir/A/B.txt ==> A/B.txt)
+ * 
+ * @exception Throw a logic_error if files cannot be read/written (should NOT happen)
+ * @return The return value of callSystem
+ */
+int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes) {
+
+    // throw a logic error if one of the input pathes is not readable
+	string in_dir = getTempInDir();
+	for (size_t i=0; i<in_pathes.size(); ++i) {
+		string f = in_dir;
+		f += '/';
+		f += in_pathes[i];
+		if (!fileExists(f)) {
+			string msg = "ERROR - File does not exist:  ";
+			msg += in_pathes[i];
+			throw(logic_error(msg));
+		}
+	}
 
 	// Create the subdirectories if necessary
+	// If out_pathes() starts with out_dir, it's OK. If not, complete them !
+	string out_dir = getTempOutDir();
 	for (size_t i=0; i<out_pathes.size(); ++i) {
-		findOrCreateDir(out_pathes[i]);
+		string f;
+		if ( isBeginningWith(out_pathes[i],out_dir) ) {
+			f = out_pathes[i];
+		} else {
+			f = out_dir;
+			f += '/';
+			f += out_pathes[i];
+		}
+		findOrCreateDir(f);
 	}
 //	cerr << "COUCOU " << cmd << "\n";
 
@@ -217,14 +252,7 @@ void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 		callSystem(cmd);
 	}
 	
-	int sts = mkdir(output_dir.c_str(), 0777);
-	if (sts != 0) {
-		string msg="ERROR - Cannot create directory ";
-		msg += output_dir;
-		msg += " - Error= ";
-		msg += strerror(errno);
-		throw(runtime_error(msg));
-	}
+	mkdir(output_dir);
 }
 
 /** 
@@ -276,7 +304,7 @@ void UsingFs::makeTempOutDir() {
  *             If from_tmp==false and path=="", return without doing anything
  *
  */
-void UsingFs::consolidateOutput(bool from_tmp, const string& path) const {
+void UsingFs::consolidateOutput(bool from_tmp, const string& path) {
 	string temp_out = (from_tmp) ? getTempOutDir() : path;
 	if (temp_out.size()==0) {
 		return;
@@ -313,7 +341,7 @@ void UsingFs::consolidateOutput(bool from_tmp, const string& path) const {
  * @exception throw an exception if the directory cannot be created
  */
 
-void UsingFs::findOrCreateDir(const string & p) const {
+void UsingFs::findOrCreateDir(const string & p) {
 	string d,n,b,e;
 	parseFilePath(p,d,n,b,e);
 

@@ -74,6 +74,9 @@ gtest.a : gtest-all.o
 gtest_main.a : gtest-all.o gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
+# Linking with bdbh and other libraries
+LIB=-L../bdbh -lbdbh -lz -ldb -ldb_cxx
+
 # Builds a sample test.  A test should link with either gtest.a or
 # gtest_main.a, depending on whether it defines its own main()
 # function.
@@ -90,32 +93,32 @@ parameters_unittest : parameters_unittest.o ../parameters.o ../system.o gtest_ma
 directories_unittest.o : directories_unittest.cpp ../directories.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c directories_unittest.cpp	
 
-directories_unittest : directories_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../system.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+directories_unittest : directories_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../usingbdbh.o ../system.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@  $(LIB) 
 
 scheduler_unittest.o : scheduler_unittest.cpp ../scheduler.cpp 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c scheduler_unittest.cpp	
 
-scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../system.o gtest_main_mpi.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+scheduler_unittest : scheduler_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../scheduler.o ../basicscheduler.o ../usingfs.o ../usingbdbh.o ../system.o gtest_main_mpi.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@  $(LIB) 
 
 buffer_unittest.o : buffer_unittest.cpp ../system.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c buffer_unittest.cpp	
 
-buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../system.o gtest_main.a 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+buffer_unittest : buffer_unittest.o constypes_unittest.o ../parameters.o ../directories.o ../usingfs.o ../usingbdbh.o ../system.o gtest_main.a 
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@  $(LIB) 
 
 chdb_unittest.o : chdb_unittest.cpp constypes_unittest.cpp ../system.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c chdb_unittest.cpp	
 
-chdb_unittest : chdb_unittest.o constypes_unittest.o ../system.o ../directories.o ../usingfs.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+chdb_unittest : chdb_unittest.o constypes_unittest.o ../system.o ../directories.o ../usingfs.o ../usingbdbh.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@  $(LIB) 
 
 system_unittest.o: system_unittest.cpp ../system.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c system_unittest.cpp 
 
-system_unittest : system_unittest.o constypes_unittest.o ../directories.o ../usingfs.o ../system.o gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+system_unittest : system_unittest.o constypes_unittest.o ../directories.o ../usingfs.o ../usingbdbh.o ../system.o gtest_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@  $(LIB) 
 
 tests: system_unittest parameters_unittest directories_unittest scheduler_unittest chdb_unittest
 	./system_unittest

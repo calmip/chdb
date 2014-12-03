@@ -66,16 +66,23 @@ TEST_F(ParametersTest, CtorExceptions1) {
 	INIT_ARGV(2,"txt");
 	INIT_ARGV(3,"--in-dir");
 	INIT_ARGV(4,"inputdir");
-	INIT_ARGV(5,"--command-line");
-	INIT_ARGV(6,"coucou");
+	INIT_ARGV(5,"--out-files");
+	INIT_ARGV(6,"%out-dir%/%path%");
+	INIT_ARGV(7,"--command-line");
+	INIT_ARGV(8,"coucou");
 
 	// "no command line" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
-	ASSERT_THROW(new Parameters(6,argv),runtime_error);
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+	ASSERT_THROW(new Parameters(8,argv),runtime_error);
+	system("mkdir inputdir");
+	ASSERT_NO_THROW(new Parameters(9,argv));
+	system("rmdir inputdir");
 
 	// If you comment-out the following, it CANNOT BE compiled !
 	// Parameters prms1 = Parameters(7,argv);
 	// Parameters prms2 = prms1;
+
+	FREE_ARGV(9);
 }
 TEST_F(ParametersTest, CtorExceptions2) {
 	char* argv[10];
@@ -84,22 +91,44 @@ TEST_F(ParametersTest, CtorExceptions2) {
 	INIT_ARGV(2,"txt");
 	INIT_ARGV(3,"--command-line");
 	INIT_ARGV(4,"coucou");
-	INIT_ARGV(5,"--in-dir");
-	INIT_ARGV(6,"inputdir");
+	INIT_ARGV(5,"--out-files");
+	INIT_ARGV(6,"%out-dir%/%path%");
+	INIT_ARGV(7,"--in-dir");
+	INIT_ARGV(8,"inputdir");
 
 	// "no input directory" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
 
 	// "input directory does not exist" exception
 	system("rm -rf inputdir");
-	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+	ASSERT_THROW(new Parameters(9,argv),runtime_error);
 
 	// creating the directory
 	system("mkdir inputdir");
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 	EXPECT_EQ((string)"inputdir",prms.getInDir());
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
+}
+TEST_F(ParametersTest, CtorExceptions3) {
+	char* argv[10];
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"txt");
+	INIT_ARGV(3,"--command-line");
+	INIT_ARGV(4,"coucou");
+	INIT_ARGV(5,"--in-dir");
+	INIT_ARGV(6,"inputdir");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
+
+	// "no out-files" exception
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+	system("mkdir inputdir");
+	ASSERT_NO_THROW(new Parameters(9,argv));
+	system("rmdir inputdir");
+
+	FREE_ARGV(9);
 }
 TEST_F(ParametersTest1, Ctoroutputdir) {
 	char* argv[10];
@@ -110,6 +139,8 @@ TEST_F(ParametersTest1, Ctoroutputdir) {
 	INIT_ARGV(4,"coucou");
 	INIT_ARGV(5,"--in-dir");
 	INIT_ARGV(6,"inputdir");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
 
     // automatically computed name
 	string outputdir = "inputdir";
@@ -119,15 +150,15 @@ TEST_F(ParametersTest1, Ctoroutputdir) {
 	string cmd = "mkdir ";
 	cmd += outputdir;
 	system(cmd.c_str());
-	EXPECT_NO_THROW(new Parameters(7,argv));
+	EXPECT_NO_THROW(new Parameters(9,argv));
 
 	cmd = "rm -r ";
 	cmd += outputdir;
 	system(cmd.c_str());
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 	EXPECT_EQ(outputdir,prms.getOutDir());
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 }
 TEST_F(ParametersTest1, CtorExceptions4) {
 	char* argv[10];
@@ -136,12 +167,14 @@ TEST_F(ParametersTest1, CtorExceptions4) {
 	INIT_ARGV(2,"coucou");
 	INIT_ARGV(3,"--in-dir");
 	INIT_ARGV(4,"inputdir");
-	INIT_ARGV(5,"--in-type");
-	INIT_ARGV(6,"txt");
+	INIT_ARGV(5,"--out-files");
+	INIT_ARGV(6,"%out-dir%/%path%");
+	INIT_ARGV(7,"--in-type");
+	INIT_ARGV(8,"txt");
 
 	// "no input type" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
-	Parameters prms(7,argv);
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+	Parameters prms(9,argv);
 
 	// empty vector_of_files
 	vector_of_strings out_files;
@@ -152,12 +185,13 @@ TEST_F(ParametersTest1, CtorExceptions4) {
 	EXPECT_EQ(false,prms.isSizeSort());
 	EXPECT_EQ(false,prms.isVerbose());
 	EXPECT_EQ(true,prms.isAbrtOnErr());
+	out_files.push_back("%out-dir%/%path%");
 	EXPECT_EQ(out_files,prms.getOutFiles());	
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 }
 TEST_F(ParametersTest1, CtorBlockSize) {
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
@@ -167,13 +201,16 @@ TEST_F(ParametersTest1, CtorBlockSize) {
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"10");
-	Parameters prms(9,argv);
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(11,argv);
 
 	// checking the block size accessor
 	EXPECT_EQ(10,prms.getBlockSize());
 
 	// should throw an exception if block-size <= 0
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
@@ -183,10 +220,12 @@ TEST_F(ParametersTest1, CtorBlockSize) {
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"-10");
-	ASSERT_THROW(new Parameters(9,argv),runtime_error);
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
+	ASSERT_THROW(new Parameters(11,argv),runtime_error);
 
 	// should throw an exception if block-size == 0
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
@@ -196,13 +235,15 @@ TEST_F(ParametersTest1, CtorBlockSize) {
 	INIT_ARGV(6,"txt");
 	INIT_ARGV(7,"--block-size");
 	INIT_ARGV(8,"0");
-	ASSERT_THROW(new Parameters(9,argv),runtime_error);
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
+	ASSERT_THROW(new Parameters(11,argv),runtime_error);
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 }
 
 TEST_F(ParametersTest1, CtorOnError) {
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--command-line");
 	INIT_ARGV(2,"coucou");
@@ -210,24 +251,26 @@ TEST_F(ParametersTest1, CtorOnError) {
 	INIT_ARGV(4,"inputdir");
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
-	INIT_ARGV(7,"--on-error");
-	INIT_ARGV(8,"errors.txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
+	INIT_ARGV(9,"--on-error");
+	INIT_ARGV(10,"errors.txt");
 
 	// If the switch --on-error IS NOT specified, isAbrtOnErr() returns true
-	Parameters prms1(7,argv);
+	Parameters prms1(9,argv);
 	EXPECT_EQ(true,prms1.isAbrtOnErr());
 
 	// If the switch --on-error IS specified, isAbrtOnErr() returns false
 	// "no input type" exception
-	Parameters prms2(9,argv);
+	Parameters prms2(11,argv);
 	EXPECT_EQ(false,prms2.isAbrtOnErr());
 
 	EXPECT_EQ("errors.txt",prms2.getErrFile());
 
-	FREE_ARGV(9);
+	FREE_ARGV(11);
 }
 TEST_F(ParametersTest1, CtorFlags) {
-	char* argv[10];
+	char* argv[11];
 	INIT_ARGV(0,"parameters_unittest");
 	INIT_ARGV(1,"--in-type");
 	INIT_ARGV(2,"txt");
@@ -237,11 +280,14 @@ TEST_F(ParametersTest1, CtorFlags) {
 	INIT_ARGV(6,"coucou");
 	INIT_ARGV(7,"--sort-by-size");
 	INIT_ARGV(8,"--verbose");
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
 	
-	Parameters prms(9,argv);
+	Parameters prms(11,argv);
 	ASSERT_EQ(true,prms.isSizeSort());
 	ASSERT_EQ(true,prms.isVerbose());
 
+	FREE_ARGV(11);
 }
 
 TEST_F(ParametersTest1, CtorOutFiles) {
@@ -262,6 +308,8 @@ TEST_F(ParametersTest1, CtorOutFiles) {
 	out_files.push_back("out1.txt");
 	out_files.push_back("out2.txt");
 	ASSERT_EQ(out_files,prms.getOutFiles());
+
+	FREE_ARGV(9);
 }
 
 

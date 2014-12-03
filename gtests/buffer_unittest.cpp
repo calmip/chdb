@@ -22,8 +22,10 @@ TEST_F(SchedTestStr,vctToBfrStrings) {
 	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
 	
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 	UsingFs dir(prms);
 	vector_of_strings files=dir.getFiles();
 
@@ -32,7 +34,7 @@ TEST_F(SchedTestStr,vctToBfrStrings) {
 	EXPECT_EQ(0,memcmp(bfr,expected_bfr.c_str(),bfr_len));
 	EXPECT_EQ(bfr_len,data_len);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 };
 
 TEST_F(SchedTestStr,bfrToVctStrings) {
@@ -46,10 +48,12 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
 	
 	char const* bfr = expected_bfr.c_str();
 
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 
 	vector_of_strings file_pathes;
 	size_t  data_size;
@@ -62,7 +66,7 @@ TEST_F(SchedTestStr,bfrToVctStrings) {
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_file_pathes,file_pathes);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 };
 
 TEST_F(SchedTestInt,vctToBfrInt) {
@@ -76,8 +80,10 @@ TEST_F(SchedTestInt,vctToBfrInt) {
 	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
 	
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 	UsingFs dir(prms);
 	vector_of_strings files=dir.getFiles();
 
@@ -91,7 +97,7 @@ TEST_F(SchedTestInt,vctToBfrInt) {
 	EXPECT_EQ(0,memcmp(bfr,expected_bfr.c_str(),bfr_len));
 	EXPECT_EQ(bfr_len,data_len);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 };
 
 TEST_F(SchedTestInt,bfrToVctInt) {
@@ -105,10 +111,12 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
-	
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
+
 	char const* bfr = expected_bfr.c_str();
 
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 
 	vector_of_int values;
 	size_t data_size;
@@ -121,7 +129,7 @@ TEST_F(SchedTestInt,bfrToVctInt) {
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_values,values);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 };
 
 TEST_F(SchedTestDbl,bfrToVctDbl) {
@@ -135,10 +143,12 @@ TEST_F(SchedTestDbl,bfrToVctDbl) {
 	INIT_ARGV(4,getInputDir().c_str());
 	INIT_ARGV(5,"--in-type");
 	INIT_ARGV(6,"txt");
-	
+	INIT_ARGV(7,"--out-files");
+	INIT_ARGV(8,"%out-dir%/%path%");
+
 	char const* bfr = expected_bfr.c_str();
 
-	Parameters prms(7,argv);
+	Parameters prms(9,argv);
 
 	vector_of_double values;
 	size_t data_size;
@@ -151,7 +161,7 @@ TEST_F(SchedTestDbl,bfrToVctDbl) {
 	EXPECT_EQ(data_size,expected_bfr.length());
 	EXPECT_EQ(expected_values,values);
 
-	FREE_ARGV(7);
+	FREE_ARGV(9);
 };
 
 // Step 3. Call RUN_ALL_TESTS() in main().

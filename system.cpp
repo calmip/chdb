@@ -8,6 +8,7 @@ using namespace std;
 
 #include <libgen.h>
 #include <cstring>
+#include <cerrno>
 #include "system.hpp"
 
 /** 
@@ -156,8 +157,9 @@ vector_of_strings split(const string& s) {
 }
 
 /** 
- * @brief Returns true if string end with the extension
+ * @brief Returns true if string ends with the extension
  * 
+ * @param name 
  * @param ext 
  * 
  * @return 
@@ -173,6 +175,24 @@ bool isEndingWith(const string& name, const string& ext) {
 	}
 }
 
+/** 
+ * @brief Returns true if string begins with the heading
+ * 
+ * @param string
+ * @param heading
+ * 
+ * @return 
+ */
+bool isBeginningWith(const string& name, const string& heading) {
+	size_t heading_len = heading.length();
+	size_t nme_len = name.length();
+	if ( heading_len <= nme_len ) {
+		string nme_head = name.substr(0,heading_len);
+		return ( nme_head == heading );
+	} else {
+		return false;
+	}
+}
 
 /** 
  * @brief returns true if the file or directory exists
@@ -187,6 +207,23 @@ bool fileExists(const string &f) {
 		return true;
 	} else {
 		return false;
+	}
+}
+
+/** 
+ * @brief Create a directory, throw a runtime_error if fail
+ * 
+ * @param dir
+ * @param mode
+ */
+void mkdir (const string& dir, mode_t mode) {
+	int sts = mkdir(dir.c_str(), mode);
+	if (sts != 0) {
+		string msg="ERROR - Cannot create directory ";
+		msg += dir;
+		msg += " - Error= ";
+		msg += strerror(errno);
+		throw(runtime_error(msg));
 	}
 }
 

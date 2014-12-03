@@ -15,6 +15,7 @@
 #include "../parameters.hpp"
 #include "../directories.hpp"
 #include "../usingfs.hpp"
+#include "../usingbdbh.hpp"
 #include "gtest/gtest.h"
 
 // This macro is useful to initialize argv with read-write area, this is required by simpleOpt
@@ -33,7 +34,9 @@ struct naco {
 // convenient functions
 void createFile(const string& d, const naco& n);
 string readFile(const string&);
+string readFileFromBdbh(const string& db, const string& key);
 bool existsFile(const string&);
+bool existsFileFromBdbh(const string& db, const string& key);
 void removeFile(const string&);
 
 // some defines: The input directory names
@@ -150,9 +153,11 @@ protected:
 class ChdbTestsWithParams {
 public:
 	ChdbTestsWithParams(const string& t): tmp_dir(t) {};
-	string getTmpDir() { return tmp_dir; };
+	string getTmpDir() const { return tmp_dir; };
 	virtual Directories* createDirectory(const Parameters&)=0;
-	// 
+	virtual string getDescription() const = 0;
+	virtual string getDirectoryType() const = 0;
+
 	virtual void cvtInputDir(const string&) = 0;
 	virtual string cmplInputDir(const string&) = 0;
 
@@ -162,6 +167,7 @@ private:
 
 /**
  * @brief This object encapsulates the Directory creation but it NOT reponsible for the directory created !
+ *        Do note forget to DELETE it
  */
 class ChdbTestsWithParamsUsingFs: public ChdbTestsWithParams {
 public:
@@ -169,14 +175,16 @@ public:
 	virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
 	virtual string cmplInputDir(const string& n) {return n;};
 	virtual void cvtInputDir(const string&) {};
+	virtual string getDescription() const {string rvl="TESTING USINGFS ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
+	virtual string getDirectoryType() const {return (string) "UsingFs";};
 };
 class ChdbTestsWithParamsUsingBdbh: public ChdbTestsWithParams {
 public:
 	ChdbTestsWithParamsUsingBdbh(const string& t): ChdbTestsWithParams(t) {};
-	// A CHANGER !
-	virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
+	virtual Directories* createDirectory(const Parameters& p) { return new UsingBdbh(p); };
 	virtual string cmplInputDir(const string& n) { string s=n+".db"; return s;};
-	// A CHANGER !
+	virtual string getDescription() const {string rvl="TESTING USINGBDBH ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
+	virtual string getDirectoryType() const {return (string) "UsingBdbh";};
 	virtual void cvtInputDir(const string& src);
 };
 

@@ -89,7 +89,7 @@ void Directories::completeFilePath(const string& p, string& text, bool force_out
 	string d,n,b,e;
 	parseFilePath(p,d,n,b,e);
 
-	string id = prms.getInDir();
+	string id = getTempInDir();
 	string od = getTempOutDir();
 	static string tmpl1="%in-dir%";
 	static string tmpl2="%out-dir%";

@@ -1,65 +1,79 @@
-
-#ifndef USING_FS_H
-#define USING_FS_H
+#ifndef USING_BDBH_H
+#define USING_BDBH_H
 
 //#include <vector>
 #include <list>
 //#include <stdexcept>
-#include <set>
+//#include <set>
+#include <memory>
 using namespace std;
 
 #include "constypes.hpp"
 #include "directories.hpp"
+#include "bdbh/command.hpp"
+
+#define DEFAULT_BDBH_TMP_DIRECTORY "."
+
+typedef auto_ptr<bdbh::BerkeleyDb> BerkeleyDb_aptr;
 
 /** 
 	\brief This class manages the files contained inside the input or output directory
-	       It is used when we work with REAL directories
+	       It is used when we work with bdbh databases
 */
-#include <iostream>
-class UsingFs: public Directories {
+class UsingBdbh: public Directories {
 public:
-	UsingFs(const Parameters& p):Directories(p){};
+	UsingBdbh(const Parameters& p);
 
 	// consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
-	virtual ~UsingFs() {
-		try {
-			consolidateOutput(true);
-		} catch (exception& e){
-			//cerr << "Process rank " << rank << " - ";
-			//cerr << "EXCEPTION CATCHED DURING UsingFs DESTRUCTOR: \n" << e.what() << '\n';
-		}
+	virtual ~UsingBdbh() {
+		//if (rank != 0) {
+			try {
+				consolidateOutput(true);
+			} catch (exception& e){
+				cerr << "Process rank " << rank << " - ";
+				cerr << "EXCEPTION CATCHED DURING UsingBdbh DESTRUCTOR: \n" << e.what() << '\n';
+			};
+			//}
 	}
 
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&);
-	void makeOutDir(bool,bool);
 	void makeTempOutDir();
+	void makeOutDir(bool,bool);
 	string getTempOutDir() const {
 		if(temp_output_dir.length()!=0) return temp_output_dir;
 		else throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
 	};
-	// temporary input diretory not used - But throws if temp not inited for consistency reasons
-	// (see Directory::UsingBdbh)
-	string getTempInDir() const { 
-		if(temp_output_dir.length()!=0) return prms.getInDir();
-		else throw(logic_error("ERROR - temporary NOT INITIALIZED"));
-	};		
+	string getTempInDir() const {
+		if(temp_input_dir.length()!=0) return temp_input_dir;
+		else throw(logic_error("ERROR - temp_input_dir NOT INITIALIZED"));
+	};
+//	string getTempDbDir() const {
+//		if(temp_db_dir.length()!=0) return temp_db_dir;
+//		else throw(logic_error("ERROR - temp_db_dir NOT INITIALIZED"));
+//	};
 	string getOutDir() const  {
 		if(output_dir.length()!=0) return output_dir;
 		else throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
-	}
+	};
 	void consolidateOutput(bool from_temp, const string& path="");
 
 //	friend class TestCase1_usingFsfindOrCreateDir_Test;
 
 private:
-	void readDir(const string &,size_t) const;
-	void readDirRecursive(const string &,size_t,list<Finfo>&,bool) const;
+	BerkeleyDb_aptr input_bdb;    // The Input database
+	BerkeleyDb_aptr output_bdb;   // The Output database
+	BerkeleyDb_aptr temp_bdb;     // The Temp database
 	virtual void findOrCreateDir(const string &);
 	virtual void v_readFiles();
-	mutable set<string> found_directories;
+	// mutable set<string> input_files;
+	set<string> found_directories;
 	string output_dir;
+	string temp_dir;
 	string temp_output_dir;
+	string temp_input_dir;
+	string temp_db_dir;
+	bool need_consolidation;
 };
 
 #endif

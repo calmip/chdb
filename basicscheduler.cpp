@@ -363,7 +363,7 @@ void BasicScheduler::mainLoopSlave() {
 	// END tag received: consolidate output directory from temporary and leave
 	// If first_execution:
 	//    - The slave did nothing !
-	//    - The temporary diectory is NOT initialized
+	//    - The temporary directory is NOT initialized
 	//    ---> There is nothing to consolidate, and calling consolidateOutput will throw an exception
 	if (!first_execution) {
 		dir.consolidateOutput(true);

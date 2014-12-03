@@ -108,3 +108,33 @@ TEST(parseFilePath,parseFilePath) {
 	EXPECT_EQ(e,"");
 
 }
+
+TEST(isEndingWith,isEndingWith) {
+	string name="a/b/c/e.txt1";
+	EXPECT_EQ(true,isEndingWith(name,".txt1"));
+	EXPECT_EQ(true,isEndingWith(name,"txt1"));
+	EXPECT_EQ(false,isEndingWith(name,".txt"));
+
+	name=".txt";
+	EXPECT_EQ(false,isEndingWith(name,".txt1"));
+}
+
+TEST(isBeginningWith,isBeginningWith) {
+	string name="a/b/c/e.txt1";
+	EXPECT_EQ(true,isBeginningWith(name,"a/b"));
+	EXPECT_EQ(false,isBeginningWith(name,"/a/b"));
+	EXPECT_EQ(true,isBeginningWith(name,"a/b/c/e.txt1"));
+	EXPECT_EQ(false,isBeginningWith(name,"a/b/c/e.txt10"));
+	EXPECT_EQ(true,isBeginningWith(name,""));
+}
+
+TEST(mkdir,mkdir) {
+	string name="some_directory";
+	EXPECT_NO_THROW(mkdir(name));
+	EXPECT_EQ(true,fileExists(name));
+	EXPECT_THROW(mkdir(name),runtime_error);
+
+	string cmd = "rmdir ";
+	cmd += name;
+	EXPECT_NO_THROW(callSystem(cmd,true));
+}

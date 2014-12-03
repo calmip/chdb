@@ -23,6 +23,40 @@ using namespace std;
    \brief 
 */
 
+/*
+  NOTMP support
+  
+  If the macro NOTMP is defined, it is not possible to modify the tmp value with the --tmp-dir switch
+  However, this switch is still recognized, for compatibility reasons
+*/
+
+/* The default values */
+#ifdef NOTMP
+#define DEFAULT_TMP_DIRECTORY ""
+#else
+#define DEFAULT_TMP_DIRECTORY "."
+#endif
+
+#define DEFAULT_VERBOSE    false
+#define DEFAULT_SIZE_SORT  false
+#define DEFAULT_BLOCK_SIZE 1
+
+/** The constructor
+
+	\param argc   passed to main by the system
+	\param argv   passed to main by the system
+
+*/
+
+Parameters::Parameters(int argc, 
+					   char* argv[]) throw(runtime_error) :
+    tmp_directory(DEFAULT_TMP_DIRECTORY),
+	is_bdbh(false),
+	is_size_sort(DEFAULT_SIZE_SORT),
+	is_verbose(DEFAULT_VERBOSE),
+	block_size(DEFAULT_BLOCK_SIZE) {
+
+{
 // define the ID values to identify the option
 enum { 
 	OPT_HELP=1,     // -h|--help
@@ -66,39 +100,6 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_CMD,           "--command-line", SO_REQ_SEP },
 	SO_END_OF_OPTIONS   // END
 };
-
-/*
-  NOTMP support
-  
-  If the macro NOTMP is defined, it is not possible to modify the tmp value with the --tmp-dir switch
-  However, this switch is still recognized, for compatibility reasons
-*/
-
-/* The default values */
-#ifdef NOTMP
-#define DEFAULT_TMP_DIRECTORY ""
-#else
-#define DEFAULT_TMP_DIRECTORY "."
-#endif
-
-#define DEFAULT_VERBOSE    false
-#define DEFAULT_SIZE_SORT  false
-#define DEFAULT_BLOCK_SIZE 1
-
-/** The constructor
-
-	\param argc   passed to main by the system
-	\param argv   passed to main by the system
-
-*/
-
-Parameters::Parameters(int argc, 
-					   char* argv[]) throw(runtime_error) :
-    tmp_directory(DEFAULT_TMP_DIRECTORY),
-	is_bdbh(false),
-	is_size_sort(DEFAULT_SIZE_SORT),
-	is_verbose(DEFAULT_VERBOSE),
-	block_size(DEFAULT_BLOCK_SIZE) {
 
 	// Searching the --command-line argument
 	CSimpleOpt arguments(argc, argv, options);
@@ -157,11 +158,17 @@ Parameters::Parameters(int argc,
 
 	// complete parameters if necessary
 	if ( output_directory == "" ) {
-		output_directory = input_directory + ".out";
+		if (isEndingWith(input_directory,".db")) {
+			output_directory = input_directory.substr(0,input_directory.length()-3);
+			output_directory += ".out.db";
+		} else {
+			output_directory = input_directory + ".out";
+		}
 	}
 
 	// check everything is ok
 	check();
+}
 }
 
 /**
@@ -188,6 +195,9 @@ void Parameters::checkEmptyMembers() {
 	}
 	if ( file_type=="") {
 		throw runtime_error("ERROR - The parameter --in-type is required");
+	}
+	if (output_files.size()==0) {
+		throw runtime_error("ERROR - The parameter --out-files is required");
 	}
 }
 void Parameters::checkInputDirectory() {

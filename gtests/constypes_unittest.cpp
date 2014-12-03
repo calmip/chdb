@@ -36,11 +36,36 @@ string readFile(const string & f) {
 	return rvl;
 }
 
+string readFileFromBdbh(const string& db, const string& key) {
+	string cmd = "./bdbh --database ";
+	string tmp_out = "tmp.out";
+	cmd += db;
+	cmd += " cat ";
+	cmd += key;
+	cmd += " >";
+	cmd += tmp_out;
+	system(cmd.c_str());
+	string out = readFile(tmp_out);
+#ifdef REMOVE_OUTPUT
+	unlink(tmp_out.c_str());
+#endif
+	return out;
+}
+
 bool existsFile(const string &f) {
 	ifstream in(f.c_str());
 	return in;
 }
 
+bool existsFileFromBdbh(const string& db, const string& key) {
+	string cmd = "./bdbh --database ";
+	cmd += db;
+	cmd += " ls ";
+	cmd += key;
+	int rvl = system(cmd.c_str());
+	return (rvl==0);
+}
+	
 void removeFile(const string& f) {
 #ifdef REMOVE_OUTPUT
 	string cmd = "rm -r ";
@@ -342,10 +367,18 @@ void ChdbTestsWithParamsUsingBdbh::cvtInputDir(const string& src) {
 	struct stat buf;
 	int err = stat(dst.c_str(), &buf);
 	if (err==-1 && errno==ENOENT) {
-		string cmd="cp -a ";
+//		string cmd="cp -a ";
+//		cmd += src;
+//		cmd += " ";
+//		cmd += dst;
+		string cmd_head = "../bdbh/bdbh --database ";
+		cmd_head += dst;
+		string cmd = cmd_head;
+		cmd += " create --compress";
+		callSystem(cmd,true);
+	   	cmd = cmd_head;
+		cmd += " add -r ";
 		cmd += src;
-		cmd += " ";
-		cmd += dst;
 		callSystem(cmd,true);
 	}
 }

@@ -14,6 +14,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <sys/types.h>
+#include <memory>
 #endif
 
 #include <iostream>
@@ -23,6 +24,7 @@ using namespace std;
 #include "system.hpp"
 #include "parameters.hpp"
 #include "usingfs.hpp"
+#include "usingbdbh.hpp"
 #include "basicscheduler.hpp"
 
 void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sched ) {
@@ -94,6 +96,22 @@ void writePid() {
 void writePid(){}
 #endif
 
+/** 
+ * @brief A factory to create to correct directory object, depending of the parameters
+ * 
+ * @param prms 
+ * 
+ * @return 
+ */
+Directories* dirFactory(Parameters& prms) {
+	string name = prms.getInDir();
+	if ( isEndingWith(name,".db") ) {
+		return new UsingBdbh(prms);
+	} else {
+		return new UsingFs(prms);
+	}
+}
+	
 /*////////////// Main ///////////////*/
 int main(int argc,char* argv[])
 {
@@ -104,7 +122,10 @@ int main(int argc,char* argv[])
 	
 	try {
 		Parameters prms(argc,argv);
-		UsingFs dir(prms);
+		auto_ptr<Directories> dir_aptr(dirFactory(prms));
+		Directories& dir = *dir_aptr.get();
+
+		//UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
 
 		if (sched.isMaster() && prms.isVerbose()) {
