@@ -23,18 +23,7 @@ typedef auto_ptr<bdbh::BerkeleyDb> BerkeleyDb_aptr;
 class UsingBdbh: public Directories {
 public:
 	UsingBdbh(const Parameters& p);
-
-	// consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
-	virtual ~UsingBdbh() {
-		//if (rank != 0) {
-			try {
-				consolidateOutput(true);
-			} catch (exception& e){
-				cerr << "Process rank " << rank << " - ";
-				cerr << "EXCEPTION CATCHED DURING UsingBdbh DESTRUCTOR: \n" << e.what() << '\n';
-			};
-			//}
-	}
+	virtual ~UsingBdbh();
 
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&);

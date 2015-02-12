@@ -19,6 +19,7 @@ using namespace std;
 //#include "command.h"
 #include "system.hpp"
 #include "usingbdbh.hpp"
+#include "bdbh/command.hpp"
 #include "bdbh/ls.hpp"
 #include "bdbh/read.hpp"
 #include "bdbh/create.hpp"
@@ -36,7 +37,19 @@ using namespace std;
 typedef auto_ptr<bdbh::Command> Command_aptr;
 
 UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_bdb(NULL),temp_bdb(NULL),need_consolidation(false) {
+	bdbh::Initialize();
 	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD);
+}
+
+// consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
+UsingBdbh::~UsingBdbh() {
+	try {
+		consolidateOutput(true);
+	} catch (exception& e){
+		cerr << "Process rank " << rank << " - ";
+		cerr << "EXCEPTION CATCHED DURING UsingBdbh DESTRUCTOR: \n" << e.what() << '\n';
+	};
+	bdbh::Terminate();
 }
 
 class PushFiles: public bdbh::LsObserver {
@@ -114,8 +127,7 @@ void UsingBdbh::v_readFiles() {
 
 		const char* args[] = {"--database",top.c_str(),"ls"};
 		bdbh::Parameters bdbh_prms(3,args);
-		bdbh::TriBuff bfr3(bdbh_prms.GetMaxFileSize());
-		bdbh::Ls ls_cmd(bdbh_prms,*input_bdb.get(),bfr3);
+		bdbh::Ls ls_cmd(bdbh_prms,*input_bdb.get());
 
 		// Attach the observer to an observer object, then execute the ls
 		if ( prms.isSizeSort() ) {
@@ -262,9 +274,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	string temp_input_dir = getTempInDir();
 	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
 	bdbh::Parameters bdbh_prms_r(9,args);
-	// TODO DANS LE CONSTRUCTEUR
-	bdbh::TriBuff bfr3(bdbh_prms_r.GetMaxFileSize());
-	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get(),bfr3);
+	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
 	read_cmd.Exec();
 	int bdbh_rvl_r = read_cmd.GetExitStatus();
 	if (bdbh_rvl_r != 0) {
@@ -318,10 +328,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		// If no output file created, we'll get an exception !
 		if (path_exists==true) {
 			bdbh::Parameters bdbh_prms_w(arg);
-
-			// TODO DANS LE CONSTRUCTEUR
-			//bdbh::TriBuff bfr3(bdbh_prms_w.GetMaxFileSize());
-			bdbh::Write write_cmd(bdbh_prms_w,*temp_bdb.get(),bfr3);
+			bdbh::Write write_cmd(bdbh_prms_w,*temp_bdb.get());
 			//cout << "INFO - WRITING DATA TO " << temp_db_dir << '\n';
 			// TODO - Exception of GetExitStatus() ? Not clair
 			write_cmd.Exec();
@@ -409,9 +416,7 @@ void UsingBdbh::makeOutDir(bool rank_flg, bool rep_flg) {
 
 	const char* args[] = {"--database",output_dir.c_str(),"create"};
 	bdbh::Parameters bdbh_prms(3,args);
-	// TODO DANS LE CONSTRUCTEUR
-	bdbh::TriBuff bfr3(bdbh_prms.GetMaxFileSize());
-	bdbh::Create create_cmd(bdbh_prms,*output_bdb.get(),bfr3);
+	bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
 	create_cmd.Exec();
 	int rvl = create_cmd.GetExitStatus();
 	if (rvl != 0) {
@@ -475,9 +480,7 @@ void UsingBdbh::makeTempOutDir() {
 	
 	const char* args[] = {"--database",temp_db_dir.c_str(),"create"};
 	bdbh::Parameters bdbh_prms(3,args);
-	// TODO DANS LE CONSTRUCTEUR
-	bdbh::TriBuff bfr3(bdbh_prms.GetMaxFileSize());
-	bdbh::Create create_cmd(bdbh_prms,*temp_bdb.get(),bfr3);
+	bdbh::Create create_cmd(bdbh_prms,*temp_bdb.get());
 	create_cmd.Exec();
 	int rvl = create_cmd.GetExitStatus();
 	if (rvl != 0) {
@@ -539,10 +542,7 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 			}
 			const char* args[] = {"--database",getOutDir().c_str(),"merge",from_db_dir.c_str()};
 			bdbh::Parameters bdbh_prms(4,args);
-
-			// DANS LE CONSTRUCTEUR !
-			bdbh::TriBuff bfr3(bdbh_prms.GetMaxFileSize());
-			bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get(),bfr3);
+			bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
 			merge_cmd.Exec();
 			int rvl = merge_cmd.GetExitStatus();
 			if (rvl != 0) {

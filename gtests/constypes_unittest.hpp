@@ -54,8 +54,8 @@ void removeFile(const string&);
 // For instance = 1 REAL directory + the corresponding bdbh version of this directory !
 class ChdbTest: public ::testing::Test {
 protected:
-	ChdbTest(const string& n): input_dir(n){};
-	virtual ~ChdbTest() { removeFile(getInputDir()+".out*"); };
+	ChdbTest(const string& n): input_dir(n){bdbh::Initialize();};
+	virtual ~ChdbTest() { removeFile(getInputDir()+".out*");/*bdbh::Terminate();*/ };
 	virtual string getInputDir() const { return input_dir; };
 
 private:
