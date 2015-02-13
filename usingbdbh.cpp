@@ -125,8 +125,9 @@ void UsingBdbh::v_readFiles() {
 		//}
    
 
-		const char* args[] = {"--database",top.c_str(),"ls"};
-		bdbh::Parameters bdbh_prms(3,args);
+		//const char* args[] = {"--database",top.c_str(),"ls"};
+		//bdbh::Parameters bdbh_prms(3,args);
+		bdbh::Parameters bdbh_prms;
 		bdbh::Ls ls_cmd(bdbh_prms,*input_bdb.get());
 
 		// Attach the observer to an observer object, then execute the ls
@@ -272,8 +273,9 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 
 	// Read the input pathes from the database, and copy them to the temporary input directory
 	string temp_input_dir = getTempInDir();
-	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
-	bdbh::Parameters bdbh_prms_r(9,args);
+//	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
+	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+	bdbh::Parameters bdbh_prms_r(6,args);
 	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
 	read_cmd.Exec();
 	int bdbh_rvl_r = read_cmd.GetExitStatus();
@@ -307,8 +309,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	// if rvl == 0, we save to the database the output files before returning
 	//if (rvl==0) {
 		vector<string> arg;
-		arg.push_back("--database");
-		arg.push_back(temp_db_dir);
+		//arg.push_back("--database");
+		//arg.push_back(temp_db_dir);
 		arg.push_back("--root");
 		arg.push_back(out_root);
 		arg.push_back("--directory");
@@ -316,7 +318,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		arg.push_back("--recursive");
 		arg.push_back("--overwrite");
 		//arg.push_back("--verbose");
-		arg.push_back("add");
+		//arg.push_back("add");
 		bool path_exists=false;
 		for (size_t i=0; i<l_out_pathes.size(); ++i) {
 			if (fileExists(out_pathes[i])) {
@@ -414,8 +416,9 @@ void UsingBdbh::makeOutDir(bool rank_flg, bool rep_flg) {
 	// Create and open an output BerkeleyDb
 	output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OCREATE);
 
-	const char* args[] = {"--database",output_dir.c_str(),"create"};
-	bdbh::Parameters bdbh_prms(3,args);
+	//const char* args[] = {"--database",output_dir.c_str(),"create"};
+	//bdbh::Parameters bdbh_prms(3,args);
+	bdbh::Parameters bdbh_prms;
 	bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
 	create_cmd.Exec();
 	int rvl = create_cmd.GetExitStatus();
@@ -478,8 +481,9 @@ void UsingBdbh::makeTempOutDir() {
 	// Create and open the database
 	temp_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(temp_db_dir.c_str(),BDBH_OCREATE);
 	
-	const char* args[] = {"--database",temp_db_dir.c_str(),"create"};
-	bdbh::Parameters bdbh_prms(3,args);
+	//const char* args[] = {"--database",temp_db_dir.c_str(),"create"};
+	//bdbh::Parameters bdbh_prms(3,args);
+	bdbh::Parameters bdbh_prms;
 	bdbh::Create create_cmd(bdbh_prms,*temp_bdb.get());
 	create_cmd.Exec();
 	int rvl = create_cmd.GetExitStatus();
@@ -540,8 +544,9 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 			if (prms.isVerbose()) {
 				cerr << "INFO - rank " << rank << " is now consolidating data " << from_db_dir << " to " << out << "\n";
 			}
-			const char* args[] = {"--database",getOutDir().c_str(),"merge",from_db_dir.c_str()};
-			bdbh::Parameters bdbh_prms(4,args);
+			//const char* args[] = {"--database",getOutDir().c_str(),"merge",from_db_dir.c_str()};
+			const char* args[] = {from_db_dir.c_str()};
+			bdbh::Parameters bdbh_prms(1,args);
 			bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
 			merge_cmd.Exec();
 			int rvl = merge_cmd.GetExitStatus();

@@ -379,8 +379,8 @@ TEST_P(TestCase1,ExecuteCommandFrmList2) {
 	{
 		auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
 		Directories& dir = *aptr_dir.get();
-
 		dir.makeOutDir(false,true);
+
 		if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 			output_dir = getInputDir();
 			output_dir.erase(output_dir.length()-3); // drop .db
@@ -408,7 +408,7 @@ TEST_P(TestCase1,ExecuteCommandFrmList2) {
 		BasicScheduler sched(prms,dir);
 		sched.return_values.clear();
 		sched.file_pathes = dir.nextBlock();
-		sched.executeCommand();
+//		sched.executeCommand();
 		EXPECT_NO_THROW(sched.executeCommand());
 
 		// only TWO results

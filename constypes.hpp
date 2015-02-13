@@ -1,7 +1,7 @@
 
 
-#ifndef CONSTYPES_H
-#define CONSTYPES_H
+#ifndef CONSTYPES_CHDB_H
+#define CONSTYPES_CHDB_H
 
 #include <vector>
 #include <string>
@@ -10,7 +10,7 @@
 #include <sstream>
 using namespace std;
 
-#define CHDB_VERSION 0.63
+#define CHDB_VERSION 0.70
 
 /** 
  * @brief Some predicates
