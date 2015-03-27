@@ -20,20 +20,21 @@ class Parameters: private NonCopyable {
 public:
     Parameters(int, char**) throw (runtime_error);
 
-	string getInDir()    const { return input_directory; };
-	string getOutDir()   const { return output_directory; };
-	string getTmpDir()   const { return tmp_directory; };
-	string getInFile()   const { return input_file; };
-	string getFileType() const { return file_type; };
-	bool isBdBh()        const { return is_bdbh; };
-	bool isSizeSort()    const { return is_size_sort; };
-	bool isVerbose()     const { return is_verbose; };
-	bool isAbrtOnErr()   const { return on_error.length()==0; };
-	bool isTmpDir()      const { return tmp_directory.length()!=0; };
-	string getErrFile()  const { return on_error; };
-	bool isReportMode()  const { return report.length()!=0; };
-	string getReport()   const { return report; };
-	int getBlockSize()   const { return block_size; };
+	string getInDir()     const { return input_directory; };
+	string getOutDir()    const { return output_directory; };
+	string getTmpDir()    const { return tmp_directory; };
+	string getInFile()    const { return input_file; };
+	string getFileType()  const { return file_type; };
+	string getCmdIsMpi()  const { return cmd_is_mpi; };
+	bool isBdBh()         const { return is_bdbh; };
+	bool isSizeSort()     const { return is_size_sort; };
+	bool isVerbose()      const { return is_verbose; };
+	bool isAbrtOnErr()    const { return on_error.length()==0; };
+	bool isTmpDir()       const { return tmp_directory.length()!=0; };
+	string getErrFile()   const { return on_error; };
+	bool isReportMode()   const { return report.length()!=0; };
+	string getReport()    const { return report; };
+	int getBlockSize()    const { return block_size; };
 	vector_of_strings  getOutFiles() const { return output_files; };
 	string getExternalCommand()      const { return external_command; };
 
@@ -52,6 +53,7 @@ private:
 	string tmp_directory;
 	string input_file;
 	string file_type;
+	string cmd_is_mpi;
 	bool is_bdbh;
 	bool is_size_sort;
 	bool is_verbose;

@@ -156,6 +156,24 @@ vector_of_strings split(const string& s) {
 }
 
 /** 
+ * @brief replace a template with value
+ * 
+ * @param[in]  tmpl  The template to look for in text
+ * @param[in]  value The value to replace with 
+ * @param[out] text
+ */
+void replaceTmpl(const string& tmpl, const string& value, string& text) {
+	size_t pos = 0;
+	do {
+		pos = text.find(tmpl,pos);
+
+		if (pos != string::npos) {
+			text.replace(pos,tmpl.length(),value);
+		}
+	} while(pos != string::npos);
+}
+
+/** 
  * @brief returns true if the file or directory exists
  * 
  * @param f 

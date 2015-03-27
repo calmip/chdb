@@ -82,10 +82,11 @@ protected:
 	mutable size_t files_size;
 	int rank;
 	int comm_size;
+	void buildMpiCommand(string&) const;
 
 private:
 	mutable vector_of_strings::iterator blk_ptr;
-	void replaceTmpl(const string& tmpl, const string& value, string& text);
+//	void replaceTmpl(const string& tmpl, const string& value, string& text);
 	virtual void v_readFiles() = 0;
 };
 

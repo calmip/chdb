@@ -258,9 +258,11 @@ int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& o
 	for (size_t i=0; i<out_pathes.size(); ++i) {
 		findOrCreateDir(out_pathes[i]);
 	}
-//	cerr << "COUCOU " << cmd << "\n";
 
-	return callSystem(cmd);
+	// Change command for mpirun instructions if necessary
+	string command = cmd;
+	buildMpiCommand(command);
+	return callSystem(command);
 }
 
 /** 
