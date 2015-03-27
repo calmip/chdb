@@ -122,5 +122,5 @@ tests: system_unittest parameters_unittest directories_unittest scheduler_unitte
 	./parameters_unittest 
 	./directories_unittest
 	./buffer_unittest
-	mpirun -n 2 ./scheduler_unittest
+	mpirun --resv-ports -n 2 ./scheduler_unittest
 	./chdb_unittest

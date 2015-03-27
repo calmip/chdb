@@ -16,7 +16,7 @@ using ::testing::Values;
 // One slave, 5 files, blocks of 1 file
 TEST_P(TestCase1,Block1) {
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
+	cmd += "--command-line './ext_cmd_with_rank.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
@@ -29,18 +29,18 @@ TEST_P(TestCase1,Block1) {
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
 	string output_dir = getInputDir() + ".out";
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
 // One slave, blocks of 2 files, no error generated
 TEST_P(TestCase1,Block2) {
 	string output_dir = getInputDir() + ".out";
 	string cmd = "mpirun -n 2 ../chdb --verbose ";
-	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
+	cmd += "--command-line './ext_cmd_with_rank.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
 	cmd += "--out-file %out-dir%/%path% ";
@@ -53,11 +53,11 @@ TEST_P(TestCase1,Block2) {
 	EXPECT_EQ(0,rvl);
 	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
 
-	EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
-	EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
-	EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
-	EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFile(output_dir+"/B.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
 // One slave, One block of 5 files, no error generated
@@ -283,24 +283,26 @@ TEST_P(TestCase3,errBlock2Slaves2) {
 
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithParamsUsingFs("none"));
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
-auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
+//auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
 
 
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase1,
 	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
 );
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase2,
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
 );
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase3,
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
 );
 
 // Step 3. Call RUN_ALL_TESTS() in main().

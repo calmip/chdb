@@ -108,6 +108,12 @@ ChdbTest1::ChdbTest1(): ChdbTest(INPUTDIR1) {
 	expected_file_contents["C/C/C.txt"] = "STS\t0\nTXT\tC\n\n";
 	expected_file_contents["D/C.txt"]   = "STS\t1\nTXT\tABC\n\n";
 	expected_file_contents["A.txt"]     = "STS\t0\nTXT\tABCDEF\n\n";
+
+	expected_file_contents_with_rank["B.txt"]     = "RANK\t1\nSIZE\t2\nSTS\t0\nTXT\tABCDEFGHIJKLMNO\n\n";
+	expected_file_contents_with_rank["C/C.txt"]   = "RANK\t1\nSIZE\t2\nSTS\t0\nTXT\tABCDEFGHIJKLMNOPQ\n\n";
+	expected_file_contents_with_rank["C/C/C.txt"] = "RANK\t1\nSIZE\t2\nSTS\t0\nTXT\tC\n\n";
+	expected_file_contents_with_rank["D/C.txt"]   = "RANK\t1\nSIZE\t2\nSTS\t1\nTXT\tABC\n\n";
+	expected_file_contents_with_rank["A.txt"]     = "RANK\t1\nSIZE\t2\nSTS\t0\nTXT\tABCDEF\n\n";
 }
 
 
