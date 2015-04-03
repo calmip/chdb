@@ -42,7 +42,9 @@ void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sche
 		cout << '\n';
 	}
 	cout << "OUTPUT DIRECTORY   = " << prms.getOutDir() << '\n';
+	cout << "WORK DIRECTORY     = " << prms.getWorkDir() << '\n'; 
 	cout << "FILE TYPE          = " << prms.getFileType() << '\n';
+	cout << "ENV SNIPPET        = " << prms.getEnvSnippet() << '\n';
 	cout << "COMMAND            = " << prms.getExternalCommand() << '\n';
 	cout << "OUTPUT FILES       = ";
 	vector_of_strings out_files = prms.getOutFiles();

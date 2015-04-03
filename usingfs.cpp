@@ -243,26 +243,69 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 
 /** 
  * @brief Execute a command through executeSystem and return the exit status of the command
- *        We pass the out_pathes vector to create the output directories if necessary
+ *        We pass the out_pathes vector and the work directory to create the output directories if necessary
  * 
- * @param cmd 
- * @param out_pathes 
+ * @param cmd         The command to execute
+ * @param out_pathes  The output pathes to create
+ * @param work_dir    The work directory to change into
+ * @param snippet     The script snippet to execute to build the environment
  * 
  * @return the command exit status
  *
  */	
 //#include <iostream>
-int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes) const {
+int UsingFs::executeExternalCommand(const string& cmd,const vector_of_strings& out_pathes, const string& work_dir, const string& snippet) const {
 
 	// Create the subdirectories if necessary
 	for (size_t i=0; i<out_pathes.size(); ++i) {
 		findOrCreateDir(out_pathes[i]);
 	}
 
-	// Change command for mpirun instructions if necessary
-	string command = cmd;
-	buildMpiCommand(command);
-	return callSystem(command);
+	// Create and change to work directory if requested
+	string saved_dir = "";
+	if (work_dir.length() != 0) {
+		getCurrentDirName(saved_dir);
+		string ok = work_dir + "/ok";  // dummy file because findOrCreateDir checks only the dir part
+		findOrCreateDir(ok);
+		int sts = chdir(work_dir.c_str());
+		if (sts != 0 ) {
+			string msg="ERROR - Cannot change to work directory ";
+			msg += work_dir;
+			msg += " - Error= ";
+			msg += strerror(errno);
+			throw(runtime_error(msg));
+		}
+	}
+
+	// will be returned at the end
+	int sts=0;
+
+	// Execute the snippet, if any
+	if (snippet.length() != 0) {
+		string sni_cmd = "/bin/bash -c '";
+		sni_cmd += snippet;
+		sni_cmd += "'";
+		sts = callSystem(sni_cmd);
+	}
+
+	// If snippet was successfull (or no snipped at all)
+	if (sts==0) {
+		// Change command for mpi instructions if necessary
+		string command = cmd;
+		buildMpiCommand(command);
+
+		// Call command and keep value
+		sts = callSystem(command);
+
+		// Change to previous current directory if necessary
+		// NB - Should work, we don't even check
+		if (saved_dir.length() != 0) {
+			chdir(saved_dir.c_str());
+		}
+	}
+
+	// Return call status
+	return sts;
 }
 
 /** 

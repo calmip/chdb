@@ -22,6 +22,8 @@ public:
 
 	string getInDir()     const { return input_directory; };
 	string getOutDir()    const { return output_directory; };
+	string getWorkDir()   const { return work_directory; };
+	string getEnvSnippet() const{ return env_snippet; };
 	string getTmpDir()    const { return tmp_directory; };
 	string getInFile()    const { return input_file; };
 	string getFileType()  const { return file_type; };
@@ -50,6 +52,8 @@ private:
 
 	string input_directory;
 	string output_directory;
+	string work_directory;
+	string env_snippet;
 	string tmp_directory;
 	string input_file;
 	string file_type;

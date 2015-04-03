@@ -36,6 +36,51 @@ TEST_P(TestCase1,Block1) {
 	EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/A.txt"));
 };
 
+// Same thing, but specify a work directory for the command
+// Warning, when executing the command, the names are now relative to work directory !
+// Thus, we prefer to use absolute names for executable name and for input
+// relative names for output is ok
+// We also use here the --create-environment switch
+TEST_P(TestCase1,Block1W) {
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string wd;
+	naco readme("README.txt","CREATED BY chdb SNIPPET");
+	
+	getCurrentDirName(wd);
+	createFile(wd,readme);
+
+	string cexe  = wd + "/ext_cmd_with_rank.sh ";
+	string cindir= wd + "/%in-dir%/%path% ";
+	cmd += "--command-line '";
+	cmd += cexe;
+	cmd += cindir;
+	cmd += " %path% 0' ";
+	cmd += "--in-type txt ";
+	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
+	cmd += "--out-file %out-dir%/OUT/%basename%/%path% ";
+	cmd += "--tmp-dir " + GetParam()->getTmpDir(); cmd += " ";
+	cmd += "--work-dir ";
+	cmd += "OUT/%basename% ";
+	cmd += "--create-environment ";
+	cmd += "'cp ../../../README.txt .'";
+	cmd += " >stdoe 2>&1";
+
+	cerr << "NOW CALLING " << cmd << '\n';
+	int rvl=system(cmd.c_str());
+	EXPECT_EQ(0,rvl);
+	EXPECT_NE(0,callSystem("grep -q '^ERROR' stdoe"));
+
+	string output_dir = getInputDir() + ".out";
+	EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFile(output_dir+"/OUT/B/B.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFile(output_dir+"/OUT/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFile(output_dir+"/OUT/C/C/C/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFile(output_dir+"/OUT/C/D/C.txt"));
+	EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/OUT/A/A.txt"));
+	EXPECT_EQ("CREATED BY chdb SNIPPET\n\n",readFile(output_dir+"/OUT/B/README.txt"));
+	EXPECT_EQ("CREATED BY chdb SNIPPET\n\n",readFile(output_dir+"/OUT/C/README.txt"));
+	EXPECT_EQ("CREATED BY chdb SNIPPET\n\n",readFile(output_dir+"/OUT/A/README.txt"));
+};
+
 // One slave, blocks of 2 files, no error generated
 TEST_P(TestCase1,Block2) {
 	string output_dir = getInputDir() + ".out";

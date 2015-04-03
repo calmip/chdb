@@ -29,6 +29,8 @@ enum {
 	OPT_INDIR,      // --in-dir
 	OPT_INFILE,     // --in-file
 	OPT_OUTDIR,     // --out-dir
+	OPT_WORKDIR,    // --work-dir
+	OPT_ENV_SNIPPET,// --create-environment
 	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
 	OPT_BLOCK_SIZE, // --block-size,
@@ -56,6 +58,8 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_INDIR,         "--in-dir",       SO_REQ_SEP },
 	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
+	{ OPT_WORKDIR,       "--work-dir",     SO_REQ_SEP },
+	{ OPT_ENV_SNIPPET,   "--create-environment", SO_REQ_SEP },
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
@@ -123,6 +127,12 @@ Parameters::Parameters(int argc,
 				break;
 			case OPT_OUTDIR:
 				output_directory =  arguments.OptionArg();
+				break;
+			case OPT_WORKDIR:
+				work_directory = arguments.OptionArg();
+				break;
+			case OPT_ENV_SNIPPET:
+				env_snippet = arguments.OptionArg();
 				break;
 			case OPT_TMPDIR:
 #ifndef NOTMP
@@ -267,6 +277,14 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
+	cerr << "                               WARNING ! \n";
+	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
+	cerr << "                                  - a RELATIVE PATH specified from ANY OTHER SWITCH will be treated FROM THE INITIAL LAUNCH DIRECTORY\n";
+	cerr << "  --create-environment       : A snippet containing some shell commands to create a working environment inside the work directory \n";
+	cerr << "                               Will be executed AFTER chdir workdir and BEFORE the command itself\n";
+	cerr << "                               EXAMPLE:\n";
+	cerr << "                                  --create-environment 'cp ~/DATA/*.inp .; cp ~/DATA/*.conf .'\n";
 	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
 	cerr << "                               load-balancing issues\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
@@ -283,7 +301,7 @@ void Parameters::usage() {
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
-	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
+	cerr << "TEMPLATES ALLOWED IN FILE NAMES (--command, --out-files, --work-dir):\n";
 	cerr << "The following templates are allowed in filenames specified in parameters command-line and out-files.\n";
 	cerr << "They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
 	cerr << "\n";

@@ -28,7 +28,7 @@ public:
 	}
 
 	//void filesToOutputDb(const vector_of_strings&) {};
-	int executeExternalCommand(const string&,const vector_of_strings&) const;
+	int executeExternalCommand(const string&,const vector_of_strings&, const string& wd="", const string& sn="") const;
 	void makeOutDir(bool,bool);
 	void makeTempOutDir();
 	string getTempOutDir() const {

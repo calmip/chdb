@@ -69,7 +69,7 @@ public:
 
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);
-	virtual int executeExternalCommand(const string&,const vector_of_strings&) const = 0;
+	virtual int executeExternalCommand(const string&,const vector_of_strings&,const string& wd="",const string& sn="") const = 0;
 	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
 

@@ -83,6 +83,18 @@ void getHostName(string& h) {
 }
 
 /** 
+ * @brief Call get_current_dir_name and put the result in a string
+ * 
+ * @param[out] d
+ */
+void getCurrentDirName(string& d) {
+	const char* d_c = get_current_dir_name();
+	d = (string) d_c;
+	free((void*)d_c);
+}
+
+
+/** 
  * @brief Sleep duration, counted in milliseconds
  * 
  * @param duration 

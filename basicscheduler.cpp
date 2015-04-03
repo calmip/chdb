@@ -423,9 +423,23 @@ void BasicScheduler::executeCommand() {
 		for (size_t j=0; j<out_files.size(); ++j) {
 			dir.completeFilePath(in_path,out_files[j],true);
 		}
+
+		string work_dir = prms.getWorkDir();
+		if (work_dir.length() != 0) {
+			// Give a real name to work_dir, and force to start with output directory name
+			dir.completeFilePath(in_path,work_dir,true);
+		}
+
+		string snippet = prms.getEnvSnippet();
+		if (work_dir.length() != 0) {
+			// Complete file paths in snippet, too
+			dir.completeFilePath(in_path,snippet);
+		}
+
 		double start = MPI_Wtime();
-		int sts = dir.executeExternalCommand(cmd,out_files);
+		int sts = dir.executeExternalCommand(cmd,out_files,work_dir,snippet);
 		double end = MPI_Wtime();
+
 		// If abort on Error, throw an exception if status != 0
 		if (sts!=0) {
 			//	if (prms.isAbrtOnErr()) {

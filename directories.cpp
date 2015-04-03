@@ -76,7 +76,7 @@ vector_of_strings Directories::nextBlock() {
  *        file pathes: #path#, #dirname#
  * 
  * @param[in]  p         Path used as a source for the template expansion
- * @param[out] text      String to expand (generally a command line)
+ * @param[out] text      String to expand (generally a command line or a file name)
  * @param[in]  force_out If true, output directory is forced at begininning of text
  */
 void Directories::completeFilePath(const string& p, string& text, bool force_out) {

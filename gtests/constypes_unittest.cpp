@@ -5,7 +5,12 @@
 #include <fstream>
 using namespace std;
 
-
+/** 
+ * @brief Create a File and write the content inside it
+ * 
+ * @param[in]  d         Path to the directory containing the file
+ * @param[in] n         Struct: name and content
+ */
 void createFile(const string& d, const naco& n) {
 	string f = d;
 	f += '/';
