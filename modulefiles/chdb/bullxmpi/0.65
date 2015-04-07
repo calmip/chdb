@@ -1,0 +1,28 @@
+#%Module
+
+# help
+proc ModulesHelp { } {
+        global version
+
+        puts stderr "\tThis module loads chdb, version bullxmpi."
+        puts stderr "\n\tVersion $version\n"
+}
+
+module-whatis	"chdb, for use with bullxmpi"
+
+conflict chdb-bullxmpi chdb-intelmpi
+
+# for Tcl script use only
+set     version      "0.65"
+
+# The module bullxmpi should be loaded
+module unload intelmpi
+module load bullxmpi
+
+# set bdb env variable for mpi slaves
+setenv CHDB_MPI_CMD "/bin/bash -c 'ssh localhost /usr/local/chdb/bullxmpi/0.65/bin/slave-wrapper.sh \$(pwd) \$(module li -t 2>&1|tail -n +2|base64 -w 0) %MPI_SLAVES% %HOSTNAME% %COMMAND%'"
+#
+# change the path to chdb
+prepend-path PATH "/usr/local/chdb/bullxmpi/0.65/bin"
+
+
