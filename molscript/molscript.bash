@@ -22,5 +22,5 @@ module load intel intelmpi
 # cf. http://www.avatar.se/molscript/
 #
 
-mpirun chdb --in-dir pdb --in-type ent --out-dir ps --out-files %out-dir%/%path% --sort-by-size --command "./molauto %in-dir%/%path% |./molscript -ps >%out-dir%/%dirname%/%basename%.ps"
+srun  chdb --in-dir pdb --in-type ent --out-dir ps --out-files %out-dir%/%path% --sort-by-size --command "./molauto %in-dir%/%path% |./molscript -ps >%out-dir%/%dirname%/%basename%.ps"
 

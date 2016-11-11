@@ -112,20 +112,20 @@ void Directories::completeFilePath(const string& p, string& text, bool force_out
 
 /** 
  * @brief Should be called by the subclasses executeExternalCommand. Build an mpi command,
- *        using the env variable CHDB_MPI_CMD and the parameter cmd_is_mpi.
+ *        using the env variable CHDB_MPI_CMD and the switch mpi-slaves
  * 
- * @param[inout]  cmd    Command to run, returned unchanged in no mpi, or completed
+ * @param[inout]  cmd    Command to run, returned unchanged if no mpi, or completed
  *                       with the mpirun calling string if mpi in slave wanted
  */
 void Directories::buildMpiCommand(string& cmd) const {
-	string cmd_is_mpi = prms.getCmdIsMpi();
-	if ( cmd_is_mpi != "" ) { 
+	string mpi_slaves = prms.getMpiSlaves();
+	if ( mpi_slaves != "" ) { 
 		const char * mpi_cmd_c = getenv("CHDB_MPI_CMD");
 		if (mpi_cmd_c != NULL) {
 			string mpi_cmd = mpi_cmd_c;
 			string h;
 			getHostName(h);
-			replaceTmpl("%MPI_SLAVES%", cmd_is_mpi, mpi_cmd);
+			replaceTmpl("%MPI_SLAVES%", mpi_slaves, mpi_cmd);
 			replaceTmpl("%HOSTNAME%", h, mpi_cmd);
 			replaceTmpl("%COMMAND%", cmd, mpi_cmd);
 			cmd = mpi_cmd;

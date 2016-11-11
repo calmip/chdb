@@ -39,7 +39,7 @@ enum {
 	OPT_ON_ERROR,      // --on-error
 	OPT_REPORT,        // --report
 	OPT_IN_TYPE,       // --in-type
-	OPT_CMD_IS_MPI,    // --command-is-mpi
+	OPT_MPI_SLAVES,    // --mpi-slaves
 	OPT_CMD            // --command-line
 };
 
@@ -68,7 +68,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_ON_ERROR,      "--on-error",     SO_REQ_SEP },
 	{ OPT_REPORT,        "--report",       SO_REQ_SEP },
 	{ OPT_IN_TYPE,       "--in-type",      SO_REQ_SEP },
-	{ OPT_CMD_IS_MPI,    "--command-is-mpi", SO_REQ_SEP },
+	{ OPT_MPI_SLAVES,    "--mpi-slaves",   SO_REQ_SEP },
 	{ OPT_CMD,           "--command-line", SO_REQ_SEP },
 	SO_END_OF_OPTIONS   // END
 };
@@ -160,8 +160,8 @@ Parameters::Parameters(int argc,
 			case OPT_IN_TYPE:
 				file_type = arguments.OptionArg();
 				break;
-			case OPT_CMD_IS_MPI:
-				cmd_is_mpi = arguments.OptionArg();
+			case OPT_MPI_SLAVES:
+				mpi_slaves = arguments.OptionArg();
 				break;
 			case OPT_CMD:
 				external_command = arguments.OptionArg();
@@ -294,7 +294,7 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
-	cerr << "  --command_is_mpi n         : The command is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "  --mpi-slaves               : The command (launched by slaves) is itself an mpi program, n is the number of mpi processes\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";

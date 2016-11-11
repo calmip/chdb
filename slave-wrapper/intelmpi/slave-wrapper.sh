@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Utilisation (a partir de chdb avec le switch --command-is-mpi)
+# Utilisation (a partir de chdb avec le switch --mpi-slaves)
 #
 #    slave-wrapper.sh WORKDIR M64 MPI_SLAVES HOSTNAME COMMANDE PARAMETRES
 #

@@ -27,7 +27,7 @@ public:
 	string getTmpDir()    const { return tmp_directory; };
 	string getInFile()    const { return input_file; };
 	string getFileType()  const { return file_type; };
-	string getCmdIsMpi()  const { return cmd_is_mpi; };
+	string getMpiSlaves() const { return mpi_slaves; };
 	bool isBdBh()         const { return is_bdbh; };
 	bool isSizeSort()     const { return is_size_sort; };
 	bool isVerbose()      const { return is_verbose; };
@@ -57,7 +57,7 @@ private:
 	string tmp_directory;
 	string input_file;
 	string file_type;
-	string cmd_is_mpi;
+	string mpi_slaves;
 	bool is_bdbh;
 	bool is_size_sort;
 	bool is_verbose;
