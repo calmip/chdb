@@ -68,7 +68,7 @@ public:
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);
 	// input files, cmd, output files
-	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&) = 0;
+	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&,const string& wd="",const string& sn="") = 0;
 	size_t getNbOfFiles() { readFiles(); return files_size; };
 	//void insertOutFilesToDb(const vector_of_strings&) {};
 
@@ -85,10 +85,11 @@ protected:
 	mutable set<string> input_files;
 	int rank;
 	int comm_size;
+	void buildMpiCommand(string&) const;
 
 private:
 	mutable vector_of_strings::iterator blk_ptr;
-	void replaceTmpl(const string& tmpl, const string& value, string& text);
+//	void replaceTmpl(const string& tmpl, const string& value, string& text);
 	virtual void v_readFiles() = 0;
 };
 

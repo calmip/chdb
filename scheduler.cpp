@@ -32,7 +32,9 @@ using namespace std;
 #include <dirent.h>
 
 /** 
- * @brief throw an error if MPI not yet initialized or if no slave 
+ * @brief Build a Scheduler object
+ *        throw an error if MPI not yet initialized or if no slave 
+ *        Set the environment variables CHDB_RANK and CHDB_COMM_SIZE
  * 
  * @param p 
  * @param d 
@@ -52,6 +54,18 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
 	if (comm_size==1) {
 		throw logic_error("ERROR - YOU SHOULD HAVE AT LEAST 1 SLAVE");
 	}
+
+	// Set two env variables
+	ostringstream os_tmp;
+	os_tmp << rank;
+	int rvl1 = setenv("CHDB_RANK",os_tmp.str().c_str(),true);
+	os_tmp.str("");
+
+	os_tmp << comm_size;
+	int rvl2 = setenv("CHDB_COMM_SIZE",os_tmp.str().c_str(),true);
+
+	if (rvl1!=0 || rvl2!=0)
+		throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK or CHD_COMM_SIZE");
 
 	// Give some infos to dir
 	dir.setRank(rank,comm_size); 

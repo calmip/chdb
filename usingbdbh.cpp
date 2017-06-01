@@ -259,9 +259,9 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
  * @exception Throw a logic_error exception if anything is wrong with bdbh (read or write)
  * @return The return value of callSystem
  */
-int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes) {
+int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes, const string&, const string&) {
 
-	// something new in output directory --> we nedd consolidation !
+	// something new in output directory --> we need consolidation !
 	need_consolidation = true;
 
 	// Create the input pathes in tmpdir

@@ -20,7 +20,9 @@ fi
 
 cat $INPUT |while read sts text
 do
-	echo -e "STS\t$sts"             >$OUTPUT || exit 10
+	echo -e "RANK\t$CHDB_RANK"       >$OUTPUT || exit 10
+	echo -e "SIZE\t$CHDB_COMM_SIZE" >>$OUTPUT || exit 10
+	echo -e "STS\t$sts"             >>$OUTPUT || exit 10
 	echo -e "TXT\t$text"            >>$OUTPUT || exit 10
 	break
 done

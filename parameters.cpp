@@ -63,6 +63,8 @@ enum {
 	OPT_INDIR,      // --in-dir
 	OPT_INFILE,     // --in-file
 	OPT_OUTDIR,     // --out-dir
+	OPT_WORKDIR,    // --work-dir
+	OPT_ENV_SNIPPET,// --create-environment
 	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
 	OPT_BLOCK_SIZE, // --block-size,
@@ -71,6 +73,7 @@ enum {
 	OPT_ON_ERROR,      // --on-error
 	OPT_REPORT,        // --report
 	OPT_IN_TYPE,       // --in-type
+	OPT_MPI_SLAVES,    // --mpi-slaves
 	OPT_CMD            // --command-line
 };
 
@@ -89,6 +92,8 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_INDIR,         "--in-dir",       SO_REQ_SEP },
 	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
+	{ OPT_WORKDIR,       "--work-dir",     SO_REQ_SEP },
+	{ OPT_ENV_SNIPPET,   "--create-environment", SO_REQ_SEP },
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
@@ -97,6 +102,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_ON_ERROR,      "--on-error",     SO_REQ_SEP },
 	{ OPT_REPORT,        "--report",       SO_REQ_SEP },
 	{ OPT_IN_TYPE,       "--in-type",      SO_REQ_SEP },
+	{ OPT_MPI_SLAVES,    "--mpi-slaves",   SO_REQ_SEP },
 	{ OPT_CMD,           "--command-line", SO_REQ_SEP },
 	SO_END_OF_OPTIONS   // END
 };
@@ -123,6 +129,12 @@ CSimpleOpt::SOption options[] = {
 			case OPT_OUTDIR:
 				output_directory =  arguments.OptionArg();
 				break;
+			case OPT_WORKDIR:
+				work_directory = arguments.OptionArg();
+				break;
+			case OPT_ENV_SNIPPET:
+				env_snippet = arguments.OptionArg();
+				break;
 			case OPT_TMPDIR:
 #ifndef NOTMP
 				tmp_directory = arguments.OptionArg();
@@ -148,6 +160,9 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_IN_TYPE:
 				file_type = arguments.OptionArg();
+				break;
+			case OPT_MPI_SLAVES:
+				mpi_slaves = arguments.OptionArg();
 				break;
 			case OPT_CMD:
 				external_command = arguments.OptionArg();
@@ -272,6 +287,14 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
+	cerr << "                               WARNING ! \n";
+	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
+	cerr << "                                  - a RELATIVE PATH specified from ANY OTHER SWITCH will be treated FROM THE INITIAL LAUNCH DIRECTORY\n";
+	cerr << "  --create-environment       : A snippet containing some shell commands to create a working environment inside the work directory \n";
+	cerr << "                               Will be executed AFTER chdir workdir and BEFORE the command itself\n";
+	cerr << "                               EXAMPLE:\n";
+	cerr << "                                  --create-environment 'cp ~/DATA/*.inp .; cp ~/DATA/*.conf .'\n";
 	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
 	cerr << "                               load-balancing issues\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
@@ -281,13 +304,14 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
+	cerr << "  --mpi-slaves               : The command (launched by slaves) is itself an mpi program, n is the number of mpi processes\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
-	cerr << "TEMPLATES ALLOWED IN FILE NAMES:\n";
+	cerr << "TEMPLATES ALLOWED IN FILE NAMES (--command, --out-files, --work-dir):\n";
 	cerr << "The following templates are allowed in filenames specified in parameters command-line and out-files.\n";
 	cerr << "They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
 	cerr << "\n";

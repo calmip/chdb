@@ -71,7 +71,9 @@ TEST_P(TestCase1,makeOutDir) {
 		auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
 		Directories& dir = *aptr_dir.get();
 
-		// create inputdir.out
+		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
+		//        It should work correctly on Lustre
+		// create inputdir.out - do not append the rank to the directory name, remove the directory if exists
 		EXPECT_NO_THROW(dir.makeOutDir(false,true));
 		// replace inputdir.out
 		EXPECT_NO_THROW(dir.makeOutDir(false,true));
@@ -80,6 +82,7 @@ TEST_P(TestCase1,makeOutDir) {
 		EXPECT_THROW(dir.makeOutDir(false,false),runtime_error);
 
 		// Is it really a Berkeleydb ?
+		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
 		if ( GetParam()->getDirectoryType()=="UsingBdbh" ) {
 			string out_dir = prms.getOutDir();
 			EXPECT_EQ(true,fileExists(out_dir+"/database"));

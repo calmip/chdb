@@ -84,6 +84,18 @@ void getHostName(string& h) {
 }
 
 /** 
+ * @brief Call get_current_dir_name and put the result in a string
+ * 
+ * @param[out] d
+ */
+void getCurrentDirName(string& d) {
+	const char* d_c = get_current_dir_name();
+	d = (string) d_c;
+	free((void*)d_c);
+}
+
+
+/** 
  * @brief Sleep duration, counted in milliseconds
  * 
  * @param duration 
@@ -192,6 +204,24 @@ bool isBeginningWith(const string& name, const string& heading) {
 	} else {
 		return false;
 	}
+}
+
+/**
+ * @brief replace a template with value
+ * 
+ * @param[in]  tmpl  The template to look for in text
+ * @param[in]  value The value to replace with 
+ * @param[out] text
+ */
+void replaceTmpl(const string& tmpl, const string& value, string& text) {
+	size_t pos = 0;
+	do {
+		pos = text.find(tmpl,pos);
+
+		if (pos != string::npos) {
+			text.replace(pos,tmpl.length(),value);
+		}
+	} while(pos != string::npos);
 }
 
 /** 

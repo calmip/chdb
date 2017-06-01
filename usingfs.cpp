@@ -1,8 +1,4 @@
 
-
-//#include <iostream>
-//#include <iterator>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
@@ -129,30 +125,24 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 }
 
 /** 
- * @brief Execute a command through executeSystem and return the exit status of the command
- *        We pass the out_pathes vector to create the output directories if necessary
- *        The vector in_pathes is not used in this version
- * 
- * @param in_pathes
- * @param cmd 
- * @param out_pathes 
- * 
- * @return the command exit status
- *
- */	
-//#include <iostream>
-/** 
  * @brief Execute the external command, using complete in_pathes as input and complete out_pathes as output
  * 
  * @pre The cmd is ready to be executed (templates subsititution already done)
+ *
  * @param in_pathes input pathes, relative to the input directory (ie inputdir/A/B.txt ==> A/B.txt)
  * @param cmd 
  * @param out_pathes output pathes, relative to the output directory (ie outputdir/A/B.txt ==> A/B.txt)
+ * @param work_dir    The work directory to change into
+ * @param snippet     The script snippet to execute to build the environment
  * 
  * @exception Throw a logic_error if files cannot be read/written (should NOT happen)
  * @return The return value of callSystem
  */
-int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,const string& cmd,const vector_of_strings& out_pathes) {
+int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
+									const string& cmd,
+									const vector_of_strings& out_pathes,
+									const string& work_dir,
+									const string& snippet) {
 
     // throw a logic error if one of the input pathes is not readable
 	string in_dir = getTempInDir();
@@ -181,44 +171,54 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,const str
 		}
 		findOrCreateDir(f);
 	}
-//	cerr << "COUCOU " << cmd << "\n";
 
-	return callSystem(cmd);
+	// Create and change to work directory if requested
+	string saved_dir = "";
+	if (work_dir.length() != 0) {
+		getCurrentDirName(saved_dir);
+		string ok = work_dir + "/ok";  // dummy file because findOrCreateDir checks only the dir part
+		findOrCreateDir(ok);
+		int sts = chdir(work_dir.c_str());
+		if (sts != 0 ) {
+			string msg="ERROR - Cannot change to work directory ";
+			msg += work_dir;
+			msg += " - Error= ";
+			msg += strerror(errno);
+			throw(runtime_error(msg));
+		}
+	}
+
+	// will be returned at the end
+	int sts=0;
+
+	// Execute the snippet, if any
+	if (snippet.length() != 0) {
+		string sni_cmd = "/bin/bash -c '";
+		sni_cmd += snippet;
+		sni_cmd += "'";
+		sts = callSystem(sni_cmd);
+	}
+
+	// If snippet was successfull (or no snipped at all)
+	if (sts==0) {
+		// Change command for mpi instructions if necessary
+		string command = cmd;
+		buildMpiCommand(command);
+
+		// Call command and keep value
+		sts = callSystem(command);
+
+		// Change to previous current directory if necessary
+		// NB - Should work, we don't even check
+		if (saved_dir.length() != 0) {
+			chdir(saved_dir.c_str());
+		}
+	}
+
+	// Return call status
+	return sts;
 }
 
-/** 
- * @brief Make the output directory, store the name to output_dir, throw an exception if error
- *        If rank_flg is true, the rank is taken into account (probably called by a slave)
- *
- * @param rank_flg If true, NOTHING IS CREATED
- * @param rep_flg If true, remove the directory if it already exists
- * 
- */
-/*
-void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
-	output_dir = prms.getOutDir();
-	if (rank_flg) {
-		return;
-	}
-
-	// remove directory if rep_flg and directory already exists
-	struct stat status;
-	if (rep_flg && stat(output_dir.c_str(), &status)==0) {
-		string cmd = "rm -r ";
-		cmd += output_dir;
-		callSystem(cmd);
-	}
-	
-	int sts = mkdir(output_dir.c_str(), 0777);
-	if (sts != 0) {
-		string msg="ERROR - Cannot create directory ";
-		msg += output_dir;
-		msg += " - Error= ";
-		msg += strerror(errno);
-		throw(runtime_error(msg));
-	}
-}
-*/
 /** 
  * @brief Make the output directory, store the name to output_dir, throw an exception if error
  *        The define OUTDIRPERSLAVE changes the behaviour of this function

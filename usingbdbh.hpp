@@ -26,7 +26,7 @@ public:
 	virtual ~UsingBdbh();
 
 	//void filesToOutputDb(const vector_of_strings&) {};
-	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&);
+	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&, const string& wd="", const string& sn="");
 	void makeTempOutDir();
 	void makeOutDir(bool,bool);
 	string getTempOutDir() const {
@@ -62,7 +62,7 @@ private:
 	string temp_output_dir;
 	string temp_input_dir;
 	string temp_db_dir;
-	bool need_consolidation;
+	mutable bool need_consolidation;
 };
 
 #endif

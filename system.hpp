@@ -10,8 +10,10 @@ using namespace std;
 #include <cassert>
 
 void getHostName(string& h);
+void getCurrentDirName(string& d);
 void sleepMs(unsigned int);
-int callSystem(string cmd, bool err_flg=false);
+int  callSystem(string cmd, bool err_flg=false);
+void replaceTmpl(const string& tmpl, const string& value, string& text);
 void parseFilePath(const string& path, string& dir, string& name, string& base, string& ext);
 bool isEndingWith(const string& name, const string& ext);
 bool isBeginningWith(const string& name, const string& heading);

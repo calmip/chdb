@@ -79,7 +79,7 @@ vector_of_strings Directories::nextBlock() {
  *        file pathes: #path#, #dirname#
  * 
  * @param[in]  p         Path used as a source for the template expansion
- * @param[out] text      String to expand (generally a command line)
+ * @param[out] text      String to expand (generally a command line or a file name)
  * @param[in]  force_out If true, output directory is forced at begininning of text
  */
 void Directories::completeFilePath(const string& p, string& text, bool force_out) {
@@ -114,21 +114,28 @@ void Directories::completeFilePath(const string& p, string& text, bool force_out
 }
 
 /** 
- * @brief replace a template with value
+ * @brief Should be called by the subclasses executeExternalCommand. Build an mpi command,
+ *        using the env variable CHDB_MPI_CMD and the switch mpi-slaves
  * 
- * @param[in]  tmpl  The template to look for in text
- * @param[in]  value The value to replace with 
- * @param[out] text
+ * @param[inout]  cmd    Command to run, returned unchanged if no mpi, or completed
+ *                       with the mpirun calling string if mpi in slave wanted
  */
-void Directories::replaceTmpl(const string& tmpl, const string& value, string& text) {
-	size_t pos = 0;
-	do {
-		pos = text.find(tmpl,pos);
-
-		if (pos != string::npos) {
-			text.replace(pos,tmpl.length(),value);
+void Directories::buildMpiCommand(string& cmd) const {
+	string mpi_slaves = prms.getMpiSlaves();
+	if ( mpi_slaves != "" ) { 
+		const char * mpi_cmd_c = getenv("CHDB_MPI_CMD");
+		if (mpi_cmd_c != NULL) {
+			string mpi_cmd = mpi_cmd_c;
+			string h;
+			getHostName(h);
+			replaceTmpl("%MPI_SLAVES%", mpi_slaves, mpi_cmd);
+			replaceTmpl("%HOSTNAME%", h, mpi_cmd);
+			replaceTmpl("%COMMAND%", cmd, mpi_cmd);
+			cmd = mpi_cmd;
+		} else {
+			throw runtime_error("ERROR -The env variable CHDB_MPI_CMD does not exists");
 		}
-	} while(pos != string::npos);
+	}
 }
 
 /** 

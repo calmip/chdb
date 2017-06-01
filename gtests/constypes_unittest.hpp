@@ -70,6 +70,7 @@ public:
 protected:
 	vector<string> expected_file_pathes;
 	map<string,string> expected_file_contents;
+	map<string,string> expected_file_contents_with_rank;
 };
 
 // ChdbTest2 = Create 10 files in the input directory, file 0.txt in error
