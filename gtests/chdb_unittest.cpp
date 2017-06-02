@@ -33,18 +33,18 @@ TEST_P(TestCase1,Block1) {
 		output_dir = output_dir.substr(0,output_dir.length()-3);
 		string output_root = output_dir + ".out";
 		output_dir += ".out.db";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
-		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(output_dir,output_root+"/D/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(output_dir,output_root+"/A.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFileFromBdbh(output_dir,output_root+"/D/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFileFromBdbh(output_dir,output_root+"/A.txt"));
 	} else {
 		string output_dir = getInputDir() + ".out";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
-		EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFile(output_dir+"/B.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/A.txt"));
 	}
 };
 
@@ -118,25 +118,25 @@ TEST_P(TestCase1,Block2) {
 		output_dir = output_dir.substr(0,output_dir.length()-3);
 		string output_root = output_dir + ".out";
 		output_dir += ".out.db";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
-		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(output_dir,output_root+"/D/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(output_dir,output_root+"/A.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFileFromBdbh(output_dir,output_root+"/D/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFileFromBdbh(output_dir,output_root+"/A.txt"));
 	} else {
 		string output_dir = getInputDir() + ".out";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFile(output_dir+"/B.txt"));
-		EXPECT_EQ(expected_file_contents["C/C.txt"],readFile(output_dir+"/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(output_dir+"/D/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFile(output_dir+"/A.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFile(output_dir+"/B.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFile(output_dir+"/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["C/C/C.txt"],readFile(output_dir+"/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["D/C.txt"],readFile(output_dir+"/D/C.txt"));
+		EXPECT_EQ(expected_file_contents_with_rank["A.txt"],readFile(output_dir+"/A.txt"));
 	}
 };
 
 // One slave, One block of 5 files, no error generated
 TEST_P(TestCase1,Block5) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -173,7 +173,7 @@ TEST_P(TestCase1,Block5) {
 // An error is generated at first file, but it is trapped to the file errors.txt
 TEST_P(TestCase1,onerror) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -217,7 +217,7 @@ TEST_P(TestCase1,onefile) {
 	naco err("errors.txt","1\tD/C.txt\n\n");
 	createFile(".",err);
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -256,7 +256,7 @@ TEST_P(TestCase1,onefile) {
 // two slaves, block size 3, no error
 TEST_P(TestCase1,twoslaves_blk3) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -294,7 +294,7 @@ TEST_P(TestCase1,twoslaves_blk3) {
 // 5 files, 5 slaves, no error generated
 TEST_P(TestCase1,fiveslaves) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 5 ../chdb --verbose ";
+	string cmd = "mpirun -n 5 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -329,7 +329,7 @@ TEST_P(TestCase1,fiveslaves) {
 // Trying 5 files, blocks of 1 files, 10 slaves = should refuse to start without creating inputdir.out
 TEST_P(TestCase1,tenslaves) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 10 ../chdb --verbose ";
+	string cmd = "mpirun -n 10 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -347,7 +347,7 @@ TEST_P(TestCase1,tenslaves) {
 // The blocks 0, 1, maybe 2 are treated, the blocks 4 & 5 should not be
 TEST_P(TestCase2,errBlock2Slaves2) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--out-files %out-dir%/%path% ";
@@ -410,7 +410,7 @@ TEST_P(TestCase2,errBlock2Slaves2) {
 // Every file should be created, as the error happens quite at the end
 TEST_P(TestCase3,errBlock2Slaves2) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "srun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -486,6 +486,7 @@ INSTANTIATE_TEST_CASE_P(
 	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );
 
+
 // Step 3. Call RUN_ALL_TESTS() in main().
 //
 // We do this by linking in src/gtest_main.cc file, which consists of
@@ -497,4 +498,3 @@ INSTANTIATE_TEST_CASE_P(
 // Did you notice that we didn't register the tests?  The
 // RUN_ALL_TESTS() macro magically knows about all the tests we
 // defined.  Isn't this convenient?
-
