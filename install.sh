@@ -19,7 +19,7 @@ VERSION=$(awk '/CHDB_VERSION/ {print $3}' version.hpp )
 # *SRCF= Some SOURCE files
 BINSRC="."
 MODSRC="modulefiles/chdb/$MPI"
-WRAPSRC="slave-wrapper/$MPI"
+WRAPSRC="wrapper/$MPI"
 MODSRCF="$MODSRC/$VERSION"
 
 # *DIR = The DESTINATION directories
