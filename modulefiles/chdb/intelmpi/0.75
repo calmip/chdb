@@ -13,7 +13,7 @@ module-whatis	"chdb, for use with intelmpi"
 conflict chdb-bullxmpi chdb-intelmpi
 
 # for Tcl script use only
-set     version      "VERSION"
+set     version      "0.75"
 
 # The module intelmpi should be loaded
 module unload bullxmpi

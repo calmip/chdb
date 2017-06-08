@@ -4,29 +4,39 @@
 #    ./install.sh ~ (for debugging)
 #    ./install.sh /usr/local (for the prod)
 
-[ "$1" = "" ] && echo "Usage: ./install directory default|intelmpi|bullxmpi" && exit 1
-[ "$2" = "" ] && echo "Usage: ./install directory default|intelmpi|bullxmpi" && exit 1
+USAGE="Usage: ./install ~|/usr/local ~/privatemodules|/usr/local/modules/modulefiles intelmpi|bullxmpi"
+[ "$1" = "" ] && echo $USAGE && exit 1
+[ "$2" = "" ] && echo $USAGE && exit 1
+[ "$3" = "" ] && echo $USAGE && exit 1
 
-DST=$1
-MPI=$2
+# *DST = The top directories for the installation
+BINDST=$1
+MODDST=$2
+MPI=$3
 VERSION=$(awk '/CHDB_VERSION/ {print $3}' version.hpp )
 
-EXE="chdb.exe"
-CHDB=chdb
-WRAPPER='slave-wrapper.sh'
-WRAPDIR="slave-wrapper/$MPI/"
+# *SRC = The SOURCE directories
+# *SRCF= Some SOURCE files
+BINSRC="."
+MODSRC="modulefiles/chdb/$MPI"
+WRAPSRC="slave-wrapper/$MPI"
+MODSRCF="$MODSRC/$VERSION"
 
-BINDIR="$DST/local/chdb/$MPI/$VERSION/bin"
+# *DIR = The DESTINATION directories
+# *DIRF= some DESTINATION files
+BINDIR="$BINDST/local/chdb/$MPI/$VERSION/bin"
+MODDIR="$MODDST/chdb/$MPI"
+MODDIRF="$MODDIR/$VERSION"
 
-# TODO - Arranger ca pour la prod !!!
-MODULEDIR=~/privatemodules/chdb/$MPI
-MODULEFILE="$MODULEDIR/$VERSION"
-MODULESRCFILE="modulefiles/chdb/$MPI/VERSION"
+# Checking the directories and important files do exist
+[ ! -f "$MODSRCF" ] && echo "ERROR - $MODSRCF DOES NOT EXIST" && exit 1
+[ ! -d "$MODDIR"  ] && echo "ERROR - $MODDIR  DOES NOT EXIST" && exit 1
+[ ! -d "$BINDIR"  ] && echo "ERROR - $BINDIR  DOES NOT EXIST" && exit 1
 
-cp "$EXE" "$WRAPDIR/$CHDB" "$WRAPDIR/$WRAPPER" "$BINDIR"
-sed -e "s!BINDIR!$BINDIR!" -e 's/VERSION/$VERSION/' <$MODULESRCFILE >$MODULEFILE
 
-( cd $BINDIR; chmod 755 $EXE $CHDB $WRAPPER )
-chmod 644 $MODULEFILE
+cp "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$BINDIR"
+( cd $BINDIR; chmod 755 $EXE $CHDB slave-wrapper.sh )
 
+sed -e "s!BINDIR!$BINDIR!" <$MODSRCF >$MODDIRF
+chmod 644 $MODDIRF
 
