@@ -15,7 +15,7 @@ using ::testing::Values;
 
 // One slave, 5 files, blocks of 1 file
 TEST_P(TestCase1,Block1) {
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd_with_rank.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -54,7 +54,7 @@ TEST_P(TestCase1,Block1) {
 // relative names for output is ok
 // We also use here the --create-environment switch
 TEST_P(TestCase1,Block1W) {
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	string wd;
 	naco readme("README.txt","CREATED BY chdb SNIPPET");
 	
@@ -99,7 +99,7 @@ TEST_P(TestCase1,Block1W) {
 // One slave, blocks of 2 files, no error generated
 TEST_P(TestCase1,Block2) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd_with_rank.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -136,7 +136,7 @@ TEST_P(TestCase1,Block2) {
 // One slave, One block of 5 files, no error generated
 TEST_P(TestCase1,Block5) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -173,7 +173,7 @@ TEST_P(TestCase1,Block5) {
 // An error is generated at first file, but it is trapped to the file errors.txt
 TEST_P(TestCase1,onerror) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -217,7 +217,7 @@ TEST_P(TestCase1,onefile) {
 	naco err("errors.txt","1\tD/C.txt\n\n");
 	createFile(".",err);
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 2 ../chdb --verbose ";
+	string cmd = "mpirun -n 2 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -256,7 +256,7 @@ TEST_P(TestCase1,onefile) {
 // two slaves, block size 3, no error
 TEST_P(TestCase1,twoslaves_blk3) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -294,7 +294,7 @@ TEST_P(TestCase1,twoslaves_blk3) {
 // 5 files, 5 slaves, no error generated
 TEST_P(TestCase1,fiveslaves) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 5 ../chdb --verbose ";
+	string cmd = "mpirun -n 5 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -329,7 +329,7 @@ TEST_P(TestCase1,fiveslaves) {
 // Trying 5 files, blocks of 1 files, 10 slaves = should refuse to start without creating inputdir.out
 TEST_P(TestCase1,tenslaves) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 10 ../chdb --verbose ";
+	string cmd = "mpirun -n 10 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path% 0' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
@@ -347,7 +347,7 @@ TEST_P(TestCase1,tenslaves) {
 // The blocks 0, 1, maybe 2 are treated, the blocks 4 & 5 should not be
 TEST_P(TestCase2,errBlock2Slaves2) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--out-files %out-dir%/%path% ";
@@ -410,7 +410,7 @@ TEST_P(TestCase2,errBlock2Slaves2) {
 // Every file should be created, as the error happens quite at the end
 TEST_P(TestCase3,errBlock2Slaves2) {
 	string output_dir = getInputDir() + ".out";
-	string cmd = "mpirun -n 3 ../chdb --verbose ";
+	string cmd = "mpirun -n 3 ../chdb.exe --verbose ";
 	cmd += "--command-line './ext_cmd.sh %in-dir%/%path% %out-dir%/%path%' ";
 	cmd += "--in-type txt ";
 	cmd += "--in-dir "; cmd += getInputDir(); cmd += " ";
