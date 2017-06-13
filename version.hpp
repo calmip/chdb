@@ -1,0 +1,2 @@
+#define CHDB_VERSION 0.75
+

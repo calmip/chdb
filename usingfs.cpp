@@ -199,7 +199,7 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 		sts = callSystem(sni_cmd);
 	}
 
-	// If snippet was successfull (or no snipped at all)
+	// If snippet was successfull (or no snippet at all)
 	if (sts==0) {
 		// Change command for mpi instructions if necessary
 		string command = cmd;

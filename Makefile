@@ -15,7 +15,7 @@ LDFLAGS=$(DEBUG)
 
 # The exec
 
-EXECFILE=chdb 
+EXECFILE=chdb.exe
 
 #
 # The source files, object files, libraries and executable name.

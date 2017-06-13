@@ -10,7 +10,7 @@
 #include <sstream>
 using namespace std;
 
-#define CHDB_VERSION 0.75
+#include "version.hpp"
 
 /** 
  * @brief Some predicates
