@@ -8,6 +8,7 @@ using namespace std;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/mman.h>
 #include <sstream>
 #include <time.h>
 #include <iomanip>
@@ -130,7 +131,7 @@ bdbh::TriBuff* Command::bfr3_ptr = NULL;
 \param verbose If true, we are in verbose mode (the --verbose switch was specified)
 Init the Dbt objects, open the database, read the info_data and create a cursor
 */
-BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool clus) throw(DbException): 
+BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool clus, bool inmem) throw(DbException): 
 #if NOCLUSTER
 #else
 	cluster(clus),
@@ -140,9 +141,11 @@ BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool clus) throw(
 	db_name(name),
 #endif
 	verbose(verb),
+    in_memory(inmem),
 	ignore_comp(false),
 	db_env(NULL),
 	db(NULL),
+    pagesize(sysconf(_SC_PAGESIZE)),
 #if NOCLUSTER
 #else
 	qinfo(NULL),
@@ -173,6 +176,52 @@ BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool clus) throw(
     //        to read info_data
     __InitDb(name,o_mode);
     
+}
+
+/** Check alignment
+ 
+ \brief Return true if p is aligned vs pagesize
+ \note  stolen from vmtouch (see __InMemory)
+ 
+ \param p An address
+ \return true/false
+ 
+*/
+bool BerkeleyDb::__aligned_p(void *p) {
+  return 0 == ((long)p & (pagesize-1));
+}
+
+/** Size conversion
+ 
+ \brief Convert a size in bytes to a size in pages
+ \note  stolen from vmtouch (see __InMemory)
+ 
+ \param size A size in bytes
+ \return size in pages
+ 
+*/
+uint32_t BerkeleyDb::__bytes2pages(uint64_t size) throw (BdbhException) {
+    uint64_t szp = (size+pagesize-1) / pagesize;
+
+// We could compile in c++11 to avoid this stupid stuff
+#ifndef UINT32_MAX
+#define UINT32_MAX  0xffffffff
+#endif
+
+    if (szp>UINT32_MAX) {
+        ostringstream msg;
+        msg << "ERROR - Size in pages should be < " << UINT32_MAX;
+        throw(BdbhException(msg.str().c_str()));
+    }
+    return szp;
+}
+
+/** Test last bit
+ 
+ \brief return true if last bit of p is 1
+ */
+bool BerkeleyDb::__is_mincore_page_resident(char p) {
+  return p & 0x1;
 }
 
 /** Open the database
@@ -270,6 +319,93 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
     }
 }
 
+
+/** Put the database in memory
+\brief Read the file: database and keep it inside the cache
+
+\param db_name The database file name
+
+\note This code is inspired by vmtouch, by Doug Hoyte and contributors. cf. https://github.com/hoytech/vmtouch
+
+*/ 
+void BerkeleyDb::__InMemory(const string& db_name) throw(BdbhException) {
+
+    string msg;
+    
+    // Try to open file, check the size, etc.
+    int fd = open(db_name.c_str(), O_RDONLY, 0);
+    if (fd==-1) {
+        msg = "ERROR - Could not open file ";
+        msg += db_name;
+        msg += (string) " to put it in memory";
+        throw(BdbhException(msg.c_str()));
+    }
+    
+    struct stat db_name_stat;
+    int rvl = fstat(fd, &db_name_stat);
+    if (rvl) {
+        msg = "ERROR - Could not stat file ";
+        msg += db_name;
+        throw(BdbhException(msg.c_str()));
+    }
+    
+    if ( ! S_ISREG(db_name_stat.st_mode)) {
+        msg = "ERROR - ";
+        msg += db_name;
+        msg += " should be a regular file, giving up";
+        throw(BdbhException(msg.c_str()));
+    }
+        
+    uint64_t size_in_bytes = db_name_stat.st_size;
+    if (size_in_bytes == 0) return;
+    
+    if (size_in_bytes > (uint64_t) MAX_INMEMORY_SIZE) {
+        ostringstream msg;
+        msg << "ERROR - " << db_name << " is too large to be put in memory ";
+        msg << "(size=" << size_in_bytes << " max=" << MAX_INMEMORY_SIZE << ")\n";
+        throw(BdbhException(msg.str().c_str()));
+    }
+
+    // mmap the file to memory and check the alignment       
+    void* mem = mmap(NULL, size_in_bytes, PROT_READ, MAP_SHARED, fd, 0);
+
+    if (mem == MAP_FAILED) {
+        msg = "ERROR - mmap returned an error (mmapped file ";
+        msg += db_name;
+        msg += ")";
+        throw(BdbhException(msg.c_str()));
+    }
+    
+    if (!__aligned_p(mem)) {
+        ostringstream msg;
+        msg << "ERROR - mmap was not page aligned: mem="<<mem<<" pagesize="<<pagesize;
+        throw(BdbhException(msg.str().c_str()));
+    }
+
+    // Determining pages already in memory
+    uint32_t size_in_pages = __bytes2pages(size_in_bytes);
+    Buffer mincore_array_bfr(size_in_pages);
+    unsigned char *mincore_array = (unsigned char*) mincore_array_bfr.GetData();
+    uint32_t pages_in_core=0;
+
+    // 3rd arg to mincore is char* on BSD and unsigned char* on linux
+    if (mincore(mem, size_in_bytes, mincore_array)) throw (BdbhException("ERROR - mincore returned NULL"));
+
+    for (uint32_t i=0; i<size_in_pages; i++) {
+      if (__is_mincore_page_resident(mincore_array[i])) {
+        pages_in_core++;
+      }
+    }
+
+    // Read the whole file unless already in memory
+    if (pages_in_core < size_in_pages ) {
+        size_t junk_counter=0; // just to prevent any compiler optimizations
+        for (size_t i=0; i<size_in_pages; i++) {
+            junk_counter += ((char*)mem)[i*pagesize];
+        }
+    }
+}
+
 /** Create the environment and the databases
 
 NOTE - We DO NOT USE THE BERKELEYDB ENVIRONMENT IF NOCLUSTER IS DEFINED
@@ -323,23 +459,21 @@ If name is a file, try to open (read only) this file.
 #if NOCLUSTER
 void BerkeleyDb::__OpenRead(const char* name,Db_aptr& dbse, const char * database_name) throw(DbException)
 {
+    string db_name = name;
     stat(name,&bd_stat);       // Keep track of (device, inode)
     
     // If a directory, try to open the environment. If it succeeds, try to open database, if it fails try something else
     if (S_ISDIR(bd_stat.st_mode))
     {
-		string db_name = name;
 		db_name += "/";
 		db_name += database_name;
-		dbse = (Db_aptr) new Db(0,0);
-		dbse->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,DB_RDONLY,0);
     }
-    // This is not a directory: just try to open as a file
-    else
-    {
-        dbse = (Db_aptr) new Db(0,0);
-        dbse->open(NULL,name,NULL,DB_UNKNOWN,DB_RDONLY,0);
-    }
+
+    // in-memory treatments: read the database file in cache before any treatment 
+    if (in_memory) __InMemory(db_name);
+
+    dbse = (Db_aptr) new Db(0,0);
+    dbse->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,DB_RDONLY,0);
 }
 #else
 void BerkeleyDb::__OpenRead(const char* name,Db_aptr& dbse, const char * database_name) throw(DbException)
@@ -408,6 +542,7 @@ void  BerkeleyDb::__OpenWrite(const char* name, Db_aptr& dbse, const char* datab
 		string db_name = name;
 		db_name += "/";
 		db_name += database_name;
+        
 		dbse     = (Db_aptr) new Db(NULL,0);
         dbse->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,0,0);
     }

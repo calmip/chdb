@@ -325,6 +325,8 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
 {
 	bool verb=params.GetVerbose();
 	bool clus=params.GetCluster();
+    bool inmemory=params.GetInmemory();
+    
     switch (params.GetCommand())
     {
         case BDBH_CREATE:
@@ -454,7 +456,7 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
         case BDBH_LS:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb,clus,inmemory);
             command = (Command_aptr) new Ls(params,*bdb.get());
 			// Attach the LsPrint observer
 			LsPrint ls_print_obs(params, cout);

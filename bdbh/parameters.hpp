@@ -14,6 +14,9 @@ namespace bdbh {
 // We store ONLY files less than 2 Mb
 #define MAX_FILE_SIZE 2*1024*1024
 
+// We refuse to put in memory database files larger than 4 Gb
+#define MAX_INMEMORY_SIZE 4*1024*1024*1024L
+
 /** The legal commands, with an integer representation
  */
 // WARNING - BDBH_CREATE should be 0 (cf. bdbh.cpp)
@@ -180,6 +183,7 @@ namespace bdbh {
 		bool GetCluster() const {return cluster;};
 		bool GetVerbose() const {return verbose; };
 		bool GetOverWrite() const { return overwrite;};
+		bool GetInmemory() const { return inmemory; };
 		bool GetSorted() const { return size_sort; };
 		bool GetSortedReverse() const { return reverse_sort; };
 		int GetCommand() const { return command;};
@@ -216,6 +220,7 @@ namespace bdbh {
 		int root_level;
 		int command;
 		bool overwrite;
+		bool inmemory;
 		bool verbose;
 		bool long_list;
 		bool size_sort;

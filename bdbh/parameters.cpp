@@ -292,14 +292,13 @@ bool Fkey::Up() {
 
 */
 Parameters::Parameters(int argc, char** argv, void(*help)())  throw(BdbhUsageException,BdbhException): 
-	database(""),
-	compress(false),
-	shell_mode(false)
+database(""),
+compress(false),
+shell_mode(false)
 {
-
-	__Init(argc, argv, help);
-	if (GetCommand() == BDBH_SHELL)
-		shell_mode = true;
+    __Init(argc, argv, help);
+    if (GetCommand() == BDBH_SHELL)
+	shell_mode = true;
 }
 
 /** The default constructor
@@ -504,104 +503,108 @@ bool Parameters::__CommandNeedsKeys() const {
 void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageException,BdbhException)
 { 	
     // define the ID values to identify the option
-	enum { 
-		// From 0 to BDBH_MAX_COMMAND, the options id is the same as the commands identification
-		OPT_HELP=BDBH_MAX_COMMAND + 1,  // -h|--help
-		OPT_SEPARATOR,  // NOT USED - Higher then OPT_CMDx, lower than other OPT_
-		OPT_DB,         // -d|--database arg
-		OPT_COMPRESS,   // -c|--compress
-		OPT_ROOT,       // -t|--root arg
-		OPT_DIRECTORY,  // -C|--directory arg
-		OPT_RECURSIVE,  // -r|--recursive,-o|--overwrite,
-		OPT_OVERWRITE,  // -o|--overwrite
-		OPT_VERBOSE,    // -v|--verbose
-		OPT_LONG_LIST,  // -l|--long_list
-		OPT_SSORT_LIST, // -S|--size_sort
-		OPT_RSORT_LIST, // -R|--reverse_sort
-		OPT_LEVEL,      // -L|--level arg
-		OPT_MODE,       // --mode arg
-		OPT_VALUE,      // --value arg
-		OPT_STAMP,      // --stamp arg,
-		OPT_CLUSTER,    // --cluster
-		OPT_CMD         // create,info,add,extract,put,mkdir,cat,ls,rm,chmod,shell,sync,q
-	};
-	
-// declare a table of CSimpleOpt::SOption structures. See the SimpleOpt.h header
-// for details of each entry in this structure. In summary they are:
-//  1. ID for this option. This will be returned from OptionId() during processing.
-//     It may be anything >= 0 and may contain duplicates.
-//  2. Option as it should be written on the command line
-//  3. Type of the option. See the header file for details of all possible types.
-//     The SO_REQ_SEP type means an argument is required and must be supplied
-//     separately, e.g. "-f FILE"
-//  4. The last entry must be SO_END_OF_OPTIONS.
-//
-	CSimpleOpt::SOption options[] = {
-		{ BDBH_CREATE,   (char *)"create",     SO_NONE    },
-		{ BDBH_CAT,      (char *)"cat",        SO_NONE    },
-		{ BDBH_EXTRACT,  (char *)"extract",    SO_NONE    },
-		{ BDBH_ADD,      (char *)"add",        SO_NONE    },
-		{ BDBH_PUT,      (char *)"put",        SO_NONE    },
-		{ BDBH_RM,       (char *)"rm",         SO_NONE    },
-		{ BDBH_LS,       (char *)"ls",         SO_NONE    },
-		{ BDBH_INFO,     (char *)"info",       SO_NONE    },
-		{ BDBH_CHMOD,    (char *)"chmod",      SO_NONE    },
-		{ BDBH_MKDIR,    (char *)"mkdir",      SO_NONE    },
-		{ BDBH_SHELL,    (char *)"shell",      SO_NONE    },
-		{ BDBH_QUIT,     (char *)"q",          SO_NONE    },
-		{ BDBH_SYNC,     (char *)"sync",       SO_NONE    },
-		{ BDBH_MERGE,    (char *)"merge",      SO_NONE    },
-		{ BDBH_HELP,     (char *)"help",       SO_NONE    },
-		{ BDBH_CONVERT,  (char *)"convert",    SO_NONE    },
-		{ BDBH_LISTKEYS, (char *)"lk",         SO_NONE    },
-		{ OPT_HELP,      (char *)"-h",          SO_NONE    },
-		{ OPT_HELP,      (char *)"--help",      SO_NONE    },
-		{ OPT_DB,        (char *)"-d",          SO_REQ_SEP },
-		{ OPT_DB,        (char *)"--database",  SO_REQ_SEP },
-		{ OPT_COMPRESS,  (char *)"-c",          SO_NONE    },
-		{ OPT_COMPRESS,  (char *)"--compress",  SO_NONE    },
-		{ OPT_ROOT,      (char *)"-t",          SO_REQ_SEP },
-		{ OPT_ROOT,      (char *)"--root",      SO_REQ_SEP },
-		{ OPT_DIRECTORY, (char *)"-C",          SO_REQ_SEP },
-		{ OPT_DIRECTORY, (char *)"--directory", SO_REQ_SEP },
-		{ OPT_RECURSIVE, (char *)"-r",          SO_NONE    },
-		{ OPT_RECURSIVE, (char *)"--recursive", SO_NONE    },
-		{ OPT_OVERWRITE, (char *)"-o",          SO_NONE    },
-		{ OPT_OVERWRITE, (char *)"--overwrite", SO_NONE    },
-		{ OPT_VERBOSE,   (char *)"-v",          SO_NONE    },
-		{ OPT_VERBOSE,   (char *)"--verbose",   SO_NONE    },
-		{ OPT_LONG_LIST, (char *)"-l",          SO_NONE    },
-		{ OPT_LONG_LIST, (char *)"--long_list", SO_NONE    },
-		{ OPT_SSORT_LIST,(char *)"-S",          SO_NONE    },
-		{ OPT_SSORT_LIST,(char *)"--size_sort", SO_NONE    },
-		{ OPT_RSORT_LIST,(char *)"-R",          SO_NONE    },
-		{ OPT_RSORT_LIST,(char *)"--reverse_sort", SO_NONE },
-		{ OPT_LEVEL,     (char *)"-L",          SO_REQ_SEP },
-		{ OPT_LEVEL,     (char *)"--level",     SO_REQ_SEP },
-		{ OPT_MODE,      (char *)"--mode",      SO_REQ_SEP },
-		{ OPT_VALUE,     (char *)"--value",     SO_REQ_SEP },
-		{ OPT_STAMP,     (char *)"--stamp",     SO_REQ_SEP },
-		{ OPT_CLUSTER,   (char *)"--cluster",   SO_REQ_SEP },
-		SO_END_OF_OPTIONS                       // END
-	};
+    enum { 
+	// From 0 to BDBH_MAX_COMMAND, the options id is the same as the commands identification
+	OPT_HELP=BDBH_MAX_COMMAND + 1,  // -h|--help
+	OPT_SEPARATOR,  // NOT USED - Higher then OPT_CMDx, lower than other OPT_
+	OPT_DB,         // -d|--database arg
+	OPT_COMPRESS,   // -c|--compress
+	OPT_ROOT,       // -t|--root arg
+	OPT_DIRECTORY,  // -C|--directory arg
+	OPT_RECURSIVE,  // -r|--recursive,-o|--overwrite,
+	OPT_OVERWRITE,  // -o|--overwrite
+	OPT_INMEMORY,   // -m|--in_memory
+	OPT_VERBOSE,    // -v|--verbose
+	OPT_LONG_LIST,  // -l|--long_list
+	OPT_SSORT_LIST, // -S|--size_sort
+	OPT_RSORT_LIST, // -R|--reverse_sort
+	OPT_LEVEL,      // -L|--level arg
+	OPT_MODE,       // --mode arg
+	OPT_VALUE,      // --value arg
+	OPT_STAMP,      // --stamp arg,
+	OPT_CLUSTER,    // --cluster
+	OPT_CMD         // create,info,add,extract,put,mkdir,cat,ls,rm,chmod,shell,sync,q
+    };
+    
+    // declare a table of CSimpleOpt::SOption structures. See the SimpleOpt.h header
+    // for details of each entry in this structure. In summary they are:
+    //  1. ID for this option. This will be returned from OptionId() during processing.
+    //     It may be anything >= 0 and may contain duplicates.
+    //  2. Option as it should be written on the command line
+    //  3. Type of the option. See the header file for details of all possible types.
+    //     The SO_REQ_SEP type means an argument is required and must be supplied
+    //     separately, e.g. "-f FILE"
+    //  4. The last entry must be SO_END_OF_OPTIONS.
+    //
+    CSimpleOpt::SOption options[] = {
+	{ BDBH_CREATE,   (char *)"create",     SO_NONE    },
+	{ BDBH_CAT,      (char *)"cat",        SO_NONE    },
+	{ BDBH_EXTRACT,  (char *)"extract",    SO_NONE    },
+	{ BDBH_ADD,      (char *)"add",        SO_NONE    },
+	{ BDBH_PUT,      (char *)"put",        SO_NONE    },
+	{ BDBH_RM,       (char *)"rm",         SO_NONE    },
+	{ BDBH_LS,       (char *)"ls",         SO_NONE    },
+	{ BDBH_INFO,     (char *)"info",       SO_NONE    },
+	{ BDBH_CHMOD,    (char *)"chmod",      SO_NONE    },
+	{ BDBH_MKDIR,    (char *)"mkdir",      SO_NONE    },
+	{ BDBH_SHELL,    (char *)"shell",      SO_NONE    },
+	{ BDBH_QUIT,     (char *)"q",          SO_NONE    },
+	{ BDBH_SYNC,     (char *)"sync",       SO_NONE    },
+	{ BDBH_MERGE,    (char *)"merge",      SO_NONE    },
+	{ BDBH_HELP,     (char *)"help",       SO_NONE    },
+	{ BDBH_CONVERT,  (char *)"convert",    SO_NONE    },
+	{ BDBH_LISTKEYS, (char *)"lk",         SO_NONE    },
+	{ OPT_HELP,      (char *)"-h",          SO_NONE    },
+	{ OPT_HELP,      (char *)"--help",      SO_NONE    },
+	{ OPT_DB,        (char *)"-d",          SO_REQ_SEP },
+	{ OPT_DB,        (char *)"--database",  SO_REQ_SEP },
+	{ OPT_COMPRESS,  (char *)"-c",          SO_NONE    },
+	{ OPT_COMPRESS,  (char *)"--compress",  SO_NONE    },
+	{ OPT_ROOT,      (char *)"-t",          SO_REQ_SEP },
+	{ OPT_ROOT,      (char *)"--root",      SO_REQ_SEP },
+	{ OPT_DIRECTORY, (char *)"-C",          SO_REQ_SEP },
+	{ OPT_DIRECTORY, (char *)"--directory", SO_REQ_SEP },
+	{ OPT_RECURSIVE, (char *)"-r",          SO_NONE    },
+	{ OPT_RECURSIVE, (char *)"--recursive", SO_NONE    },
+	{ OPT_INMEMORY,  (char *)"-m",          SO_NONE    },
+	{ OPT_INMEMORY,  (char *)"--in_memory", SO_NONE    },
+	{ OPT_OVERWRITE, (char *)"-o",          SO_NONE    },
+	{ OPT_OVERWRITE, (char *)"--overwrite", SO_NONE    },
+	{ OPT_VERBOSE,   (char *)"-v",          SO_NONE    },
+	{ OPT_VERBOSE,   (char *)"--verbose",   SO_NONE    },
+	{ OPT_LONG_LIST, (char *)"-l",          SO_NONE    },
+	{ OPT_LONG_LIST, (char *)"--long_list", SO_NONE    },
+	{ OPT_SSORT_LIST,(char *)"-S",          SO_NONE    },
+	{ OPT_SSORT_LIST,(char *)"--size_sort", SO_NONE    },
+	{ OPT_RSORT_LIST,(char *)"-R",          SO_NONE    },
+	{ OPT_RSORT_LIST,(char *)"--reverse_sort", SO_NONE },
+	{ OPT_LEVEL,     (char *)"-L",          SO_REQ_SEP },
+	{ OPT_LEVEL,     (char *)"--level",     SO_REQ_SEP },
+	{ OPT_MODE,      (char *)"--mode",      SO_REQ_SEP },
+	{ OPT_VALUE,     (char *)"--value",     SO_REQ_SEP },
+	{ OPT_STAMP,     (char *)"--stamp",     SO_REQ_SEP },
+	{ OPT_CLUSTER,   (char *)"--cluster",   SO_REQ_SEP },
+	SO_END_OF_OPTIONS                       // END
+    };
 
-	// re-initializing some private members
-	root          = "";
-	root_level    = 0;
-	command       = -1;
-	overwrite     = false;
-	verbose       = false;
-	long_list     = false;
-	size_sort     = false;
-	reverse_sort  = false;
-	cluster       = false;
-	level         = -1;
-	mode          = "";
-	stamp         = "";
-	val           = "";
-	val_available = false;
+    // re-initializing some private members
+    root          = "";
+    root_level    = 0;
+    command       = -1;
+    overwrite     = false;
+    verbose       = false;
+    inmemory      = false;
+    long_list     = false;
+    size_sort     = false;
+    reverse_sort  = false;
+    cluster       = false;
+    level         = -1;
+    mode          = "";
+    stamp         = "";
+    val           = "";
+    val_available = false;
 		
-	CSimpleOpt arguments(argc, argv, options);
+    CSimpleOpt arguments(argc, argv, options);
 
     string directory="";
     bool recursive = false;
@@ -610,124 +613,127 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 		//cout << "coucou " << arguments.OptionId() << " " << arguments.OptionText() << "\n";
         if (arguments.LastError() == SO_SUCCESS) {
             if (arguments.OptionId() <= BDBH_MAX_COMMAND) {
-				command = arguments.OptionId();
-			}
-			else if (arguments.OptionId() == OPT_HELP) {
+		command = arguments.OptionId();
+	    }
+	    else if (arguments.OptionId() == OPT_HELP) {
                 if (help != NULL)
-	                help();
-		        throw( BdbhUsageException() );
-			}
-			else if (arguments.OptionId() == OPT_DB) {
-				if (shell_mode)
-					throw (BdbhException("--database not allowed in shell mode"));
-				database = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_COMPRESS) {
-				if (shell_mode)
-					throw (BdbhException("--compress not allowed in shell mode"));
-				compress = true;
-			}
-			else if (arguments.OptionId() == OPT_ROOT) {
-				root = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_DIRECTORY) {
-				directory = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_RECURSIVE) {
-				recursive = true;
-			}
-			else if (arguments.OptionId() == OPT_OVERWRITE) {
-				overwrite = true;
-			}
-			else if (arguments.OptionId() == OPT_VERBOSE) {
-				verbose = true;
-			}
-			else if (arguments.OptionId() == OPT_LONG_LIST) {
-				long_list = true;
-			}
-			else if (arguments.OptionId() == OPT_SSORT_LIST) {
-				size_sort = true;
-			}
-			else if (arguments.OptionId() == OPT_RSORT_LIST) {
-				reverse_sort = true;
-			}
-			else if (arguments.OptionId() == OPT_LEVEL) {
-				level = atoi(arguments.OptionArg());
-			}
-			else if (arguments.OptionId() == OPT_MODE) {
-				mode = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_VALUE) {
-				val = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_STAMP) {
-				stamp = arguments.OptionArg();
-			}
-			else if (arguments.OptionId() == OPT_CLUSTER) {
-				cluster = true;
-			}
-        }
-	}
-
-	// check the validity of the command	
-	if (command == -1) 
-	{
-		if (strict_check_mode && !shell_mode) {
-			cerr << "WARNING - No command recognized - switching to shell mode, exit with q\n";
-			command = BDBH_SHELL;
+		    help();
+		    throw( BdbhUsageException() );
 		}
+	    else if (arguments.OptionId() == OPT_DB) {
+		if (shell_mode)
+		    throw (BdbhException("--database not allowed in shell mode"));
+		database = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_COMPRESS) {
+		if (shell_mode)
+		    throw (BdbhException("--compress not allowed in shell mode"));
+		compress = true;
+	    }
+	    else if (arguments.OptionId() == OPT_ROOT) {
+		root = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_DIRECTORY) {
+		directory = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_RECURSIVE) {
+		recursive = true;
+	    }
+	    else if (arguments.OptionId() == OPT_OVERWRITE) {
+		overwrite = true;
+	    }
+	    else if (arguments.OptionId() == OPT_INMEMORY) {
+		inmemory = true;
+	    }
+	    else if (arguments.OptionId() == OPT_VERBOSE) {
+		verbose = true;
+	    }
+	    else if (arguments.OptionId() == OPT_LONG_LIST) {
+		long_list = true;
+	    }
+	    else if (arguments.OptionId() == OPT_SSORT_LIST) {
+		size_sort = true;
+	    }
+	    else if (arguments.OptionId() == OPT_RSORT_LIST) {
+		reverse_sort = true;
+	    }
+	    else if (arguments.OptionId() == OPT_LEVEL) {
+		level = atoi(arguments.OptionArg());
+	    }
+	    else if (arguments.OptionId() == OPT_MODE) {
+		mode = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_VALUE) {
+		val = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_STAMP) {
+		stamp = arguments.OptionArg();
+	    }
+	    else if (arguments.OptionId() == OPT_CLUSTER) {
+		cluster = true;
+	    }
 	}
-	
-	if (shell_mode)
-	{
-		if ( command==BDBH_CREATE || command==BDBH_SHELL )
-			throw (BdbhException("Command Not allowed in shell mode"));
+    }
+
+    // check the validity of the command	
+    if (command == -1) 
+    {
+	if (strict_check_mode && !shell_mode) {
+	    cerr << "WARNING - No command recognized - switching to shell mode, exit with q\n";
+	    command = BDBH_SHELL;
 	}
-	else
-	{
-		if ( command==BDBH_SYNC )
-			throw (BdbhException("Command allowed ONLY in shell mode"));
-	}
+    }
+    
+    if (shell_mode)
+    {
+	if ( command==BDBH_CREATE || command==BDBH_SHELL )
+	    throw (BdbhException("Command Not allowed in shell mode"));
+    }
+    else
+    {
+	if ( command==BDBH_SYNC )
+	    throw (BdbhException("Command allowed ONLY in shell mode"));
+    }
 		
-	// root: useful for the commands extract, ls, add/write
-	//       if not specified, an environment variable is used
-	if (root == "")
+    // root: useful for the commands extract, ls, add/write
+    //       if not specified, an environment variable is used
+    if (root == "")
     {
         char* t;
         if (command==BDBH_EXTRACT || command==BDBH_LS) {
             t = getenv("BDBH_ROOTX");
-		} else if (command==BDBH_ADD) {
+	} else if (command==BDBH_ADD) {
             t = getenv("BDBH_ROOTA");
-		}
+	}
         else {
             t = NULL;
-		}
+	}
 
         if (t!=NULL) {
             root = (string) t;
-		}
-	} else {
-		// root Should NOT start with a '/'
-		if (root[0] != '/') {
-			StripLeadingSlash(root);
-		}
-
-		// append a /
-		if (root.length()>0) {
-			AddTrailingSlash(root);
-		}
+	}
+    } else {
+	// root Should NOT start with a '/'
+	if (root[0] != '/') {
+	    StripLeadingSlash(root);
 	}
 
-	AddTrailingSlash(root);
-	StripLeadingSlash(root);
-	Fkey::root = root;
+	// append a /
+	if (root.length()>0) {
+	    AddTrailingSlash(root);
+	}
+    }
 
-	root_level = CountLevel(root.c_str());
+    AddTrailingSlash(root);
+    StripLeadingSlash(root);
+    Fkey::root = root;
 
-	if ( directory=="/" )
-		throw BdbhException("Sorry, --directory cannot reference /");
-	AddTrailingSlash(directory);
-	Fkey::directory = directory;
+    root_level = CountLevel(root.c_str());
+
+    if ( directory=="/" )
+	throw BdbhException("Sorry, --directory cannot reference /");
+    AddTrailingSlash(directory);
+    Fkey::directory = directory;
 
     // The database specification: required (in strict_check_mode only), but may come from the environment
     if (database == "")
@@ -735,9 +741,9 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
         char* db = getenv("BDBH_DATABASE");
         if (db==NULL && strict_check_mode==true)
             throw (BdbhException("Database not specified - please set BDBH_DATABASE env variable or specify --database"));
-		if (db != NULL) {
-			database = (string) db;
-		}
+	if (db != NULL) {
+	    database = (string) db;
+	}
     };
 
     // The --value is ignored if the command is not put
@@ -747,14 +753,19 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
     }
 
     // recursive
-	if (level>0)
-		recursive = true;
+    if (level>0)
+	recursive = true;
 
     // Some flags are incompatible with some commands
     if (command==BDBH_CAT)
     {
         if (recursive)
             throw (BdbhException("recursive cannot be specified with the command cat"));
+    }
+    if (command!=BDBH_LS)
+    {
+	if (inmemory)
+	    throw (BdbhException("inmemory can be specified ONLY WITH ls"));
     }
 
     // The --level switch is used ONLY with the commands: extract, ls, chmod
@@ -763,7 +774,7 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
         throw (BdbhException("--level can be specified only with ls, chmod or extract"));
     }
 	
-	__InitFkeys (arguments.Files(),arguments.FileCount(), recursive);
+    __InitFkeys (arguments.Files(),arguments.FileCount(), recursive);
 }
 
 /** Initialize the vector: fkeys
