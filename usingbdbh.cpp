@@ -322,7 +322,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 
 	// if rvl == 0, we save to the database the output files before returning
 	//if (rvl==0) {
-		vector<string> arg;
+		vector_of_strings arg;            // The arg to write output files to the database
+
 		//arg.push_back("--database");
 		//arg.push_back(temp_db_dir);
 		arg.push_back("--root");
@@ -333,7 +334,11 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		arg.push_back("--overwrite");
 		//arg.push_back("--verbose");
 		//arg.push_back("add");
-		bool path_exists=false;
+		// If no output file created, we'll get an exception !
+
+		bool path_exists=false;	          // False if nothing created (which is probably an error)
+
+		// Keep track of the files to be stored and destroyed
 		for (size_t i=0; i<l_out_pathes.size(); ++i) {
 			if (fileExists(out_pathes[i])) {
 				arg.push_back(l_out_pathes[i]);
@@ -341,8 +346,9 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 			}
 		}
 
-		// If no output file created, we'll get an exception !
 		if (path_exists==true) {
+
+			// Store the outpufiles to the database
 			bdbh::Parameters bdbh_prms_w(arg);
 			bdbh::Write write_cmd(bdbh_prms_w,*temp_bdb.get());
 			//cout << "INFO - WRITING DATA TO " << temp_db_dir << '\n';
@@ -357,6 +363,18 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 					out << out_pathes[i] << ' ';
 				}
 				throw(logic_error(out.str()));
+			}
+			
+			// Destroy the files/directories
+			for (size_t i=0; i<out_pathes.size(); ++i) {
+				string cmd = "rm -rf ";
+				cmd += out_pathes[i];
+				callSystem(cmd,false);
+
+				//rvl = unlink( out_pathes[i].c_str() );
+				//if (rvl != 0) {
+				//	cerr << "WARNING - Could not remove file " << out_pathes[i] << " - " << strerror(rvl) << "\n";
+				//}
 			}
 		}
 		return rvl;
@@ -581,12 +599,15 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 		} else {
 			to_remove = path;
 		}
+		
+		/*
 		if ( prms.isVerbose() ) {
 			cerr << "INFO - rank " << rank << " is now removing " << to_remove << "\n";
 		}
 		string cmd = "rm -rf ";
 		cmd += to_remove;
 		callSystem(cmd,false);
+		*/ 
 	}
 }
 
