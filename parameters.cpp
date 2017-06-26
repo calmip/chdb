@@ -52,6 +52,7 @@ Parameters::Parameters(int argc,
 					   char* argv[]) throw(runtime_error) :
     tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
+	is_in_memory(false),
 	is_size_sort(DEFAULT_SIZE_SORT),
 	is_verbose(DEFAULT_VERBOSE),
 	block_size(DEFAULT_BLOCK_SIZE) {
@@ -67,7 +68,8 @@ enum {
 	OPT_ENV_SNIPPET,// --create-environment
 	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
-	OPT_BLOCK_SIZE, // --block-size,
+	OPT_BLOCK_SIZE, // --block-size
+	OPT_IN_MEMORY,  // --in-memory
 	OPT_SORT_BY_SIZE,  // --sort-by-size
 	OPT_VERBOSE,       // --verbose
 	OPT_ON_ERROR,      // --on-error
@@ -97,6 +99,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
+	{ OPT_IN_MEMORY,     "--in-memory",    SO_NONE    },
 	{ OPT_SORT_BY_SIZE,  "--sort-by-size", SO_NONE    },
 	{ OPT_VERBOSE,       "--verbose",      SO_NONE    },
 	{ OPT_ON_ERROR,      "--on-error",     SO_REQ_SEP },
@@ -145,6 +148,9 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_BLOCK_SIZE:
 				block_size = atoi(arguments.OptionArg());
+				break;
+			case OPT_IN_MEMORY:
+				is_in_memory = true;
 				break;
 			case OPT_SORT_BY_SIZE:
 				is_size_sort = true;
@@ -308,6 +314,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
+	cerr << "  --in-memory                : Read the whole database in memory. May help if you get poor performance when starting chdb. Or not\n";
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";

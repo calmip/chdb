@@ -273,7 +273,7 @@ class Coucou {
 		void __Unlock(const char *name) throw(BdbhException);
 #endif
 		bool verbose;               // The switch --verbose was specified
-		bool in_memory;				// the swtich --in_memory was specified
+		bool in_memory;				// the switch --in_memory was specified
     
 		// Metadata for info_data
 		Mdata minfo_data;

@@ -3,6 +3,9 @@
 //#include <iostream>
 //#include <iterator>
 
+// See L 47 - Bullshit here
+#include <mpi.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
@@ -38,7 +41,14 @@ typedef auto_ptr<bdbh::Command> Command_aptr;
 
 UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_bdb(NULL),temp_bdb(NULL),need_consolidation(false) {
 	bdbh::Initialize();
-	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD);
+	// Switch in-memory: used ONLY by rank 0, if using bdbh
+	bool in_memory = false;
+	
+	// @todo - We cannot use the rank defined by the scheduler because the Scheduler must be created AFTER th e Directory ! Bull shit here !
+	int mpi_rank;
+	MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);
+	if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
+	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,false,in_memory);
 }
 
 // consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
