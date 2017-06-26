@@ -72,7 +72,7 @@ class Coucou {
 
 	/** \brief We alloc some memory in the contructor, free it in the destructor
 	   
-		GetData() returns the buffer's bas address
+		GetData() returns the buffer's base address
 		SetSize() is used to set the size of the buffer (must be < the memory allocated)
 		Getsize() returns the current size
 	*/
@@ -199,7 +199,7 @@ class Coucou {
 	class BerkeleyDb
 	{
     public:
-		BerkeleyDb(const char* name,int o_mode,bool verb=false, bool cluster=false) throw(DbException);
+		BerkeleyDb(const char* name,int o_mode,bool verb=false, bool cluster=false, bool in_memory=false) throw(DbException);
 		~BerkeleyDb();
 
 		int GetOpenMode() const { return open_mode; };
@@ -258,6 +258,10 @@ class Coucou {
 		void __OpenWrite(const char*, Db_aptr&, const char*) throw(DbException,BdbhException);
 
 #if NOCLUSTER
+		void __InMemory(const string&) throw(BdbhException); // Put the whole database in memory to increase performance
+    	bool __aligned_p(void*);
+		uint32_t __bytes2pages(uint64_t) throw (BdbhException);
+		bool __is_mincore_page_resident(char p);
 #else
 		// Lock or unlock, used only if the switch --cluster was specified
 		bool cluster;               // The switch --cluster was specified: we must lock/unlock the database
@@ -269,6 +273,7 @@ class Coucou {
 		void __Unlock(const char *name) throw(BdbhException);
 #endif
 		bool verbose;               // The switch --verbose was specified
+		bool in_memory;				// the switch --in_memory was specified
     
 		// Metadata for info_data
 		Mdata minfo_data;
@@ -296,6 +301,9 @@ class Coucou {
 
 		/// The db itself
 		Db_aptr db;
+		
+		/// The pagesize on our platform
+		long pagesize;
 
 #if NOCLUSTER
 #else

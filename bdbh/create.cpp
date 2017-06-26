@@ -261,6 +261,7 @@ void bdbh::Usage()
     cout << "   -t [ --root ] arg        path to the root of the hierarchy\n";
     cout << "   -C [ --directory ] arg   with extract: The hierarchy is retrieved to this directory\n";
     cout << "   -r [ --recursive ]       with extract/add/ls: directories are treated recursively\n";
+    cout << "   -m [ --in_memory ]       with ls: read the whole database in cache, getting sometimes better performance\n";
     cout << "   -o [ --overwrite ]       with extract/add: data or files may be overwritten\n";
     cout << "   -v [ --verbose ]         a lot of messages are displayed\n";
     cout << "   -l [ --long_list ]       with ls: long listing\n";

@@ -127,7 +127,6 @@ int main(int argc,char* argv[])
 		auto_ptr<Directories> dir_aptr(dirFactory(prms));
 		Directories& dir = *dir_aptr.get();
 
-		//UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
 
 		if (sched.isMaster() && prms.isVerbose()) {
