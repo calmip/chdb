@@ -60,6 +60,7 @@ public:
 		// if nothing stripped or bad type give up
 		// if input_files not empty check the file is to be kept
 
+		//cerr << "coucou (root,name) " << root << ',' << name << "\n";
 		if (bdbh::StripLeadingStringSlash(root,name) || name.length()==0) {
 			if (isEndingWith(name,file_type)) {
 				if (in_files_empty || input_files.find(name)!=input_files.end()) {
@@ -81,6 +82,7 @@ class PushFilesMeta: public bdbh::LsObserver {
 public:
 	PushFilesMeta(const string& r, const string& t, list<Finfo>& ls, set<string>ss):root(r),file_type(t),files(ls),input_files(ss),in_files_empty(ss.empty()){};
 	void Update(string name,const bdbh::Mdata& mdata) {
+
 		// Strip the root
 		// if nothing stripped or bad type give up
 		// if input_files not empty check the file is to be kept
@@ -108,7 +110,8 @@ private:
 void UsingBdbh::v_readFiles() {
 	if (files.size()==0) {
 		string top = prms.getInDir();
-		string root=top.substr(0,top.length()-3); // input.db -> input
+		//string root=top.substr(0,top.length()-3); // input.db -> input
+		string root = "";
 		string ext = ".";
 		ext += prms.getFileType();
 	
@@ -274,7 +277,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	// Read the input pathes from the database, and copy them to the temporary input directory
 	string temp_input_dir = getTempInDir();
 //	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
-	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+//	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+	const char* args[] = {"--root","","--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
 	bdbh::Parameters bdbh_prms_r(6,args);
 	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
 	read_cmd.Exec();
