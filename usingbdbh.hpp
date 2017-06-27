@@ -37,10 +37,10 @@ public:
 		if(temp_input_dir.length()!=0) return temp_input_dir;
 		else throw(logic_error("ERROR - temp_input_dir NOT INITIALIZED"));
 	};
-//	string getTempDbDir() const {
-//		if(temp_db_dir.length()!=0) return temp_db_dir;
-//		else throw(logic_error("ERROR - temp_db_dir NOT INITIALIZED"));
-//	};
+	string getTempDbDir() const {
+		if(temp_db_dir.length()!=0) return temp_db_dir;
+		else throw(logic_error("ERROR - temp_db_dir NOT INITIALIZED"));
+	};
 	string getOutDir() const  {
 		if(output_dir.length()!=0) return output_dir;
 		else throw(logic_error("ERROR - output_dir NOT INITIALIZED"));

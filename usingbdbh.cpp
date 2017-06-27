@@ -348,7 +348,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 
 		if (path_exists==true) {
 
-			// Store the outpufiles to the database
+			// Store the outputfiles to the database
 			bdbh::Parameters bdbh_prms_w(arg);
 			bdbh::Write write_cmd(bdbh_prms_w,*temp_bdb.get());
 			//cout << "INFO - WRITING DATA TO " << temp_db_dir << '\n';
@@ -365,7 +365,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 				throw(logic_error(out.str()));
 			}
 			
-			// Destroy the files/directories
+			// Destroy the output files/directories
 			for (size_t i=0; i<out_pathes.size(); ++i) {
 				string cmd = "rm -rf ";
 				cmd += out_pathes[i];
@@ -376,6 +376,11 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 				//	cerr << "WARNING - Could not remove file " << out_pathes[i] << " - " << strerror(rvl) << "\n";
 				//}
 			}
+			
+			// Destroy the input file(s)
+			// Destroy only in_pathes[0]
+			string f = temp_input_dir + '/' + in_pathes[0];
+			unlink ( f.c_str());
 		}
 		return rvl;
 //	} else {
@@ -442,28 +447,30 @@ void UsingBdbh::makeOutDir(bool rank_flg, bool rep_flg) {
 		callSystem(cmd);
 	}
 
-	// throw a runtime error if directory already exists, else makes directory
-	mkdir (output_dir);
-
-	// Create and open an output BerkeleyDb
-	output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OCREATE);
-
-	//const char* args[] = {"--database",output_dir.c_str(),"create"};
-	//bdbh::Parameters bdbh_prms(3,args);
-	bdbh::Parameters bdbh_prms;
-	bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
-	create_cmd.Exec();
-	int rvl = create_cmd.GetExitStatus();
-	if (rvl != 0) {
-		ostringstream out;
-		out << "ERROR - could not create output " << output_dir << " database. Status=" << rvl;
-		throw(logic_error(out.str()));
+	// Only the MASTER creates the output directory, the slaves will create it only during consolidation
+	if (rank == 0) {
+		// throw a runtime error if directory already exists, else makes directory
+		mkdir (output_dir);
+	
+		// Create and open an output BerkeleyDb
+		output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OCREATE);
+	
+		//const char* args[] = {"--database",output_dir.c_str(),"create"};
+		//bdbh::Parameters bdbh_prms(3,args);
+		bdbh::Parameters bdbh_prms;
+		bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
+		create_cmd.Exec();
+		int rvl = create_cmd.GetExitStatus();
+		if (rvl != 0) {
+			ostringstream out;
+			out << "ERROR - could not create output " << output_dir << " database. Status=" << rvl;
+			throw(logic_error(out.str()));
+		}
+	
+		// Reopen the output db in write mode
+		output_bdb.reset();
+		output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OWRITE);
 	}
-
-	// Reopen the output db in write mode
-	output_bdb.reset();
-	output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OWRITE);
-//	mkdir(output_dir);
 }
 
 /** 
@@ -549,55 +556,85 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 	// mark the dir to consolidated status
 	need_consolidation = false;
 
-	string temp_out = (from_tmp) ? getTempOutDir() : path;
-	if (temp_out.size()==0) {
+	string src_dir, src_dir_db;
+	
+	// tmp directory has the following structure:
+	// some/path/       ==> src_dir
+	// some/path/db     ==> src_dir_db
+	// some/path/input
+	// some/path/output
+	if (from_tmp) {
+		src_dir = getTempOutDir();
+		//src_dir_db = src_dir + "/db";
+		src_dir_db = getTempDbDir();
+		temp_bdb.get()->Sync();
+		temp_bdb.reset();
+	} else {
+		src_dir    = path;
+		src_dir_db = path;		
+	}
+
+	if (src_dir.size()==0) {
 		return;
 	}
 
-	string out = getOutDir();
+	string dst_dir = getOutDir();
 
-	// output directory same directory as temp_out nothing to do !
-	if (temp_out!=out) {
+	// If dst_dir directory is same directory as src_dir nothing to do !
+	if (src_dir!=dst_dir) {
 
-		string from_db_dir;
-		// if consol from_tmp, sync and close the database
-		// if consol from_tmp, use temp_db_dir !
-		if ( from_tmp) {
-			//temp_bdb.get()->Sync();
-			temp_bdb.reset();
-			from_db_dir = temp_db_dir;
-		} else {
-			from_db_dir = temp_out;
-		}
-
-		// If directory to consolidate exists
 		struct stat sts;
-		if (stat(temp_out.c_str(), &sts)==0) {
+		if (stat(src_dir.c_str(), &sts)==0) {
 			if (prms.isVerbose()) {
-				cerr << "INFO - rank " << rank << " is now consolidating data " << from_db_dir << " to " << out << "\n";
+				cerr << "INFO - rank " << rank << " is now consolidating data " << src_dir_db << " to " << dst_dir << "\n";
 			}
-			//const char* args[] = {"--database",getOutDir().c_str(),"merge",from_db_dir.c_str()};
-			const char* args[] = {from_db_dir.c_str()};
-			bdbh::Parameters bdbh_prms(1,args);
-			bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
-			merge_cmd.Exec();
-			int rvl = merge_cmd.GetExitStatus();
-			if (rvl != 0) {
-				ostringstream out;
-				out << "ERROR - could not merge database " << temp_out << " to " << out << " Status=" << rvl;
-				throw(logic_error(out.str()));
+			
+			// If destination directory exists, merge source directory to it
+			if (stat(dst_dir.c_str(), &sts)==0) {
+					
+	
+				//const char* args[] = {"--database",getOutDir().c_str(),"merge",src_dir_db.c_str()};
+				const char* args[] = {src_dir_db.c_str()};
+				bdbh::Parameters bdbh_prms(1,args);
+				bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
+				merge_cmd.Exec();
+				int rvl = merge_cmd.GetExitStatus();
+				if (rvl != 0) {
+					ostringstream out;
+					out << "ERROR - could not merge database " << src_dir << " to " << dst_dir << " Status=" << rvl;
+					throw(logic_error(out.str()));
+				}
+	
+				// Sync output data
+				output_bdb.get()->Sync();
 			}
-
-			// Sync output data
-			output_bdb.get()->Sync();
+		
+			// If destination directory does not exist, we just have to cp
+			else {
+				string cmd = "cp -a " + src_dir_db + " " + dst_dir;
+				callSystem(cmd,false);
+			}
+		} else {
+			string msg = "ERROR - could not merge database ";
+			msg += src_dir;
+			msg += " to ";
+			msg += dst_dir;
+			msg += dst_dir;
+			msg += " (";
+			msg += src_dir;
+			msg += " does not exist)";
+			throw(logic_error(msg));
 		}
 
 		// remove temporary directory, ignore the error
+		// It temporary, we remove db, input, output
 		string to_remove;
 		if (from_tmp) {
-			to_remove = temp_dir;
+			to_remove = src_dir;
+			
+		// Else, we remove only db directory
 		} else {
-			to_remove = path;
+			to_remove = src_dir_db;
 		}
 		
 		/*
