@@ -762,10 +762,10 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
         if (recursive)
             throw (BdbhException("recursive cannot be specified with the command cat"));
     }
-    if (command!=BDBH_LS)
+    if (command!=BDBH_LS && command != BDBH_MERGE)
     {
 	if (inmemory)
-	    throw (BdbhException("inmemory can be specified ONLY WITH ls"));
+	    throw (BdbhException("in_memory can be specified ONLY WITH ls OR merge"));
     }
 
     // The --level switch is used ONLY with the commands: extract, ls, chmod
