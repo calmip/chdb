@@ -37,7 +37,7 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
-typedef auto_ptr<bdbh::Command> Command_aptr;
+//typedef auto_ptr<bdbh::Command> Command_aptr;
 
 UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_bdb(NULL),temp_bdb(NULL),need_consolidation(false) {
 	bdbh::Initialize();
@@ -377,8 +377,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 				//}
 			}
 			
-			// Destroy the input file(s)
-			// Destroy only in_pathes[0]
+			// Destroy the input file(s) (ie only in_pathes[0])
 			string f = temp_input_dir + '/' + in_pathes[0];
 			unlink ( f.c_str());
 		}
@@ -723,6 +722,21 @@ void UsingBdbh::findOrCreateDir(const string & p) {
 		}
 	}
 }
+
+void UsingBdbh::SetSignal(int signal) {
+	cerr << "UsingBdbh received a signal " << signal << " - Closing output and temporary databases" << endl;
+	Sync();
+}
+
+/****************
+ * @brief Synchronize output databases
+ * 
+ *********/
+void UsingBdbh::Sync() {
+	if (output_bdb.get() != NULL) output_bdb->Sync(false);
+	if (temp_bdb.get() != NULL)   temp_bdb->Sync(false);
+}
+	
 
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx

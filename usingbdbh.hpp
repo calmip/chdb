@@ -47,6 +47,9 @@ public:
 	};
 	void consolidateOutput(bool from_temp, const string& path="");
 
+	virtual void SetSignal(int signal);
+	virtual void Sync();
+	
 //	friend class TestCase1_usingFsfindOrCreateDir_Test;
 
 private:
