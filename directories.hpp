@@ -51,6 +51,8 @@ public:
 	virtual void findOrCreateDir(const string &) = 0;
 	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
+	// consolidateOutput: the slaves may write output to temporaries (this depends on children of Directories)
+	//                    All those temporaries are consolidated at the end
 	virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
 
 	const vector_of_strings& getFiles() {

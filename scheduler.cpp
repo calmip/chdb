@@ -151,7 +151,7 @@ void Scheduler::finalize() {
 }
 
 void Scheduler::SetSignal(int signal) {
-	cerr << "Scheduler received a signal - " << signal << endl;
+	cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << endl;
 	if (isMaster()) {
 		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
 		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";

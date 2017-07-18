@@ -66,6 +66,7 @@ private:
 	string temp_input_dir;
 	string temp_db_dir;
 	mutable bool need_consolidation;
+	bool signal_received;
 };
 
 #endif

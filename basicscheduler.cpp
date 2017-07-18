@@ -207,8 +207,10 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		file_pathes = dir.nextBlock();
 	}
 
+	// No more files to compute, but there are still some slaves working
 	// loop over the slaves: when each slave is ready, send him a msg END
 	//                       and when the slave sends back a tag END, consolidate his work and forget him
+	//
 	int working_slaves = getNbOfSlaves(); // The master is not a slave
 	while(working_slaves>0) {
 		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
@@ -237,6 +239,7 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		}
 
 		// We received a tag "END": consolidate data (if necessary) and forget this slave
+		// We consolidate from 
 		else {
 			dir.consolidateOutput(false,file_pathes[0]);
 			working_slaves--;
