@@ -347,10 +347,12 @@ class Coucou {
 	
 		virtual void Exec() throw(BdbhException,DbException) = 0;
 		int GetExitStatus() const {return exit_status;};
-		static int GetSignal() {return signal_received;};
-		static void ResetSignal() {signal_received=0;};
-    
-		static void sig_handler(int signal) {signal_received=signal;};
+
+		// Signal handling: the signal handler should call SetSignal. 
+		// The bdbh operations are interrupted when signal_received is > 0, but the database should stay coherent
+
+   		void SetSignal(int s) {signal_received=s;};
+		void ResetSignal() {SetSignal(0); };
 	
 		friend class Merge;
 		friend void Initialize();
@@ -422,8 +424,8 @@ class Coucou {
 		// Update the data_info from the parameters
 		void __UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir) throw(DbException);
 	
-		/// Return true we a signal was recevied recently
-		bool _IsSignalReceived() { return signal_received;};
+		/// Return true if a signal was received recently
+		bool _IsSignalReceived() {return signal_received!=0;};
 	
 		/// Compare the level passed by parameter with the --level switch
 		/// Returns 0  if level higher than the switch (too deep)

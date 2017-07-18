@@ -28,7 +28,6 @@ using namespace std;
 #include "merge.hpp"
 
 using namespace bdbh;
-//using bdbh::Usage;
 
 bool Parse (const char* s, vector<string>& v);
 
@@ -43,6 +42,43 @@ void ListKeys(const string& );
 char* StampPrompt(const string&, const string&,int,char*,size_t );
 
 extern const char* legal_commands_switches[];
+
+
+/************************
+ * Handling some signals
+ ************************/
+
+
+class SignalHandle {
+    public:
+        static class Initializer {
+            public:
+                Initializer() {
+                    struct sigaction new_action;
+                    sigemptyset (&new_action.sa_mask);
+                    new_action.sa_flags = 0;
+                    new_action.sa_handler = sig_handler;
+                
+                    sigaction (SIGINT,  &new_action, NULL);
+                    sigaction (SIGTERM, &new_action, NULL);
+                }
+        } Init;
+
+        static void Connect(Command* c_ptr) { cmd_ptr = c_ptr; };
+        static void sig_handler(int s) {
+            if (cmd_ptr != NULL) {
+                cerr << "signal received " << s << endl;
+                cmd_ptr->SetSignal(s);
+            }
+        }
+        
+    private:
+        static Command* cmd_ptr;
+};
+
+// Initialize SignalHandle, ie run the Initializer to connect the signal handler, and init cmd_ptr
+Command* SignalHandle::cmd_ptr = NULL;
+SignalHandle::Initializer SignalHandle::Init;
 
 /*////////////// Main ///////////////*/
 int main(int argc,char* argv[])
@@ -498,6 +534,11 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
             break;
         }
     }
+    
+    // Connect the new command to the SignalHandle
+    SignalHandle::Connect(command.get());
+    
+    // Execute command
     command.get()->Exec();
 }
 

@@ -61,7 +61,8 @@ void Merge::__Exec(const Fkey& fkey) throw(BdbhException,DbException)
 {
     string from_db_name = fkey.GetFileName();
     
-    BerkeleyDb from_db(from_db_name.c_str(),BDBH_OREAD);
+    bool in_memory = prm.GetInmemory();
+    BerkeleyDb from_db(from_db_name.c_str(),BDBH_OREAD,false,false,in_memory);
     if (from_db.GetCompressionFlag() != bdb.GetCompressionFlag())
         throw (BdbhException("All databases must have the same compression status"));
     

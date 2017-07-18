@@ -51,6 +51,8 @@ public:
 	virtual void findOrCreateDir(const string &) = 0;
 	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
+	// consolidateOutput: the slaves may write output to temporaries (this depends on children of Directories)
+	//                    All those temporaries are consolidated at the end
 	virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
 
 	const vector_of_strings& getFiles() {
@@ -75,13 +77,21 @@ public:
 	friend class TestCase1_block1_Test;
 	friend class TestCase1_usingFsfindOrCreateDir_Test;
 
+	// Derived classes may override those functions if they have something to close in emergency...
+	virtual void Sync() {};
+	virtual void SetSignal(int signal) {};
+	
 protected:
 	void initInputFiles() const;
 	bool isCorrectType(const string &) const;
 
 	const Parameters& prms;
+	
+	// The input files to be treated
 	mutable vector_of_strings files;
 	mutable size_t files_size;
+	
+	// The files which are specified through the switch --in-files
 	mutable set<string> input_files;
 	int rank;
 	int comm_size;

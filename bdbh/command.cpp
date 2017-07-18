@@ -25,6 +25,8 @@ using bdbh::Time;
 
 //int Coucou::level=0; See the class Coucou, used for debugging
 
+int Command::signal_received = 0;
+
 /** class initialization, with memory allocation
  \param[in] sze The capacity of the buffer
  \exception      If impossible to allocate memory
@@ -106,21 +108,9 @@ void Buffer::SetSize(int32_t s) throw(BdbhException)
 \param p The parsed command-line parameters
 \param d A BerkeleyDb object
 
-The constructor only traps the SIGINT signal
 */
-
-int Command::signal_received = -1;
  
-Command::Command(const Parameters   & p, BerkeleyDb& d): prm(p),exit_status(0),bdb(d),bfr3(__InitBfr3())
-{
-    // Manage the INT (ctrl-C) signal, unless already done (they are static var and function)
-    if (signal_received == -1)
-    {
-        signal(SIGINT, sig_handler);
-        signal_received = 0;
-    }; 
-}
-
+Command::Command(const Parameters   & p, BerkeleyDb& d): prm(p),exit_status(0),bdb(d),bfr3(__InitBfr3()) {}
 bdbh::TriBuff* Command::bfr3_ptr = NULL;
 
 /** BerkeleyDb initialization

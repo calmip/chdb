@@ -76,11 +76,21 @@ void BasicScheduler::mainLoop() {
 		mainLoopSlave();
 	}
 }
+/***
+ * @brief Called only on Master BEFORE calling MainLoop, to initialize several stuff
+ * 
+ * @param err_file
+ * @param report_file
+ * 
+ ****/
 
 void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
 
 	// read the file names
 	dir.readFiles();
+	
+	// Init the list of files to treat
+	_initCheckList();
 
 	// check the number of blocks versus number of slaves and throw an exception if too many slaves
 	size_t slaves_max = dir.getNbOfFiles()/prms.getBlockSize();
@@ -172,6 +182,9 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		// counting the files
 		treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
 
+		// checking the list items - If using bdbh, the temporary databases should be already synced
+		_checkListItems(file_pathes,return_values);
+		
 		// Write info to report
 		if (prms.isReportMode()) {
 			reportBody(report_file, talking_slave);
@@ -194,8 +207,10 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		file_pathes = dir.nextBlock();
 	}
 
+	// No more files to compute, but there are still some slaves working
 	// loop over the slaves: when each slave is ready, send him a msg END
 	//                       and when the slave sends back a tag END, consolidate his work and forget him
+	//
 	int working_slaves = getNbOfSlaves(); // The master is not a slave
 	while(working_slaves>0) {
 		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
@@ -224,6 +239,7 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		}
 
 		// We received a tag "END": consolidate data (if necessary) and forget this slave
+		// We consolidate from 
 		else {
 			dir.consolidateOutput(false,file_pathes[0]);
 			working_slaves--;
@@ -258,9 +274,10 @@ void BasicScheduler::reportHeader(ostream& os) {
 }
 
 /** 
- * @brief Write some report lines
+ * @brief Write some report lines (called by MainLoopMaster)
  *        Update the corresponding cell of wall_time_slaves
  * 
+ * @pre wall_times, file_pathes, return_values correctly initialized
  * @param os 
  * @param rank 
  */
@@ -463,10 +480,17 @@ void BasicScheduler::executeCommand() {
 			wall_times[i] = end - start;
 		}
 	}
+	
+	// Sync the temporary and output databases, for security
+	// If a signal is received after this call, the files are stored in the databases
+	dir.Sync();
 }
 
 /** 
- * @brief Called by the master when error mode is on
+ * @brief Called by the MainLoopMaster when error mode is on
+ * 
+ * @pre return_values is filled with the returned values
+ * @pre file_pathes is filled with the treated file pathes, in the same order as return_values
  * 
  * @param err_file 
  *

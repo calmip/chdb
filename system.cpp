@@ -25,7 +25,7 @@ using namespace std;
  *
  */
 
-#define DEBUG_SYSTEM 1
+#define DEBUG_SYSTEM 0
 
 int callSystem(string cmd, bool err_flg) {
 #ifdef DEBUG_SYSTEM
