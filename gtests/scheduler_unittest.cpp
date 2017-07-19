@@ -100,6 +100,7 @@ TEST_P(TestCase1,AbortOnError) {
 	Parameters prms(13,argv);
 	string output_dir; 
 	string output_root;
+	string input_root;
 
 	// Inside a block to consolidate at end (see the destructor of dir)
 	{
@@ -123,6 +124,8 @@ TEST_P(TestCase1,AbortOnError) {
 
 		output_root = dir.getOutDir();
 		output_root = output_root.substr(0,output_root.length()-3);// drop the final .db
+		input_root  = getInputDir();
+		input_root.erase(input_root.length()-3); // drop .db
 
 		cout << "================\n";
 #ifdef NOTMP
@@ -151,7 +154,7 @@ TEST_P(TestCase1,AbortOnError) {
 
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string slave_outdir = output_dir + ".0";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(slave_outdir,output_root + "/B.txt"));
+		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(slave_outdir, output_root + "/" + input_root + "/B.txt"));
 	} else {
 #ifdef OUTDIRPERSLAVE
 		string slave_outdir = output_dir + ".0";
@@ -190,6 +193,7 @@ TEST_P(TestCase1,ContinueOnError) {
 
 	string output_dir;
 	string output_root;
+	string input_root;
 	{
 		auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
 		Directories& dir = *aptr_dir.get();
@@ -208,6 +212,8 @@ TEST_P(TestCase1,ContinueOnError) {
 
 		output_root = dir.getOutDir();
 		output_root = output_root.substr(0,output_root.length()-3);// drop the final .db
+		input_root  = getInputDir();
+		input_root  = input_root.substr(0,input_root.length()-3);// drop the final .db
 
 		/*
 		{
@@ -244,11 +250,12 @@ TEST_P(TestCase1,ContinueOnError) {
 
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string slave_outdir = output_dir + ".0";
-		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(slave_outdir,output_root + "/B.txt"));
-		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/D/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(slave_outdir,output_root + "/A.txt"));
+		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(slave_outdir,output_root + '/' + input_root + "/B.txt"));
+		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(slave_outdir,output_root + '/' + input_root + "/C/C.txt"));
+		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(slave_outdir,output_root + '/' + input_root + "/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(slave_outdir,output_root + '/' + input_root + "/D/C.txt"));
+		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(slave_outdir,output_root + '/' + input_root + "/A.txt"));
+		EXPECT_EQ("1\t"+input_root+"/D/C.txt\n\n",readFile("errors.txt"));
 	} else {
 #ifdef OUTDIRPERSLAVE
 		string slave_outdir = output_dir + ".0";
@@ -260,8 +267,8 @@ TEST_P(TestCase1,ContinueOnError) {
 		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFile(slave_outdir+"/C/C/C.txt"));
 		EXPECT_EQ(expected_file_contents["D/C.txt"],readFile(slave_outdir+"/D/C.txt"));
 		EXPECT_EQ(expected_file_contents["A.txt"],readFile(slave_outdir+"/A.txt"));
+		EXPECT_EQ("1\tD/C.txt\n\n",readFile("errors.txt"));
 	}
-	EXPECT_EQ("1\tD/C.txt\n\n",readFile("errors.txt"));
 
 	FREE_ARGV(15);
 
@@ -294,7 +301,13 @@ TEST_P(TestCase1,ExecuteCommandFrmList1) {
 	string current = ".";
 
 	// Recreate the file errors.txt (removed at end of tests)
-	createFile(current,naco("errors.txt","1\tD/C.txt"));
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		string input_root = getInputDir();
+		input_root  = input_root.substr(0,input_root.length()-3);// drop the final .db
+		createFile(current,naco("errors.txt","1\t"+input_root+"/D/C.txt"));
+	} else {
+		createFile(current,naco("errors.txt","1\tD/C.txt"));
+	}
 
 	string output_dir;
 	string output_root;
@@ -334,7 +347,9 @@ TEST_P(TestCase1,ExecuteCommandFrmList1) {
 	}
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string slave_outdir = output_dir + ".0";
-		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/D/C.txt"));
+                string input_root = getInputDir();
+                input_root  = input_root.substr(0,input_root.length()-3);// drop the final .db
+		EXPECT_EQ(expected_file_contents["D/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/" + input_root + "/D/C.txt"));
 	} else {
 #ifdef OUTDIRPERSLAVE
 		string slave_outdir = output_dir + ".0";
@@ -375,6 +390,7 @@ TEST_P(TestCase1,ExecuteCommandFrmList2) {
 
 	string output_dir;
 	string output_root;
+	string input_root;
 	Parameters prms(15,argv);
 	{
 		auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
@@ -392,12 +408,20 @@ TEST_P(TestCase1,ExecuteCommandFrmList2) {
 
 		output_root = dir.getOutDir();
 		output_root = output_root.substr(0,output_root.length()-3);// drop the final .db
+                input_root = getInputDir();
+                input_root  = input_root.substr(0,input_root.length()-3);// drop the final .db
 
 		// Prepare files.txt
 		ofstream f("files.txt");
-		f << "C/C/C.txt\n";
-		f << "# some comment\n";
-		f << "A.txt\n";
+		if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+			f << input_root + "/C/C/C.txt\n";
+	                f << "# some comment\n";
+			f << input_root + "/A.txt\n";
+		} else {
+			f << "C/C/C.txt\n";
+			f << "# some comment\n";
+			f << "A.txt\n";
+		}
 		f.close();
 		
 		// Read the files
@@ -418,8 +442,8 @@ TEST_P(TestCase1,ExecuteCommandFrmList2) {
 
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string slave_outdir = output_dir + ".0";
-		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/C/C/C.txt"));
-		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(slave_outdir,output_root + "/A.txt"));
+		EXPECT_EQ(expected_file_contents["C/C/C.txt"],readFileFromBdbh(slave_outdir,output_root + "/" + input_root + "/C/C/C.txt"));
+		EXPECT_EQ(expected_file_contents["A.txt"],readFileFromBdbh(slave_outdir,output_root + "/" + input_root + "/A.txt"));
 	} else {
 #ifdef OUTDIRPERSLAVE
 		string slave_outdir = output_dir + ".0";
