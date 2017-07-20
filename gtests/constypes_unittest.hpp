@@ -83,7 +83,7 @@ protected:
 	map<string,string> expected_file_contents;
 };
 
-// ChdbTest2 = Create 10 files in the input directory, file 9.txt in error
+// ChdbTest3 = Create 10 files in the input directory, file 9.txt in error
 class ChdbTest3: public ChdbTest {
 public:
 	ChdbTest3();
