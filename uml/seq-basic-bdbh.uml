@@ -1,0 +1,85 @@
+@startuml
+title Sequence diagram for Basicscheduler UsingBdbh
+
+box "Rank 0"
+participant Master
+participant "Master\nDirectories" as md
+end box
+box "rank 1" #aaaaaa
+participant "Slave1\nBasic Scheduler" as s1bs
+participant "Slave1\nDirectories" as s1d
+end box
+box "rank 2" #aaaaaa
+participant "Slave2\nBasic Scheduler" as s2bs
+participant "Slave2\nDirectories" as s2d
+end box
+
+== Initialization ==
+Master --> Master: Init mpi
+Master --> md: Read the list of files to treat
+
+== Processing ==
+loop until all slaves running
+	Master -> s1bs: Sending block of files
+	loop for files in block
+		s1bs --> s1d: Reading file
+		s1d --> s1bs: file read
+		s1bs --> s1bs: Executing program
+		Note over s1bs,s1d: Asynchronous execution
+	end loop
+	Master -> s2bs: sending block of files
+	loop for files in block
+		s2bs --> s2d: Reading file
+		s2d --> s2bs: file read
+		s2bs --> s2bs: Executing program
+		Note over s2bs,s2d: Asynchronous execution
+	end loop
+end
+
+loop until no more blocks
+	s2bs -> Master: finished
+	Note over s1bs, s2d
+	   The slave is given a new block
+	   as soon as finished current
+	end note
+	Master -> s2bs: Sending block of files
+	loop for files in block
+		s2bs --> s2d: Reading file
+		s2d --> s2bs: file read
+		s2bs --> s2bs: Executing program
+		Note over s2bs,s2d: Asynchronous execution
+	end loop
+
+	s2bs -> Master: finished
+	Master -> s2bs: Sending block of files
+	s2bs --> s2d: Reading file
+	
+	s1bs -> Master: finished
+	Master -> s1bs: Sending block of files
+	loop for files in block
+		s1bs --> s1d: Reading file
+		s1d --> s1bs: file read
+		s1bs --> s1bs: Executing program
+		Note over s1bs,s1d: Asynchronous execution
+	end loop
+	Note over Master,s2d
+	   Processing order is unpredictable
+	end note
+end
+
+== Terminating ==
+loop until all slaves finished
+	s2bs --> s2d: Copying data from tmp
+	s2d --> s2bs: Done
+	s2bs -> Master: finished
+	Master --> md: Consolidating slave2 data to Output Dir
+	md --> Master: OK
+	s1bs --> s1d: Copying data from tmp
+	s1d --> s1bs: Done
+	s1bs -> Master: finished
+	Master --> md: Consolidating slave1 data to Output Dir
+	md --> Master: OK
+end
+
+@enduml
+

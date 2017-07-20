@@ -1,0 +1,122 @@
+@startuml
+
+class Directories {
+	The base class for all methods of storage 
+	(database, files, etc)
+	Use this class to discover and read files, etc.
+    .. Initializing things ..
+	{abstract} void +makeOutDir(bool,bool)
+	{abstract} void +makeTempOutDir()
+	.. Some getters ..
+	{abstract} string +getOutDir()
+	{abstract} string +getTempOutDir()
+	{abstract} string +getTempInDir()
+	.. Blocks of files to be processed ..
+	{abstract} void +buildBlocks()
+	{abstract} nextBlock()
+	.. Consolidate the output files at the end ..
+	+ {abstract}{method} void consolidateOutput
+	.. Managing signals to save data ..
+	+ void Sync()
+	+ void SetSignal()
+	.. The files to treat ..
+	vector_of_strings #files
+	set<string> #input_files 
+	.. some mpi stuff ..
+	# int rank
+	# int comm_size
+	# void buildMpiCommand()
+	.. Ref to the parameters..
+	# prms
+}
+
+class UsingFs {
+	This class is used when the files are simply stored in an 
+	ordinary filesystem.
+}
+
+class UsingBdbh {
+	This class is used when the files are stored 
+	in a Bdbh data container, thus lowering the number of files 
+	seen by the filesystem
+}
+
+Directories <|--- UsingFs
+Directories <|--- UsingBdbh
+NonCopyable <|--- Parameters
+NonCopyable <|--- Scheduler
+NonCopyable <|--- Directories
+
+Parameters  *-- Directories
+Parameters  *--   Scheduler
+Directories *--   Scheduler : Uses <
+Scheduler   <|--- BasicScheduler
+
+class Parameters {
+	.. A lot of getters ! ..
+	getInDir()
+	.. Checking the parameters coherency ..
+	check()
+	.. Printing the usage ..
+	usage()
+}
+
+class Scheduler {
+	The base class for all schedulers
+	Most methods are abstract
+	Know how many slaves we have
+	Initialize and finalize stuff
+	Every work is done in the main loop
+	Maintain a set of files to be treated
+	etc.
+
+	.. Getters ..
+	+ getRank()
+	+ getNbOfslaves()
+	+ isMaster()
+	+ getTreatedfiles()
+	.. Initialize, finish ..
+	+ {static} init()
+	+ {static} finalize()
+	+ {static} abort()
+	.. Processing files ..
+	+ {abstract} mainLoop()
+	+ {abstract} bool errorHandle()
+	+ {abstract} getTreatedfiles()
+	.. Measuring time ..
+	+ startTimer()
+	+ getTimer()
+	.. Managing signals ..
+	+ Setsignal()
+}
+
+class BasicScheduler {
+	Implementing a very basic scheduler: 
+	send blocks of files to the slaves.
+	When a slave has finished retrieve and store results
+	There is one mainloop for the master 
+	and another main loop for the slaves
+	External program is forked from the slave main loop
+	.. Processing files ..
+	+ mainLoop()
+	- mainLoopMaster()
+	-mainLoopSlave()
+}
+	
+note top of NonCopyable : Objects deriving from me cannot be copied
+note top of Parameters : Manage command line parameters
+note top of Directories : Manage input/output files
+note top of Scheduler : Manage work of slaves
+note bottom of usingFs : files are on filesystem
+note bottom of usingBdbh : files are in a bdbh datacontainer
+'note "This is a floating note" as N1
+'note "This note is connected\nto several objects." as N2
+
+
+
+
+
+'class Foo
+'note left: On last defined class
+
+@enduml
