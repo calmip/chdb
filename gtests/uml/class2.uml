@@ -1,0 +1,6 @@
+@startuml
+
+	ChdbTestsWithParams <|-- ChdbTestsWithParamsUsingFs
+	ChdbTestsWithParams <|-- ChdbTestsWithParamsUsingBdbh
+
+@enduml
