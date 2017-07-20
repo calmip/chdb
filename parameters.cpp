@@ -286,6 +286,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "REQUIRED PARAMETERS:\n";
 	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
+	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
 	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
@@ -293,6 +294,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "                               If using bdbh data container as input, output will be stored in another data container and the default name is inputdir.out.db\n";
 	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
 	cerr << "                               WARNING ! \n";
 	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
@@ -314,7 +316,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
-	cerr << "  --in-memory                : Read the whole database in memory. May help if you get poor performance when starting chdb. Or not\n";
+	cerr << "  --in-memory                : Read the whole database in memory. May help if you get poor performance when starting chdb with a lot of files and using bdbh.\n";
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
@@ -328,6 +330,13 @@ void Parameters::usage() {
 	cerr << "  %name%         The file name with the extension (toto.txt)\n";
 	cerr << "  %basename%     The file name without the extension (toto)\n";
 	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B)\n";
+	cerr << "\n";
+	cerr << "ENVIRONMENT VARIABLES:\n";
+	cerr << "The following environment variables are available in the command lauched by chdb:\n";
+	cerr << "$CHDB_RANK : The mpi rank of this slave\n";
+	cerr << "$CHDB_COMM_SIZE : The size of the chdb mpi communicator (ie nb of mpi processes, or nb of slaves + 1)\n";
+	cerr << "\n\n";
+	
 	throw ParametersHelp();
 }
 

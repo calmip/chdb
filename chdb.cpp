@@ -114,7 +114,7 @@ class SignalHandle {
                 
                     sigaction (SIGINT,  &new_action, NULL);
                     sigaction (SIGTERM, &new_action, NULL);
-                    cerr << "Signals programmed\n";
+                    //cerr << "Signals programmed\n";
                 }
         } Init;
 

@@ -163,7 +163,6 @@ void Scheduler::SetSignal(int signal) {
 		ofs.close();
 		_exit(0);
 	}
-	//signal_received pour inhiber le nettoyage !!!!!!!!!!!!!!!
 	dir.SetSignal(signal);
 }
 
