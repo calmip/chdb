@@ -17,6 +17,7 @@
 #include <csignal>
 
 #include <iostream>
+#include <fstream>
 #include <map>
 using namespace std;
 //#include <cassert>
@@ -66,6 +67,10 @@ protected:
 
 	int comm_size;
 	int rank;
+
+	// Derived classes should know what to do with those files
+	ofstream err_file;
+	ofstream report_file;
 
 private:
 	double start_time;

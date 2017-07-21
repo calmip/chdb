@@ -161,6 +161,11 @@ void Scheduler::SetSignal(int signal) {
 			if ( i->second == false) ofs << i->first << endl;
 		}
 		ofs.close();
+		
+		// Close open files, if necessary
+		if (err_file.is_open())    err_file.close();
+		if (report_file.is_open()) report_file.close();
+		
 		_exit(0);
 	}
 	dir.SetSignal(signal);

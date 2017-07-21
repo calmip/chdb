@@ -58,8 +58,9 @@ void BasicScheduler::mainLoop() {
 */
 
 	// Used only by the master
-	ofstream err_file;
-	ofstream report_file;
+	// Now declared as a protected member in Scheduler
+	//ofstream err_file;
+	//ofstream report_file;
 
 	// some initialization specific to the master
 	if (isMaster()) {
