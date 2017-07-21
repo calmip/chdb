@@ -23,6 +23,7 @@ public:
 	string getInDir()     const { return input_directory; };
 	string getOutDir()    const { return output_directory; };
 	string getWorkDir()   const { return work_directory; };
+	unsigned int getSleepTime() const { return sleep_time;};
 	string getEnvSnippet() const{ return env_snippet; };
 	string getTmpDir()    const { return tmp_directory; };
 	string getInFile()    const { return input_file; };
@@ -54,6 +55,7 @@ private:
 	string input_directory;
 	string output_directory;
 	string work_directory;
+	unsigned int sleep_time;
 	string env_snippet;
 	string tmp_directory;
 	string input_file;

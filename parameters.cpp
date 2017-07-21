@@ -50,13 +50,13 @@ using namespace std;
 
 Parameters::Parameters(int argc, 
 					   char* argv[]) throw(runtime_error) :
+	sleep_time(0),
     tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
 	is_in_memory(false),
 	is_size_sort(DEFAULT_SIZE_SORT),
 	is_verbose(DEFAULT_VERBOSE),
 	block_size(DEFAULT_BLOCK_SIZE) {
-
 {
 // define the ID values to identify the option
 enum { 
@@ -65,6 +65,7 @@ enum {
 	OPT_INFILE,     // --in-file
 	OPT_OUTDIR,     // --out-dir
 	OPT_WORKDIR,    // --work-dir
+	OPT_SLEEPTIME,	// --sleep
 	OPT_ENV_SNIPPET,// --create-environment
 	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
@@ -95,6 +96,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
 	{ OPT_WORKDIR,       "--work-dir",     SO_REQ_SEP },
+	{ OPT_SLEEPTIME,	 "--sleep",        SO_REQ_SEP },
 	{ OPT_ENV_SNIPPET,   "--create-environment", SO_REQ_SEP },
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
@@ -134,6 +136,9 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_WORKDIR:
 				work_directory = arguments.OptionArg();
+				break;
+			case OPT_SLEEPTIME:
+				sleep_time = atoi(arguments.OptionArg());
 				break;
 			case OPT_ENV_SNIPPET:
 				env_snippet = arguments.OptionArg();
@@ -305,6 +310,8 @@ void Parameters::usage() {
 	cerr << "                                  --create-environment 'cp ~/DATA/*.inp .; cp ~/DATA/*.conf .'\n";
 	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
 	cerr << "                               load-balancing issues\n";
+	cerr << "  --sleep-time <T>           : Before starting process, each slave sleeps T * rank seconds. This is to desynchronize I/O calls when\n";
+	cerr << "                               chdb is used to launch I/O intensive programs, as this could stress the shared filesystem\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
 	cerr << "                               are stored in this file for later reference and execution\n";
 	cerr << "                               NOTE: The default is to INTERRUPT chdb when the return status is not 0\n";

@@ -357,6 +357,15 @@ void BasicScheduler::mainLoopSlave() {
 		sleep(5);
 	}
 */
+
+	// Sleep a while before starting, this may be good for the I/O subsystem
+	// Every slave slaves sleep_time * rank, thus the highest the rank the more you sleep
+	// We sleep ONLY at the beginning
+	unsigned int sleep_time = prms.getSleepTime();
+	if (sleep_time != 0) {
+		sleep(sleep_time*rank);
+	}
+	
 	// all msgs are sent/received to/from the master
 	const int master    = 0;
 	int tag             = CHDB_TAG_GO;
