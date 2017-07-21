@@ -115,9 +115,13 @@ CSimpleOpt::SOption options[] = {
 	// Searching the --command-line argument
 	CSimpleOpt arguments(argc, argv, options);
     while (arguments.Next()) {
-//		cerr << arguments.LastError() << "  " << arguments.OptionId() << '\n';
+		//cerr << arguments.LastError() << "  " << arguments.OptionId() << " " << arguments.OptionText() << '\n';
 		if (arguments.LastError() != SO_SUCCESS) {
-			throw runtime_error(getLastErrorText(arguments));
+			string msg = "ERROR: ";
+			msg += arguments.OptionText();
+			msg += " ";
+			msg += getLastErrorText(arguments);
+			throw runtime_error(msg);
 		}
 		else
 		{
