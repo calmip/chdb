@@ -25,7 +25,7 @@ class BasicScheduler: public Scheduler {
 public:
 	BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d),first_execution(true),treated_files(0){};
 	void mainLoop();
-	bool errorHandle(ofstream&);
+	bool errorHandle();
 	size_t getTreatedFiles() const { return treated_files; };
  
 	friend class TestCase1_ExecuteCommandFrmList1_Test;
@@ -43,8 +43,8 @@ private:
 	vector_of_int files_slaves;         // Number of files treated by each slave ( maintained by the master
 	vector_of_strings file_pathes;      // The file_pathes to be treated at next iteration (ie: the Block)
 
-	void mainLoopMaster(ofstream&, ofstream&);
-	void mainLoopProlog(ofstream&, ofstream&);
+	void mainLoopMaster();
+	void mainLoopProlog();
 	void mainLoopSlave();
 	void sendEndMsg(void*, int);
 
@@ -62,6 +62,9 @@ private:
 	void reportBody(ostream&, int);
 	void reportSummary(ostream&);
 
+	void openErrFileIfNecessary();
+	void openReportFileIfNecessary();
+	
 	size_t treated_files;
 };
 

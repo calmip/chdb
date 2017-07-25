@@ -64,7 +64,7 @@ void BasicScheduler::mainLoop() {
 
 	// some initialization specific to the master
 	if (isMaster()) {
-		mainLoopProlog(err_file,report_file);
+		mainLoopProlog();
 	}
 
 	// A barrier to wait for slave initialization
@@ -72,20 +72,20 @@ void BasicScheduler::mainLoop() {
 
 	// Enter the loop
 	if (isMaster()) {
-		mainLoopMaster(err_file,report_file);
+		mainLoopMaster();
 	} else {
 		mainLoopSlave();
 	}
 }
 /***
- * @brief Called only on Master BEFORE calling MainLoop, to initialize several stuff
+ * @brief Called ONLY on Master BEFORE calling MainLoop, to initialize several stuff
  * 
  * @param err_file
  * @param report_file
  * 
  ****/
 
-void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
+void BasicScheduler::mainLoopProlog() {
 
 	// read the file names
 	dir.readFiles();
@@ -109,6 +109,22 @@ void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
 	dir.makeOutDir(false,false);
 
 	// Open the error file, if any
+	// NOTE - opened here and not in the constructor because it should NOT be opened on slaves !
+	openErrFileIfNecessary();
+
+	// Open the report file, if any
+	// NOTE - opened here and not in the constructor because it should NOT be opened on slaves !
+	openReportFileIfNecessary();
+
+	return_values.clear();
+	wall_times.clear();
+}
+
+/*******
+ * \brief Open the err_file if prms is OK
+ * 
+ ******************************************/
+void BasicScheduler::openErrFileIfNecessary() {
 	if (!prms.isAbrtOnErr()) {
 		string err_name = prms.getErrFile();
 		err_file.open(err_name.c_str());
@@ -118,8 +134,13 @@ void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
 			throw(runtime_error(msg));
 		}
 	}
+}
 
-	// Open the report file, if any
+/*******
+ * \brief Open the report_file if prms is OK
+ * 
+ ******************************************/
+void BasicScheduler::openReportFileIfNecessary() {
 	if (prms.isReportMode()) {
 		string report_name = prms.getReport();
 		report_file.open(report_name.c_str());
@@ -131,11 +152,12 @@ void BasicScheduler::mainLoopProlog(ofstream& err_file, ofstream& report_file) {
 			reportHeader(report_file);
 		}
 	}
-
-	return_values.clear();
-	wall_times.clear();
 }
 
+
+
+
+	
 /** 
  * @brief Send to the slave a message with no data and END TAG
  * 
@@ -151,7 +173,7 @@ void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
  * @brief The main loop for the master
  * 
  */
-void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
+void BasicScheduler::mainLoopMaster() {
 	MPI_Status sts;
 
 	// loop over the file blocks
@@ -192,7 +214,7 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 		}
 
 		// Handle the error, if error found and abort mode exit from the loop
-		bool err_found = errorHandle(err_file);
+		bool err_found = errorHandle();
 		if (err_found && prms.isAbrtOnErr()) {
 			sendEndMsg(send_bfr, talking_slave);
 			break;
@@ -228,7 +250,7 @@ void BasicScheduler::mainLoopMaster(ofstream& err_file, ofstream& report_file) {
 			treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
 			
 			// Handle the error
-			errorHandle(err_file);
+			errorHandle();
 		
 			// Write info to report
 			if (prms.isReportMode()) {
@@ -497,16 +519,15 @@ void BasicScheduler::executeCommand() {
 }
 
 /** 
- * @brief Called by the MainLoopMaster when error mode is on
+ * @brief Called by the MainLoopMaster when error mode is on, writes to err_file
+ *        the errors found in the last treated block and return true if some error is found
  * 
  * @pre return_values is filled with the returned values
  * @pre file_pathes is filled with the treated file pathes, in the same order as return_values
  * 
- * @param err_file 
- *
  * @return true = error found, false = no error
  */
-bool BasicScheduler::errorHandle(ofstream& err_file) {
+bool BasicScheduler::errorHandle() {
 
 	// find the first value in error and return false if none
 	vector_of_int::iterator it = find_if(return_values.begin(),return_values.end(),isNotNull);

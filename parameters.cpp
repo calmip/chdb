@@ -327,7 +327,9 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
-	cerr << "  --mpi-slaves               : The command (launched by slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "  --mpi-slaves <n>           : The command (launched by the slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "                               you CANNOT launch with chdb mpi programs using more than one node\n";
+	cerr << "                               you CAN launch with chdb several mpi programs per node\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
