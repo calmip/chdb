@@ -62,6 +62,18 @@ UsingBdbh::~UsingBdbh() {
 	bdbh::Terminate();
 }
 
+/***
+ *   \brief Check the parameters (member prms)
+ * 
+ *   Throw a runtime error if something wrong
+ * 
+ *******************/
+void UsingBdbh::checkParameters(){
+	if (prms.getOutFiles().size()==0) {
+		throw runtime_error("ERROR - The parameter --out-files is required when using bdbh for output");
+	}
+}
+
 class PushFiles: public bdbh::LsObserver {
 public:
 	PushFiles(const string& r, const string& t, vector_of_strings& vs, const set<string>&ss):root(r),file_type(t),files(vs),input_files(ss),in_files_empty(ss.empty()){};

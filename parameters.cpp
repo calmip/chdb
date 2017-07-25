@@ -197,15 +197,16 @@ CSimpleOpt::SOption options[] = {
 	}
 
 	// check everything is ok
-	check();
+	checkParameters();
 }
 }
 
 /**
    \brief throw a runtime_error is there is something wrong with the parameters
+   \note  Those checks are generic - Other checks are done in Directories.
 */
 
-void Parameters::check() {
+void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
 	//checkOutputDirectory();
@@ -226,9 +227,9 @@ void Parameters::checkEmptyMembers() {
 	if ( file_type=="") {
 		throw runtime_error("ERROR - The parameter --in-type is required");
 	}
-	if (output_files.size()==0) {
-		throw runtime_error("ERROR - The parameter --out-files is required");
-	}
+//	if (output_files.size()==0) {
+//		throw runtime_error("ERROR - The parameter --out-files is required");
+//	}
 }
 void Parameters::checkInputDirectory() {
 	struct stat bfr;
@@ -298,8 +299,11 @@ void Parameters::usage() {
 	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
 	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
+	cerr << "\n";
+	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
 	cerr << "                               NOTE: if several output files are generated for each command, the names must be separated by a comma (,)\n";
+	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
