@@ -148,8 +148,7 @@ TEST_P(TestCase1,AbortOnError) {
 		EXPECT_NO_THROW(sched.executeCommand());
 
 		// There is an error (file D/C.txt), errorHandle should find it and thus return true
-		ofstream err;
-		EXPECT_EQ(true,sched.errorHandle(err));
+		EXPECT_EQ(true,sched.errorHandle());
 	}
 
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
@@ -231,20 +230,21 @@ TEST_P(TestCase1,ContinueOnError) {
 		// execute command, initializing return_values and file_pathes
 		// no exception, thanks to --on-error
 		sched.return_values.clear();
+		sched.openErrFileIfNecessary();
 		sched.file_pathes = dir.nextBlock();
 
 //		sched.executeCommand();
 		EXPECT_NO_THROW(sched.executeCommand());
 
-		// call errorHandle, generating errors.txt
-		string e_out = prms.getErrFile();
+		// call errorHandle, filling up errors.txt
+		//string e_out = prms.getErrFile();
 		{
-			ofstream e(e_out.c_str());
-			sched.errorHandle(e);
-			e.close();
+			//ofstream e(e_out.c_str());
+			sched.errorHandle();
+			//e.close();
 		}
 
-		ifstream e(e_out.c_str());
+		ifstream e(prms.getErrFile().c_str());
 		EXPECT_EQ(true,e.good());
 	}
 
@@ -472,6 +472,7 @@ auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWith
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase1,
+//	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get())
 //	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
 //	Values(test_case_Bdbh_withtmp.get())
 	Values(test_case_Fs_notmp.get(),test_case_Bdbh_withtmp.get())

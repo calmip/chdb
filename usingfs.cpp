@@ -23,6 +23,16 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
+
+
+/***
+ *   \brief Check the parameters (member prms)
+ * 
+ *   Throw a runtime error if something wrong
+ * 
+ *******************/
+void UsingFs::checkParameters() {}
+
 /**
    \brief Read the file names from the input directory and push them to files
           If files is already filled, do nothing

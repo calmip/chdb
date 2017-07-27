@@ -26,7 +26,7 @@ using ::testing::Values;
 
 /**
    \brief compute output directory name from input directory and from directory type
-          Suppported directories = UsingFs or UsingBdbh
+          Supported directories = UsingFs or UsingBdbh
  */
 
 string computeOutputDir(const string& input_dir,const string& directory_type) {
@@ -70,11 +70,13 @@ TEST_P(TestCase1,makeOutDir) {
 	{
 		auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
 		Directories& dir = *aptr_dir.get();
+		dir.setRank(0,1);
 
 		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
 		//        It should work correctly on Lustre
 		// create inputdir.out - do not append the rank to the directory name, remove the directory if exists
 		EXPECT_NO_THROW(dir.makeOutDir(false,true));
+		
 		// replace inputdir.out
 		EXPECT_NO_THROW(dir.makeOutDir(false,true));
 
@@ -104,15 +106,15 @@ TEST_P(TestCase1,makeOutDir) {
 		string out_1 = getInputDir();
 #ifdef OUTDIRPERSLAVE
 		out_1 += ".out.1";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_NO_THROW(callSystem(cmd,true));
 		cmd = "rm -r " + out_1;
 		EXPECT_NO_THROW(callSystem(cmd,true));
 #else
 		out_1 += ".out";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
-		cmd = "rm -r " + out_1 + " >&/dev/null";;
+		cmd = "rm -r " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
 #endif
 
@@ -157,7 +159,7 @@ TEST_P(TestCase1,MakeTempOutDir) {
 	string output_dir = computeOutputDir(getInputDir(),GetParam()->getDirectoryType());
 	string out = output_dir + "_??????";
 	cmd += out;
-	cmd += " &>/dev/null";
+	cmd += " >/dev/null 2>&1";
 
 	// TESTING usingfs
 	if (GetParam()->getDirectoryType() == "UsingFs" ) {
@@ -283,6 +285,44 @@ TEST_P(TestCase1,getTempOut_or_InDir) {
 	FREE_ARGV(11);
 }
 
+// Testing Directory WITHOUT the --out-files parameter
+// Parameters are checked when setRank is called... 
+TEST_P(TestCase1,withoutOutfiles) {
+	cout << GetParam()->getDescription() << '\n';
+	
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	//INIT_ARGV(9,"--out-files");
+	//INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(9,argv);
+
+	// Create a directory with rank 0 --> Parameters are checked
+	auto_ptr<Directories> aptr_dir_master(GetParam()->createDirectory(prms));
+	Directories& dir_master = *aptr_dir_master.get();
+
+	// Create a directory with rank 1 --> Parameters are NOT checked
+	auto_ptr<Directories> aptr_dir_slave(GetParam()->createDirectory(prms));
+	Directories& dir_slave = *aptr_dir_slave.get();
+	
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		EXPECT_THROW(dir_master.setRank(0,2),runtime_error);
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	} else {
+		EXPECT_NO_THROW(dir_master.setRank(0,2));
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	}
+}	
+	
 // testing Directory::completeFilePath, with or without temporary directory
 TEST_P(TestCase1,completeFilePath) {
 	cout << GetParam()->getDescription() << '\n';
@@ -424,11 +464,14 @@ TEST_P(TestCase1,getFiles_Unsorted) {
 
 	vector_of_strings found_files=dir.getFiles();
 	vector_of_strings expected_files;
-	expected_files.push_back("A.txt");
-	expected_files.push_back("B.txt");
-	expected_files.push_back("C/C.txt");
-	expected_files.push_back("C/C/C.txt");
-	expected_files.push_back("D/C.txt");
+	string topdir = "";
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+		
+	expected_files.push_back(topdir + "A.txt");
+	expected_files.push_back(topdir + "B.txt");
+	expected_files.push_back(topdir + "C/C.txt");
+	expected_files.push_back(topdir + "C/C/C.txt");
+	expected_files.push_back(topdir + "D/C.txt");
 	EXPECT_EQ(expected_files,found_files);
 
 	// again
@@ -466,11 +509,13 @@ TEST_P(TestCase1,getFiles_Sorted) {
 	dir.setRank(0,4);
 	vector_of_strings found_files=dir.getFiles();
 	list<string> expected_files;
-	expected_files.push_back("C/C/C.txt");
-	expected_files.push_back("D/C.txt");
-	expected_files.push_back("A.txt");
-	expected_files.push_back("B.txt");
-	expected_files.push_back("C/C.txt");
+        string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+	expected_files.push_back(topdir + "C/C/C.txt");
+	expected_files.push_back(topdir + "D/C.txt");
+	expected_files.push_back(topdir + "A.txt");
+	expected_files.push_back(topdir + "B.txt");
+	expected_files.push_back(topdir + "C/C.txt");
 	expected_files.reverse();
 	EXPECT_EQ(true,equal(expected_files.begin(),expected_files.end(),found_files.begin()));
 
@@ -515,34 +560,37 @@ TEST_P(TestCase1,block1) {
 	dir.files.push_back("");
 	EXPECT_EQ(5,dir.getNbOfFiles());
 
+	string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+
 	// 1th blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("A.txt");
+	expected_block.push_back(topdir + "A.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 2nd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("B.txt");
+	expected_block.push_back(topdir + "B.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 3rd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("C/C.txt");
+	expected_block.push_back(topdir + "C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 4th blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("C/C/C.txt");
+	expected_block.push_back(topdir + "C/C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 5th blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("D/C.txt");
+	expected_block.push_back(topdir + "D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 6th blck
@@ -590,24 +638,27 @@ TEST_P(TestCase1,block2) {
 	// Read the files
 	dir.readFiles();
 
+        string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("A.txt");
-	expected_block.push_back("B.txt");
+	expected_block.push_back(topdir + "A.txt");
+	expected_block.push_back(topdir + "B.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 2nd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("C/C.txt");
-	expected_block.push_back("C/C/C.txt");
+	expected_block.push_back(topdir + "C/C.txt");
+	expected_block.push_back(topdir + "C/C/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// 3rd blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("D/C.txt");
+	expected_block.push_back(topdir + "D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -650,14 +701,17 @@ TEST_P(TestCase1,block3) {
 	// Read the files
 	dir.readFiles();
 
+        string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("A.txt");
-	expected_block.push_back("B.txt");
-	expected_block.push_back("C/C.txt");
-	expected_block.push_back("C/C/C.txt");
-	expected_block.push_back("D/C.txt");
+	expected_block.push_back(topdir + "A.txt");
+	expected_block.push_back(topdir + "B.txt");
+	expected_block.push_back(topdir + "C/C.txt");
+	expected_block.push_back(topdir + "C/C/C.txt");
+	expected_block.push_back(topdir + "D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -700,14 +754,17 @@ TEST_P(TestCase1,block4) {
 	// Read the files
 	dir.readFiles();
 
+        string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+
 	// 1st blck
 	block = dir.nextBlock();
 	expected_block.clear();
-	expected_block.push_back("A.txt");
-	expected_block.push_back("B.txt");
-	expected_block.push_back("C/C.txt");
-	expected_block.push_back("C/C/C.txt");
-	expected_block.push_back("D/C.txt");
+	expected_block.push_back(topdir + "A.txt");
+	expected_block.push_back(topdir + "B.txt");
+	expected_block.push_back(topdir + "C/C.txt");
+	expected_block.push_back(topdir + "C/C/C.txt");
+	expected_block.push_back(topdir + "D/C.txt");
 	EXPECT_EQ(expected_block,block);
 
 	// next blcks: empty
@@ -745,14 +802,18 @@ TEST_P(TestCase1,ExternalCommand) {
 	string f,cmd;
 
 	// create output directory and temp directory
+	dir.setRank(0,1);
 	dir.makeOutDir(false,true);
 	dir.makeTempOutDir();
 
 	// input, output files
 	vector_of_strings output_files;
 	vector_of_strings input_files;
-	output_files.push_back("A.out");  // creating output_files[0]
-	input_files.push_back("A.txt");   // creating input_files[0]
+        string topdir = "";
+        if ( GetParam()->getDirectoryType() == "UsingBdbh" ) topdir = "inputdir1/";
+
+	output_files.push_back(topdir + "A.out");  // creating output_files[0]
+	input_files.push_back(topdir + "A.txt");   // creating input_files[0]
 
 	cmd = "./coucou.sh";
 	int rvl=0;
@@ -760,16 +821,16 @@ TEST_P(TestCase1,ExternalCommand) {
 	EXPECT_NO_THROW(rvl=dir.executeExternalCommand(input_files,cmd,output_files));
 	EXPECT_EQ(127,rvl);
 
-	input_files[0] = "Z.txt";  // input file does not exist, should throw an exception !
+	input_files[0] = topdir + "Z.txt";  // input file does not exist, should throw an exception !
 	EXPECT_THROW(rvl=dir.executeExternalCommand(input_files,cmd,output_files),exception);
 
-	input_files[0] = "B.txt";
+	input_files[0] = topdir + "B.txt";
 	cmd = "./ext_cmd.sh " + dir.getTempInDir() + '/' + input_files[0] + " " + dir.getTempOutDir() + '/' + input_files[0];
 	EXPECT_EQ(0,dir.executeExternalCommand(input_files,cmd,output_files));
 //	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) exit(1);
 
     // Should return 1 (this file is in "error")
-	input_files[0] = "D/C.txt";
+	input_files[0] = topdir + "D/C.txt";
 	output_files[0]= input_files[0];
 	cmd = "./ext_cmd.sh " + dir.getTempInDir() + '/' + input_files[0] + " " + dir.getTempOutDir() + '/' + output_files[0];
 	EXPECT_EQ(1,dir.executeExternalCommand(input_files,cmd,output_files));

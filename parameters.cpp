@@ -115,9 +115,13 @@ CSimpleOpt::SOption options[] = {
 	// Searching the --command-line argument
 	CSimpleOpt arguments(argc, argv, options);
     while (arguments.Next()) {
-//		cerr << arguments.LastError() << "  " << arguments.OptionId() << '\n';
+		//cerr << arguments.LastError() << "  " << arguments.OptionId() << " " << arguments.OptionText() << '\n';
 		if (arguments.LastError() != SO_SUCCESS) {
-			throw runtime_error(getLastErrorText(arguments));
+			string msg = "ERROR: ";
+			msg += arguments.OptionText();
+			msg += " ";
+			msg += getLastErrorText(arguments);
+			throw runtime_error(msg);
 		}
 		else
 		{
@@ -193,15 +197,16 @@ CSimpleOpt::SOption options[] = {
 	}
 
 	// check everything is ok
-	check();
+	checkParameters();
 }
 }
 
 /**
    \brief throw a runtime_error is there is something wrong with the parameters
+   \note  Those checks are generic - Other checks are done in Directories.
 */
 
-void Parameters::check() {
+void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
 	//checkOutputDirectory();
@@ -222,9 +227,9 @@ void Parameters::checkEmptyMembers() {
 	if ( file_type=="") {
 		throw runtime_error("ERROR - The parameter --in-type is required");
 	}
-	if (output_files.size()==0) {
-		throw runtime_error("ERROR - The parameter --out-files is required");
-	}
+//	if (output_files.size()==0) {
+//		throw runtime_error("ERROR - The parameter --out-files is required");
+//	}
 }
 void Parameters::checkInputDirectory() {
 	struct stat bfr;
@@ -294,8 +299,11 @@ void Parameters::usage() {
 	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
 	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
+	cerr << "\n";
+	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
 	cerr << "                               NOTE: if several output files are generated for each command, the names must be separated by a comma (,)\n";
+	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
@@ -319,7 +327,9 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
-	cerr << "  --mpi-slaves               : The command (launched by slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "  --mpi-slaves <n>           : The command (launched by the slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "                               you CANNOT launch with chdb mpi programs using more than one node\n";
+	cerr << "                               you CAN launch with chdb several mpi programs per node\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";

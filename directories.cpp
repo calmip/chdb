@@ -34,7 +34,8 @@ using namespace std;
 int operator<(const Finfo& a, const Finfo& b) { return a.st_size < b.st_size; }
 
 /** 
- * @brief set the protected member rank and comm_size
+ * @brief set the protected member rank and comm_size, 
+ *        if rank=0 call check_parameters
  * 
  * @param r 
  * @param s 
@@ -48,6 +49,9 @@ void Directories::setRank(int r, int s) {
 	}
 	rank=r;
 	comm_size=s;
+	// We check the parameters only for the master process
+	// If problem detected throw runtime_error
+	if (rank==0) checkParameters();
 }
 
 /**

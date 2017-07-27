@@ -58,6 +58,8 @@ private:
 	virtual void findOrCreateDir(const string &);
 	virtual void v_readFiles();
 	mutable set<string> found_directories;
+	void checkParameters();
+	
 	string output_dir;
 	string temp_output_dir;
 };

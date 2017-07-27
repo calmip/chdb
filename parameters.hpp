@@ -43,7 +43,7 @@ public:
 	string getExternalCommand()      const { return external_command; };
 
 private:
-	void check();
+	void checkParameters();
 	void checkEmptyMembers();
 	void checkInputDirectory();
 	//void checkOutputDirectory();

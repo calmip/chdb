@@ -168,7 +168,7 @@ private:
 
 /**
  * @brief This object encapsulates the Directory creation but it NOT reponsible for the directory created !
- *        Do note forget to DELETE it
+ *        Do not forget to DELETE it
  */
 class ChdbTestsWithParamsUsingFs: public ChdbTestsWithParams {
 public:
