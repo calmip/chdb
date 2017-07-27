@@ -44,10 +44,15 @@ UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_
 	// Switch in-memory: used ONLY by rank 0, if using bdbh
 	bool in_memory = false;
 	
-	// @todo - We cannot use the rank defined by the scheduler because the Scheduler must be created AFTER th e Directory ! Bull shit here !
+	// @todo - We cannot use the rank defined by the scheduler because the Scheduler must be created AFTER the Directory ! Bull shit here !
 	int mpi_rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);
-	if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
+	// MPI should be initialized here, unless we are running an unit test
+	int inited=0;
+	MPI_Initialized(&inited);
+	if (inited) {
+		MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);
+		if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
+	}
 	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,false,in_memory);
 }
 

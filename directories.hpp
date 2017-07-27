@@ -41,6 +41,9 @@ class Directories: private NonCopyable {
 public:
 	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()) {};
 	virtual ~Directories(){};
+	
+	// setRank should be set ONLY ONE TIME (this is checked)
+	// ONLY IF master, setRank calls checkParameters and throws a runtime_exception if there is something wrong
 	void setRank(int,int);
 
 	virtual void   makeOutDir(bool,bool) = 0;

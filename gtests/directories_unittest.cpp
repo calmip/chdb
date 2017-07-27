@@ -26,7 +26,7 @@ using ::testing::Values;
 
 /**
    \brief compute output directory name from input directory and from directory type
-          Suppported directories = UsingFs or UsingBdbh
+          Supported directories = UsingFs or UsingBdbh
  */
 
 string computeOutputDir(const string& input_dir,const string& directory_type) {
@@ -106,15 +106,15 @@ TEST_P(TestCase1,makeOutDir) {
 		string out_1 = getInputDir();
 #ifdef OUTDIRPERSLAVE
 		out_1 += ".out.1";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_NO_THROW(callSystem(cmd,true));
 		cmd = "rm -r " + out_1;
 		EXPECT_NO_THROW(callSystem(cmd,true));
 #else
 		out_1 += ".out";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
-		cmd = "rm -r " + out_1 + " >&/dev/null";;
+		cmd = "rm -r " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
 #endif
 
@@ -159,7 +159,7 @@ TEST_P(TestCase1,MakeTempOutDir) {
 	string output_dir = computeOutputDir(getInputDir(),GetParam()->getDirectoryType());
 	string out = output_dir + "_??????";
 	cmd += out;
-	cmd += " &>/dev/null";
+	cmd += " >/dev/null 2>&1";
 
 	// TESTING usingfs
 	if (GetParam()->getDirectoryType() == "UsingFs" ) {
@@ -285,6 +285,44 @@ TEST_P(TestCase1,getTempOut_or_InDir) {
 	FREE_ARGV(11);
 }
 
+// Testing Directory WITHOUT the --out-files parameter
+// Parameters are checked when setRank is called... 
+TEST_P(TestCase1,withoutOutfiles) {
+	cout << GetParam()->getDescription() << '\n';
+	
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	//INIT_ARGV(9,"--out-files");
+	//INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(9,argv);
+
+	// Create a directory with rank 0 --> Parameters are checked
+	auto_ptr<Directories> aptr_dir_master(GetParam()->createDirectory(prms));
+	Directories& dir_master = *aptr_dir_master.get();
+
+	// Create a directory with rank 1 --> Parameters are NOT checked
+	auto_ptr<Directories> aptr_dir_slave(GetParam()->createDirectory(prms));
+	Directories& dir_slave = *aptr_dir_slave.get();
+	
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		EXPECT_THROW(dir_master.setRank(0,2),runtime_error);
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	} else {
+		EXPECT_NO_THROW(dir_master.setRank(0,2));
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	}
+}	
+	
 // testing Directory::completeFilePath, with or without temporary directory
 TEST_P(TestCase1,completeFilePath) {
 	cout << GetParam()->getDescription() << '\n';
