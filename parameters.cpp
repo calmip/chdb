@@ -175,6 +175,7 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_IN_TYPE:
 				file_type = arguments.OptionArg();
+				is_type_dir = (file_type == "dir");
 				break;
 			case OPT_MPI_SLAVES:
 				mpi_slaves = arguments.OptionArg();
@@ -186,8 +187,14 @@ CSimpleOpt::SOption options[] = {
 		}
 	}
 
-	// complete parameters if necessary
-	if ( output_directory == "" ) {
+	// complete parameters if necessary:
+	//    - Default value for work directory if file type is "dir"
+	//    - Default value for output directory UNLESS file type is "dir"
+	if ( isTypeDir() ) {
+		if ( getWorkDir() == "") {
+			work_directory = "%in-dir%/%path%";
+		}
+	} else if ( output_directory == "" ) {
 		if (isEndingWith(input_directory,".db")) {
 			output_directory = input_directory.substr(0,input_directory.length()-3);
 			output_directory += ".out.db";
@@ -209,7 +216,6 @@ CSimpleOpt::SOption options[] = {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -227,9 +233,6 @@ void Parameters::checkEmptyMembers() {
 	if ( file_type=="") {
 		throw runtime_error("ERROR - The parameter --in-type is required");
 	}
-//	if (output_files.size()==0) {
-//		throw runtime_error("ERROR - The parameter --out-files is required");
-//	}
 }
 void Parameters::checkInputDirectory() {
 	struct stat bfr;
@@ -257,20 +260,6 @@ void Parameters::checkInputDirectory() {
 		}
 	}
 }
-/*
-void Parameters::checkOutputDirectory() {
-	struct stat bfr;
-	int rvl;
-
-	rvl = stat(output_directory.c_str(),&bfr);
-	if (rvl == 0) {
-		string msg = "ERROR - The output directory ";
-		msg += output_directory;
-		msg += " already exists !";
-		throw runtime_error(msg);
-	}
-}
-*/
 
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
@@ -298,6 +287,9 @@ void Parameters::usage() {
 	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
 	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
+	cerr << "                               NOTES: The file type \"dir\" is a SPECIAL CASE:\n";
+	cerr << "                                      1/ If you specify \"dir\", THE INPUT FILES SHOULD BE DIRECTORIES\n";
+	cerr << "                                      2/ You CANNOT USE a \"dir\" file type while using the bdbh data cobntainer\n";
 	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "\n";
 	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
@@ -306,18 +298,24 @@ void Parameters::usage() {
 	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
-	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
-	cerr << "                               If using bdbh data container as input, output will be stored in another data container and the default name is inputdir.out.db\n";
+	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = \"inputdir.out\"\n";
+	cerr << "                               NOTES:\n";
+	cerr << "                                      - The default name is \"inputdir.out\"\n";
+	cerr << "                                      - If using bdbh data container as input, the default output name is \"inputdir.out.db\" (a bdbh data container)\n";
+	cerr << "                                      - If using the \"dir\" file type, there is NO default output name.\n";
+	cerr << "                                      - The output directory should NOT exist when chdb is started, and it will be created by chdb.\n";
 	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
 	cerr << "                               WARNING ! \n";
-	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
+	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THE WORK DIRECTORY\n";
 	cerr << "                                  - a RELATIVE PATH specified from ANY OTHER SWITCH will be treated FROM THE INITIAL LAUNCH DIRECTORY\n";
+	cerr << "                               The default is: \"Do not change directory\", EXCEPT for the type: \"dir\", \n";
+	cerr << "                               where the default is = \"change to %in-dir%/%path%\"";
 	cerr << "  --create-environment       : A snippet containing some shell commands to create a working environment inside the work directory \n";
 	cerr << "                               Will be executed AFTER chdir workdir and BEFORE the command itself\n";
 	cerr << "                               EXAMPLE:\n";
 	cerr << "                                  --create-environment 'cp ~/DATA/*.inp .; cp ~/DATA/*.conf .'\n";
-	cerr << "  --block-size 10            : The higher the block-size, the less mpi communications, but you may get\n";
-	cerr << "                               load-balancing issues\n";
+	cerr << "  --block-size 1             : The higher the block-size, the less mpi communications, but you may get\n";
+	cerr << "                               load-balancing issues (default = 1)\n";
 	cerr << "  --sleep-time <T>           : Before starting process, each slave sleeps T * rank seconds. This is to desynchronize I/O calls when\n";
 	cerr << "                               chdb is used to launch I/O intensive programs, as this could stress the shared filesystem\n";
 	cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
@@ -337,21 +335,21 @@ void Parameters::usage() {
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
-	cerr << "TEMPLATES ALLOWED IN FILE NAMES (--command, --out-files, --work-dir):\n";
-	cerr << "The following templates are allowed in filenames specified in parameters command-line and out-files.\n";
-	cerr << "They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
+	cerr << "TEMPLATES ALLOWED IN FILE NAME SPECIFICATIONS (--command, --out-files, --work-dir):\n";
+	cerr << "  The following templates are allowed in filenames specified in parameters command-line and out-files.\n";
+	cerr << "  They are expanded using the real input file. We suppose that the input file is inputdir/A/B/toto.txt:\n";
 	cerr << "\n";
-	cerr << "  %in-dir%       The input directory  (inputdir)\n";
-	cerr << "  %out-dir%      The output directory (inputdir.out)\n";
-	cerr << "  %path%         The input file complete path (relative to the input directory: A/B/toto.txt)\n";
-	cerr << "  %name%         The file name with the extension (toto.txt)\n";
-	cerr << "  %basename%     The file name without the extension (toto)\n";
-	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B)\n";
+	cerr << "    %in-dir%       The input directory  (inputdir)\n";
+	cerr << "    %out-dir%      The output directory (inputdir.out)\n";
+	cerr << "    %path%         The input file complete path (relative to the input directory: A/B/toto.txt)\n";
+	cerr << "    %name%         The file name with the extension (toto.txt)\n";
+	cerr << "    %basename%     The file name without the extension (toto)\n";
+	cerr << "    %dirname%      The directory name relative to the input or output directory (A/B)\n";
 	cerr << "\n";
 	cerr << "ENVIRONMENT VARIABLES:\n";
-	cerr << "The following environment variables are available in the command lauched by chdb:\n";
-	cerr << "$CHDB_RANK : The mpi rank of this slave\n";
-	cerr << "$CHDB_COMM_SIZE : The size of the chdb mpi communicator (ie nb of mpi processes, or nb of slaves + 1)\n";
+	cerr << "  The following environment variables are available in the command launched by chdb:\n";
+	cerr << "    $CHDB_RANK      : The mpi rank of this slave\n";
+	cerr << "    $CHDB_COMM_SIZE : The size of the chdb mpi communicator (ie nb of mpi processes, or nb of slaves + 1)\n";
 	cerr << "\n\n";
 	
 	throw ParametersHelp();

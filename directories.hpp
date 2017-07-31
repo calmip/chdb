@@ -86,7 +86,7 @@ public:
 	
 protected:
 	void initInputFiles() const;
-	bool isCorrectType(const string &) const;
+	bool isCorrectType(const string &, bool) const;
 
 	const Parameters& prms;
 	

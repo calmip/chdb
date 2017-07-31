@@ -28,6 +28,7 @@ public:
 	string getTmpDir()    const { return tmp_directory; };
 	string getInFile()    const { return input_file; };
 	string getFileType()  const { return file_type; };
+	bool isTypeDir()      const { return file_type=="dir"; };
 	string getMpiSlaves() const { return mpi_slaves; };
 	bool isBdBh()         const { return is_bdbh; };
 	bool isInMemory()     const { return is_in_memory; };
@@ -60,6 +61,7 @@ private:
 	string tmp_directory;
 	string input_file;
 	string file_type;
+	bool is_type_dir;
 	string mpi_slaves;
 	bool is_bdbh;
 	bool is_in_memory;

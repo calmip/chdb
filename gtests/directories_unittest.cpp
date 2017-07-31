@@ -988,6 +988,50 @@ TEST_P(TestCase1,SortFiles2) {
 	FREE_ARGV(13);
 }
 
+// testing file type dir
+// testing buildBlocks
+//         distribution in blocks size 5, from a sorted array, size 33
+TEST_P(TestCase4,filetypedir) {
+	cout << GetParam()->getDescription() << '\n';
+
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"touch out.txt");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"dir");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(11,argv);
+
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		EXPECT_THROW(dir.setRank(0,2),runtime_error);
+	} else {
+		EXPECT_NO_THROW(dir.setRank(0,2));
+	
+		vector_of_strings files = dir.getFiles();
+		vector_of_strings expected_input_files;
+		
+		expected_input_files.push_back("0.dir");
+		expected_input_files.push_back("0.dir/1.dir");
+		expected_input_files.push_back("3.dir");
+		expected_input_files.push_back("4.dir");
+		expected_input_files.push_back("C/2.dir");
+		EXPECT_EQ(expected_input_files,files);
+	}
+	
+	FREE_ARGV(11);
+}
+
 // Calling "none" for tmp-dir is just a trick: "none" does not exist, so there is NO tmp-dir
 // If you do NOT specify --tmp-dir, you get the default tmpdir, which may - or not - be defined
 // See parameters.cpp
@@ -997,10 +1041,15 @@ auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithPara
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
 auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
 
-
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase1,
-//	Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get(),test_case_Bdbh_withtmp.get())
+//	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+);
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase4,
 	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );

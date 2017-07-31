@@ -77,6 +77,9 @@ void UsingBdbh::checkParameters(){
 	if (prms.getOutFiles().size()==0) {
 		throw runtime_error("ERROR - The parameter --out-files is required when using bdbh for output");
 	}
+	if (prms.isTypeDir()) {
+		throw runtime_error("ERROR - Using directories as input files is forbidden with bdbh");
+	}
 }
 
 class PushFiles: public bdbh::LsObserver {

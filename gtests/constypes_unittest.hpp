@@ -43,6 +43,7 @@ void removeFile(const string&);
 #define INPUTDIR1 "inputdir1"
 #define INPUTDIR2 "inputdir2"
 #define INPUTDIR3 "inputdir3"
+#define INPUTDIR4 "inputdir4"
 
 // Comment out the following to inhibit directory cleaning (but this will make fail some tests)
 #define REMOVE_OUTPUT
@@ -91,6 +92,17 @@ public:
 protected:
 	vector<string> expected_file_pathes;
 	map<string,string> expected_file_contents;
+};
+
+// ChdbTest4 = Create 5 directories .dir in the input directory, nothing in the directories
+class ChdbTest4: public ChdbTest {
+public:
+	ChdbTest4();
+	
+protected:
+	vector<string> expected_input_files;
+	vector<string> expected_file_pathes;
+//	map<string,string> expected_file_contents;
 };
 
 // Adding the mpi buffer to ChdbTest1 (names only)
@@ -219,6 +231,15 @@ public:
 	};
 	~TestCase3() { removeFile(getInputDir()+".out*"); };
 	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest3::getInputDir()); };
+};
+class TestCase4: public ChdbTest4,
+				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+public:
+	TestCase4() : ChdbTest4(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+		GetParam()->cvtInputDir(ChdbTest4::getInputDir());
+	};
+	~TestCase4() { removeFile(getInputDir()+".out*"); };
+	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest4::getInputDir()); };
 };
 
 #endif

@@ -179,14 +179,18 @@ void Directories::initInputFiles() const {
 
 /** 
  * @brief Check the name extension versus the required extension (file type)
+ *        Check also the file type (Regular file or Directory)
  * 
  * @param name 
+ * @param is_a_dir (true = directory)
  * 
  * @return true if the type is OK, false if not
  */
-bool Directories::isCorrectType(const string & name) const {
-	string ext     = '.' + prms.getFileType();
-	return isEndingWith(name,ext);
+bool Directories::isCorrectType(const string & name,bool is_a_dir) const {
+	string ext  = '.' + prms.getFileType();
+	bool ext_ok = isEndingWith(name,ext);
+	bool dir_ok = (is_a_dir == prms.isTypeDir());
+	return ext_ok && dir_ok;
 }
 
 /** 
