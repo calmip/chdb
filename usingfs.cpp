@@ -157,7 +157,7 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 /** 
  * @brief Execute the external command, using complete in_pathes as input and complete out_pathes as output
  * 
- * @pre The cmd is ready to be executed (templates subsititution already done)
+ * @pre The cmd is ready to be executed (templates substitution already done)
  *
  * @param in_pathes input pathes, relative to the input directory (ie inputdir/A/B.txt ==> A/B.txt)
  * @param cmd 

@@ -187,7 +187,9 @@ CSimpleOpt::SOption options[] = {
 		}
 	}
 
-	// complete parameters if necessary
+	// complete parameters if necessary:
+	//    - Default value for work directory if file type is "dir"
+	//    - Default value for output directory UNLESS file type is "dir"
 	if ( isTypeDir() ) {
 		if ( getWorkDir() == "") {
 			work_directory = "%in-dir%/%path%";
@@ -214,7 +216,6 @@ CSimpleOpt::SOption options[] = {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -232,9 +233,6 @@ void Parameters::checkEmptyMembers() {
 	if ( file_type=="") {
 		throw runtime_error("ERROR - The parameter --in-type is required");
 	}
-//	if (output_files.size()==0) {
-//		throw runtime_error("ERROR - The parameter --out-files is required");
-//	}
 }
 void Parameters::checkInputDirectory() {
 	struct stat bfr;
@@ -262,20 +260,6 @@ void Parameters::checkInputDirectory() {
 		}
 	}
 }
-/*
-void Parameters::checkOutputDirectory() {
-	struct stat bfr;
-	int rvl;
-
-	rvl = stat(output_directory.c_str(),&bfr);
-	if (rvl == 0) {
-		string msg = "ERROR - The output directory ";
-		msg += output_directory;
-		msg += " already exists !";
-		throw runtime_error(msg);
-	}
-}
-*/
 
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
@@ -314,14 +298,15 @@ void Parameters::usage() {
 	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
-	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = \"inputdir.out\"\n";
 	cerr << "                               NOTES:\n";
-	cerr << "                                      - If using bdbh data container as input, output will be stored in another data container \n";
-	cerr << "                                        and the default name is inputdir.out.db\n";
-	cerr << "                                      - If using the \"dir\" file type, --out-dir is not used and SHOULD NOT BE SPECIFIED.\n";
+	cerr << "                                      - The default name is \"inputdir.out\"\n";
+	cerr << "                                      - If using bdbh data container as input, the default output name is \"inputdir.out.db\" (a bdbh data container)\n";
+	cerr << "                                      - If using the \"dir\" file type, there is NO default output name.\n";
+	cerr << "                                      - The output directory should NOT exist when chdb is started, and it will be created by chdb.\n";
 	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
 	cerr << "                               WARNING ! \n";
-	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
+	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THE WORK DIRECTORY\n";
 	cerr << "                                  - a RELATIVE PATH specified from ANY OTHER SWITCH will be treated FROM THE INITIAL LAUNCH DIRECTORY\n";
 	cerr << "                               The default is: \"Do not change directory\", EXCEPT for the type: \"dir\", \n";
 	cerr << "                               where the default is = \"change to %in-dir%/%path%\"";

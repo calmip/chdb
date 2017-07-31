@@ -105,8 +105,10 @@ void BasicScheduler::mainLoopProlog() {
 		throw(runtime_error(out.str()));
 	}
 
-	// Create the output directory
-	dir.makeOutDir(false,false);
+	// Create the output directory unless not specified (possible with 'dir' file type)
+	if (prms.getOutDir() != "") {
+		dir.makeOutDir(false,false);
+	}
 
 	// Open the error file, if any
 	// NOTE - opened here and not in the constructor because it should NOT be opened on slaves !

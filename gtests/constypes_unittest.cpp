@@ -274,6 +274,52 @@ ChdbTest3::ChdbTest3(): ChdbTest(INPUTDIR3) {
 	expected_file_contents["8.txt"]     = "STS\t0\nTXT\t8\n\n";
 	expected_file_contents["9.txt"]     = "STS\t1\nTXT\t9\n\n";
 }
+
+/** 
+ * @brief Create 5 .dir directories in the input directory
+ * 
+ */
+ChdbTest4::ChdbTest4(): ChdbTest(INPUTDIR4) {
+
+	// Nothing to do if inputdir already exists !
+	struct stat buf;
+	int err = stat(getInputDir().c_str(), &buf);
+	if (err==-1 && errno==ENOENT) {
+	
+		// Create and populate expected_input_files
+		
+		// Create 5 directories in the directories, the last will generate an error (see ext_cmd.sh)
+		// these files will be considered by Directories
+		expected_input_files.push_back("0.dir");
+		expected_input_files.push_back("0.dir/1.dir");
+		expected_input_files.push_back("C/2.dir");
+		expected_input_files.push_back("3.dir");
+		expected_input_files.push_back("4.dir");
+		
+		// Create the hierarchy
+		mkdir(getInputDir().c_str(),0700);
+		string dir1=getInputDir() + "/C";
+		mkdir(dir1.c_str(),0700);
+	
+		// Create the .dir directories
+		for (size_t i=0;i<expected_input_files.size();++i) {
+			string d = getInputDir() + '/' + expected_input_files[i];
+			mkdir(d.c_str(),0700);
+		}
+	}
+	else if (err == -1) {
+		throw(runtime_error("ERROR"));
+	};
+
+	// Expected created files in those directories
+	expected_file_pathes.push_back("out.txt");
+	expected_file_pathes.push_back("out.txt");
+	expected_file_pathes.push_back("out.txt");
+	expected_file_pathes.push_back("out.txt");
+	expected_file_pathes.push_back("out.txt");
+}
+
+
 /** 
  * @brief Adding the mpi buffer to ChdbTest1 (names only)
  * 
