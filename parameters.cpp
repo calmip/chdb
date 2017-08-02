@@ -96,7 +96,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_INFILE,        "--in-files",     SO_REQ_SEP },
 	{ OPT_OUTDIR,        "--out-dir",      SO_REQ_SEP },
 	{ OPT_WORKDIR,       "--work-dir",     SO_REQ_SEP },
-	{ OPT_SLEEPTIME,	 "--sleep",        SO_REQ_SEP },
+	{ OPT_SLEEPTIME,	 "--sleep-time",   SO_REQ_SEP },
 	{ OPT_ENV_SNIPPET,   "--create-environment", SO_REQ_SEP },
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
@@ -325,9 +325,17 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
-	cerr << "  --mpi-slaves <n>           : The command (launched by the slaves) is itself an mpi program, n is the number of mpi processes\n";
-	cerr << "                               you CANNOT launch with chdb mpi programs using more than one node\n";
-	cerr << "                               you CAN launch with chdb several mpi programs per node\n";
+	cerr << "  --mpi-slaves <s>           : The command (launched by the slaves) is an mpi program, s is the number of mpi processes/slave, placement is left to the system\n";
+	cerr << "                                   -you CANNOT launch with chdb mpi programs using more than one node\n";
+	cerr << "                                   -you CAN launch with chdb several slaves per node\n";
+	cerr << "  --mpi-slaves <S:s:c>       : The command (launched by the slaves) is an mpi program, and chdb tries to control the placement:\n";
+	cerr << "                             :     S is the number of slaves per node\n";
+	cerr << "                                   s is the number of mpi processes/slave\n";
+	cerr << "                                   c is the number of threads/mpi process\n";
+	cerr << "                               NOTE: It is your reponsability to:\n";
+	cerr << "                                   - Reserve the resources needed\n";
+	cerr << "                                   - Arrange for S * s * c to be less or equal to the number of cores in each node\n";
+	cerr << "                                   - Export correct environment variables, for example: --command-line 'env OMP_NUM_THREADS=s my_exe'\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
