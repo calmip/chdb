@@ -129,6 +129,7 @@ void Directories::buildMpiCommand(string& cmd) const {
 	if ( mpi_slaves != "" ) { 
 		const char * mpi_cmd_c = getenv("CHDB_MPI_CMD");
 		if (mpi_cmd_c != NULL) {
+			//cerr << "MOUMOUMOU #" << mpi_cmd_c << "#\n";
 			string mpi_cmd = mpi_cmd_c;
 			string h;
 			getHostName(h);
@@ -140,6 +141,8 @@ void Directories::buildMpiCommand(string& cmd) const {
 			throw runtime_error("ERROR -The env variable CHDB_MPI_CMD does not exists");
 		}
 	}
+	//cerr << "COUCOUCOU #" << cmd << "#\n";
+
 }
 
 /** 
