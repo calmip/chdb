@@ -34,9 +34,9 @@ MODDIRF="$MODDIR/$VERSION"
 [ ! -d "$BINDIR"  ] && echo "ERROR - $BINDIR  DOES NOT EXIST" && exit 1
 
 
-cp "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$BINDIR"
-( cd $BINDIR; chmod 755 $EXE $CHDB slave-wrapper.sh )
+cp "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$WRAPSRC/env-wrapper.sh" "$WRAPSRC/mod-wrapper.sh" "$BINDIR"
+( cd $BINDIR; chmod 755 $EXE $CHDB *-wrapper.sh )
 
-sed -e "s!BINDIR!$BINDIR!" <$MODSRCF >$MODDIRF
+sed -e "s!BINDIR!$BINDIR!g" <$MODSRCF >$MODDIRF
 chmod 644 $MODDIRF
 

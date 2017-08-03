@@ -290,7 +290,7 @@ void Parameters::usage() {
 	cerr << "                               NOTES: The file type \"dir\" is a SPECIAL CASE:\n";
 	cerr << "                                      1/ If you specify \"dir\", THE INPUT FILES SHOULD BE DIRECTORIES\n";
 	cerr << "                                      2/ You CANNOT USE a \"dir\" file type while using the bdbh data cobntainer\n";
-	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
+	cerr << "  --command-line 'my_exe ...': The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "\n";
 	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
