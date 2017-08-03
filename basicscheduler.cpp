@@ -468,17 +468,21 @@ void BasicScheduler::executeCommand() {
 
 		// skip input files with empty names
 		if (in_path.size()==0) continue;
-
 		dir.completeFilePath(in_path,cmd);
+
+		// If dir file type, DO NOT prepent outdirectory to the output file path
+		// because in this case the output file should be computed from the current (work) directory
+		bool outdir_complete = !prms.isTypeDir();
+
 		vector_of_strings out_files = prms.getOutFiles();
 		for (size_t j=0; j<out_files.size(); ++j) {
-			dir.completeFilePath(in_path,out_files[j],true);
+			dir.completeFilePath(in_path,out_files[j],outdir_complete);
 		}
 
 		string work_dir = prms.getWorkDir();
 		if (work_dir.length() != 0) {
 			// Give a real name to work_dir, and force to start with output directory name
-			dir.completeFilePath(in_path,work_dir,true);
+			dir.completeFilePath(in_path,work_dir,outdir_complete);
 		}
 
 		string snippet = prms.getEnvSnippet();
