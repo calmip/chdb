@@ -301,8 +301,9 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	string in_top  = prms.getInDir();
 	string in_root = in_top.substr(0,in_top.length()-3); // removing .db from end
 	
-	string out_top = prms.getOutDir();
-	string out_root= out_top.substr(0,out_top.length()-3); // removing .db from end
+	//string out_top = prms.getOutDir();
+	//string out_root= out_top.substr(0,out_top.length()-3); // removing .db from end
+	string out_root = prms.getOutDir(true);   // Version db_free of output directory
 
 	// Read the input pathes from the database, and copy them to the temporary input directory
 	string temp_input_dir = getTempInDir();

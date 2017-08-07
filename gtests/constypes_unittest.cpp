@@ -25,6 +25,7 @@ void createFile(const string& d, const naco& n) {
 }
 
 string readFile(const string & f) {
+	cerr << f << "\n";
 	ifstream in(f.c_str());
 	if (!in) {
 		string msg = "ERROR - Could not open the file ";
@@ -49,6 +50,7 @@ string readFileFromBdbh(const string& db, const string& key) {
 	cmd += key;
 	cmd += " >";
 	cmd += tmp_out;
+	cerr << cmd << "\n";
 	system(cmd.c_str());
 	string out = readFile(tmp_out);
 #ifdef REMOVE_OUTPUT

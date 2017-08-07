@@ -131,6 +131,9 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_INDIR:
 				input_directory = arguments.OptionArg();
+				if (isEndingWith(input_directory,".db")) {
+					is_bdbh = true;
+				}
 				break;
 			case OPT_INFILE:
 				input_file = arguments.OptionArg();
@@ -190,7 +193,10 @@ CSimpleOpt::SOption options[] = {
 
 	// complete parameters if necessary:
 	//    - Default value for work directory if file type is "dir"
-	//    - Default value for output directory if file type is "file"
+	//    - Default value for output directory UNLESS file type is "dir"
+	//    - output_directory_db_free is used ONLY for bdbh, as we distinguish between:
+	//        * data container name  (ie output_directory, input.out.db) and
+	//        * top directory inside the container (ie output_directory_db_free, ie input.out)
 	//    - No default value for output directory if file type is "iter"
 	if ( isTypeDir() ) {
 		if ( getWorkDir() == "") {
@@ -199,11 +205,14 @@ CSimpleOpt::SOption options[] = {
 	};
 
 	if ( isTypeFile() && output_directory == "" ) {
-		if (isEndingWith(input_directory,".db")) {
+		if (isBdBh()) {
 			output_directory = input_directory.substr(0,input_directory.length()-3);
-			output_directory += ".out.db";
+			output_directory         += ".out";
+			output_directory_db_free = output_directory;
+			output_directory         += ".db";
 		} else {
-			output_directory = input_directory + ".out";
+			output_directory         = input_directory + ".out";
+			output_directory_db_free = output_directory;
 		}
 	}
 
@@ -302,14 +311,14 @@ void Parameters::checkInputDirectory() {
 	}
 	else
 	{
-		if ( S_ISREG(bfr.st_mode) ) {
-			// TODO --> verifier que ca peut s'ouvrir avec bdbh !!!
-			is_bdbh = true;
-		}
-		else if ( !S_ISDIR(bfr.st_mode) && !S_ISLNK(bfr.st_mode)) {
+		//if ( S_ISREG(bfr.st_mode) ) {
+		//	// TODO --> verifier que ca peut s'ouvrir avec bdbh !!!
+		//	is_bdbh = true;
+		//}
+		if ( !S_ISDIR(bfr.st_mode) && !S_ISLNK(bfr.st_mode)) {
 			string msg = "ERROR - ";
 			msg += input_directory;
-			msg += " should be a directory, a symlink, or a bdbh file";
+			msg += " should be a directory, or a symlink";
 			throw runtime_error(runtime_error(msg));
 		}
 	}
