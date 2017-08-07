@@ -21,7 +21,7 @@ public:
     Parameters(int, char**) throw (runtime_error);
 
 	string getInDir()     const { return input_directory; };
-	string getOutDir()    const { return output_directory; };
+	string getOutDir(bool db_free=false)    const { return (!db_free) ? output_directory: output_directory_db_free; };
 	string getWorkDir()   const { return work_directory; };
 	unsigned int getSleepTime() const { return sleep_time;};
 	string getEnvSnippet() const{ return env_snippet; };
@@ -55,6 +55,7 @@ private:
 
 	string input_directory;
 	string output_directory;
+	string output_directory_db_free;
 	string work_directory;
 	unsigned int sleep_time;
 	string env_snippet;
