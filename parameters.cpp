@@ -2,6 +2,7 @@
 #include <iostream>
 //#include <iterator>
 //#include <set>
+#include <string>
 using namespace std;
 
 #include <sys/types.h>
@@ -48,8 +49,7 @@ using namespace std;
 
 */
 
-Parameters::Parameters(int argc, 
-					   char* argv[]) throw(runtime_error) :
+Parameters::Parameters(int argc,char* argv[]):
 	sleep_time(0),
     tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
@@ -174,8 +174,9 @@ CSimpleOpt::SOption options[] = {
 				report = arguments.OptionArg();
 				break;
 			case OPT_IN_TYPE:
-				file_type = arguments.OptionArg();
-				is_type_dir = (file_type == "dir");
+				//file_type = arguments.OptionArg();
+				setInputType(arguments.OptionArg());
+				//is_type_dir = (file_type == "dir");
 				break;
 			case OPT_MPI_SLAVES:
 				mpi_slaves = arguments.OptionArg();
@@ -189,12 +190,15 @@ CSimpleOpt::SOption options[] = {
 
 	// complete parameters if necessary:
 	//    - Default value for work directory if file type is "dir"
-	//    - Default value for output directory UNLESS file type is "dir"
+	//    - Default value for output directory if file type is "file"
+	//    - No default value for output directory if file type is "iter"
 	if ( isTypeDir() ) {
 		if ( getWorkDir() == "") {
 			work_directory = "%in-dir%/%path%";
 		}
-	} else if ( output_directory == "" ) {
+	};
+
+	if ( isTypeFile() && output_directory == "" ) {
 		if (isEndingWith(input_directory,".db")) {
 			output_directory = input_directory.substr(0,input_directory.length()-3);
 			output_directory += ".out.db";
@@ -208,6 +212,51 @@ CSimpleOpt::SOption options[] = {
 }
 }
 
+/****
+  \brief Set members related to input type
+
+  \param cft The type read from the command line
+*********/
+void Parameters::setInputType(const string& cft) {
+	file_type = cft;
+	if (file_type == "dir") {
+		is_type_dir = true;
+	} else {
+		is_type_dir = false;
+	}
+	
+	try {
+		if ( cft.find(' ')==string::npos ) {
+			is_type_iter = false;
+			is_type_file = true;
+		} else {
+			size_t idx;
+			unsigned int start=0,end=0,step=1;
+			start = stoul(cft,&idx);
+			// idx = number of processed characters
+			if (idx != cft.length()) {
+				string cft1 = cft.substr(idx);
+				end = stoul(cft1, &idx);
+				if (idx != cft1.length()) {
+					string cft2 = cft1.substr(idx);
+					step = stoul(cft2, nullptr);
+				}
+			}
+			iter_start = start;
+			iter_end   = end;
+			iter_step  = step;
+			is_type_iter = true;
+			is_type_file = false;
+		};
+	}
+	// As we do not check, stoul may throw an invalid_argument
+	// But we want a runtime_error to be thrown...
+	catch (const invalid_argument& e) {
+		throw(runtime_error(e.what()));
+	}
+}
+    
+
 /**
    \brief throw a runtime_error is there is something wrong with the parameters
    \note  Those checks are generic - Other checks are done in Directories.
@@ -216,6 +265,7 @@ CSimpleOpt::SOption options[] = {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
+	checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -224,20 +274,24 @@ void Parameters::checkBlockSize() {
 	}
 }
 void Parameters::checkEmptyMembers() {
+	if ( file_type=="") {
+		throw runtime_error("ERROR - The parameter --in-type is required");
+	}
 	if ( external_command == "" ) {
 		throw runtime_error("ERROR - The parameter --command-line is required");
 	}
-	if ( input_directory=="" ) {
+	if ( input_directory=="" && ! isTypeIter()) {
 		throw runtime_error("ERROR - The parameter --in-dir is required");
-	}
-	if ( file_type=="") {
-		throw runtime_error("ERROR - The parameter --in-type is required");
 	}
 }
 void Parameters::checkInputDirectory() {
 	struct stat bfr;
 	int rvl;
-
+	
+	// If input directory not specified (thus is_type_iter), all ok
+	if (input_directory=="") return;
+	
+	// Check input directory exists and is a directory
 	rvl = stat(input_directory.c_str(),&bfr);
 	if (rvl != 0) {
 		string msg = "ERROR - Cannot open file or directory ";
@@ -261,6 +315,12 @@ void Parameters::checkInputDirectory() {
 	}
 }
 
+void Parameters::checkOutputDirectory() {
+	if (isTypeIter() && output_directory=="") {
+		throw runtime_error("ERROR - Output directory should be specified when asking for iterations");
+	}
+}
+	
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
 	cerr << "Copyright license todo\n";

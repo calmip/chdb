@@ -18,7 +18,8 @@ using namespace std;
 class Parameters: private NonCopyable {
 
 public:
-    Parameters(int, char**) throw (runtime_error);
+	// May throw a runtime_error if something wrong with the parameters
+    Parameters(int, char**);
 
 	string getInDir()     const { return input_directory; };
 	string getOutDir()    const { return output_directory; };
@@ -27,10 +28,15 @@ public:
 	string getEnvSnippet() const{ return env_snippet; };
 	string getTmpDir()    const { return tmp_directory; };
 	string getInFile()    const { return input_file; };
+	unsigned int getIterationStart() const { if (isTypeIter()) return iter_start; else throw logic_error("ERROR - Not in TypeIter");};
+	unsigned int getIterationEnd()   const { if (isTypeIter()) return iter_end; else throw logic_error("ERROR - Not in TypeIter");};
+	unsigned int getIterationStep()  const { if (isTypeIter()) return iter_step; else throw logic_error("ERROR - Not in TypeIter");};
 	string getFileType()  const { return file_type; };
-	bool isTypeDir()      const { return file_type=="dir"; };
-	string getMpiSlaves() const { return mpi_slaves; };
+	bool isTypeDir()      const { return is_type_dir; };
+	bool isTypeIter()	  const { return is_type_iter;};
 	bool isBdBh()         const { return is_bdbh; };
+	bool isTypeFile()     const { return is_type_file; };
+	string getMpiSlaves() const { return mpi_slaves; };
 	bool isInMemory()     const { return is_in_memory; };
 	bool isSizeSort()     const { return is_size_sort; };
 	bool isVerbose()      const { return is_verbose; };
@@ -47,8 +53,9 @@ private:
 	void checkParameters();
 	void checkEmptyMembers();
 	void checkInputDirectory();
-	//void checkOutputDirectory();
+	void checkOutputDirectory();
 	void checkBlockSize();
+	void setInputType(const string&);
 
 	string getLastErrorText(const CSimpleOpt& arg);
 	void usage();
@@ -61,8 +68,13 @@ private:
 	string tmp_directory;
 	string input_file;
 	string file_type;
+	bool is_type_file;
 	bool is_type_dir;
+	bool is_type_iter;
 	string mpi_slaves;
+	unsigned int iter_start;
+	unsigned int iter_end;
+	unsigned int iter_step;
 	bool is_bdbh;
 	bool is_in_memory;
 	bool is_size_sort;

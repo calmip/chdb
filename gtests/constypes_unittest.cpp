@@ -59,7 +59,7 @@ string readFileFromBdbh(const string& db, const string& key) {
 
 bool existsFile(const string &f) {
 	ifstream in(f.c_str());
-	return in;
+	return (bool) in;
 }
 
 bool existsFileFromBdbh(const string& db, const string& key) {

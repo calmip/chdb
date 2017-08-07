@@ -10,7 +10,7 @@ CXX=mpicxx
 # debugging and error checking the program or optimizing the code).
 #
 
-CXXFLAGS=$(DEBUG) -Wall -pedantic
+CXXFLAGS=$(DEBUG) -Wall -pedantic -std=c++11 -Wno-deprecated-declarations
 LDFLAGS=$(DEBUG)
 
 # The exec
