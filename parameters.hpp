@@ -53,7 +53,7 @@ private:
 	void checkParameters();
 	void checkEmptyMembers();
 	void checkInputDirectory();
-	void checkOutputDirectory();
+	//void checkOutputDirectory();
 	void checkBlockSize();
 	void setInputType(const string&);
 

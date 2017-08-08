@@ -326,10 +326,6 @@ TEST_F(ParametersTest1, CtorIterations) {
 	INIT_ARGV(2,"1 10");
 	INIT_ARGV(3,"--command-line");
 	INIT_ARGV(4,"coucou");
-
-	// "no output directory" exception
-	ASSERT_THROW(new Parameters(5,argv),runtime_error);
-	
 	INIT_ARGV(5,"--out-dir");
 	INIT_ARGV(6,"iter.out");
 

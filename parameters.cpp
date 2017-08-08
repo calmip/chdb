@@ -274,7 +274,7 @@ void Parameters::setInputType(const string& cft) {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	checkOutputDirectory();
+	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -324,12 +324,15 @@ void Parameters::checkInputDirectory() {
 	}
 }
 
+/*
 void Parameters::checkOutputDirectory() {
 	if (isTypeIter() && output_directory=="") {
 		throw runtime_error("ERROR - Output directory should be specified when asking for iterations");
 	}
 }
-	
+*/
+
+
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
 	cerr << "Copyright license todo\n";
@@ -353,12 +356,15 @@ void Parameters::usage() {
 	cerr << "Usage: mpirun -n N ... chdb parameters switches ..." << '\n';
 	cerr << "\n";
 	cerr << "REQUIRED PARAMETERS:\n";
-	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
-	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
 	cerr << "                               NOTES: The file type \"dir\" is a SPECIAL CASE:\n";
 	cerr << "                                      1/ If you specify \"dir\", THE INPUT FILES SHOULD BE DIRECTORIES\n";
 	cerr << "                                      2/ You CANNOT USE a \"dir\" file type while using the bdbh data cobntainer\n";
+	cerr << "  --in-type 1 10             : Iteration mode: do not use input files, iterate from 1 to 10, executing the code 10 times\n";
+	cerr << "  --in-type 1 10 2           : Iteration mode again, with a step = 2 (thus 5 executions only\n";
+	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
+	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
+	cerr << "                               In iteration mode, this parameter is optional\n";
 	cerr << "  --command-line 'my_exe ...': The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "\n";
 	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";

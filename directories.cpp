@@ -180,6 +180,44 @@ void Directories::initInputFiles() const {
 	}
 }
 
+/******************
+ * @brief Read the files to process
+ *        If dir or file type, call v_readFiles
+ *        If iter type, do the iterations
+ * 
+ ****************************/ 
+
+void Directories::readFiles() {
+	if (files.empty()) {
+		if ( !prms.isTypeIter()) {
+			v_readFiles();
+			files_size = count_if(files.begin(), files.end(), isNotNullStr);
+			if ( ! files.empty()) {
+				blk_ptr=files.begin();
+			}
+		} else {
+			// Init the list of input files if any
+			initInputFiles();
+			if (input_files.empty()) {
+				for (unsigned int i = prms.getIterationStart(); i <= prms.getIterationEnd(); i += prms.getIterationStep() ) {
+					files.push_back(to_string(i));
+				}
+			} else {
+				for (unsigned int i = prms.getIterationStart(); i <= prms.getIterationEnd(); i += prms.getIterationStep() ) {
+					string f=to_string(i);
+					if (input_files.find(f)!=input_files.end()) {
+						files.push_back(f);
+					}
+				}
+			}
+			files_size = files.size();
+			if ( ! files.empty() ) {
+				blk_ptr = files.begin();
+			}
+		}
+	}
+}
+
 /** 
  * @brief Check the name extension versus the required extension (file type)
  *        Check also the file type (Regular file or Directory)
@@ -198,7 +236,7 @@ bool Directories::isCorrectType(const string & name,bool is_a_dir) const {
 
 /** 
  * 
- * @brief Prepare the f vector for a balanced distribution of jobs:
+ * @brief Prepare the f vector for a balanced distribution of jobs (useful only if isSizeSort())
  *        1/ The f_info list is sorted from the longest to the shortest file
  *        2/ The file names are copied to f using an interleaved algorithm
  * 

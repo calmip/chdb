@@ -142,7 +142,9 @@ SignalHandle::Initializer SignalHandle::Init;
  * @return 
  */
 Directories* dirFactory(Parameters& prms) {
-	string name = prms.getInDir();
+	string input = prms.getInDir();
+	string output= prms.getOutDir();
+	string name = (input=="")?output:input;
 	if ( isEndingWith(name,".db") ) {
 		return new UsingBdbh(prms);
 	} else {
