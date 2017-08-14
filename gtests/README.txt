@@ -13,7 +13,7 @@ make
 ./parameters_unittest 
 ./buffer_unittest 
 rm -rf input*; ./directories_unittest 
-mpirun -n 2 ./scheduler_unittest
+rm -rf input*; mpirun -n 2 ./scheduler_unittest
 ./system_unittest 
 rm -rf input*; ./chdb_unittest 
 

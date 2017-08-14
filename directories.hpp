@@ -62,13 +62,10 @@ public:
 		readFiles();
 		return files;
 	}
-	void readFiles() {
-		v_readFiles();
-		files_size = count_if(files.begin(), files.end(), isNotNullStr);
-		if ( ! files.empty()) {
-			blk_ptr=files.begin();
-		}
-	}
+	
+	// If in iter mode, generate the list of files
+	// Else, delegate this to v_readFiles, a virtual pure.
+	void readFiles();
 
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);

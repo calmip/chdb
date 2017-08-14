@@ -175,15 +175,18 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 									const string& snippet) {
 
     // throw a logic error if one of the input pathes is not readable
-	string in_dir = getTempInDir();
-	for (size_t i=0; i<in_pathes.size(); ++i) {
-		string f = in_dir;
-		f += '/';
-		f += in_pathes[i];
-		if (!fileExists(f)) {
-			string msg = "ERROR - File does not exist:  ";
-			msg += in_pathes[i];
-			throw(logic_error(msg));
+    // (but NOT in iter type)
+    if (!prms.isTypeIter()) {
+		string in_dir = getTempInDir();
+		for (size_t i=0; i<in_pathes.size(); ++i) {
+			string f = in_dir;
+			f += '/';
+			f += in_pathes[i];
+			if (!fileExists(f)) {
+				string msg = "ERROR - File does not exist:  ";
+				msg += in_pathes[i];
+				throw(logic_error(msg));
+			}
 		}
 	}
 
@@ -296,6 +299,11 @@ void UsingFs::makeTempOutDir() {
 
 	// Generating an exception if outdir is not yet initialized !
 	string outdir = getOutDir();
+	
+	// .. not if iter type
+	if (prms.isTypeIter() && outdir=="") {
+		outdir = "chdb.out";
+	}
 	string tmpdir="";
 	if (prms.isTmpDir()) {
 		string tmp = prms.getTmpDir();

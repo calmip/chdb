@@ -174,7 +174,14 @@ TEST_F(ParametersTest1, CtorExceptions4) {
 
 	// "no input type" exception
 	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+
 	Parameters prms(9,argv);
+	
+	// "getIterationStart etc. 
+	ASSERT_EQ(false,prms.isTypeIter());
+	ASSERT_THROW(prms.getIterationStart(),logic_error);
+	ASSERT_THROW(prms.getIterationEnd(),logic_error);
+	ASSERT_THROW(prms.getIterationStep(),logic_error);
 
 	// empty vector_of_files
 	vector_of_strings out_files;
@@ -312,6 +319,74 @@ TEST_F(ParametersTest1, CtorOutFiles) {
 	FREE_ARGV(9);
 }
 
+TEST_F(ParametersTest1, CtorIterations) {
+	char* argv[7];
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"1 10");
+	INIT_ARGV(3,"--command-line");
+	INIT_ARGV(4,"coucou");
+	INIT_ARGV(5,"--out-dir");
+	INIT_ARGV(6,"iter.out");
+
+	{
+		Parameters prms(7,argv);
+	
+		ASSERT_EQ(true,prms.isTypeIter());	
+		ASSERT_EQ(1, prms.getIterationStart());
+		ASSERT_EQ(1, prms.getIterationStep());
+		ASSERT_EQ(10, prms.getIterationEnd());
+		ASSERT_EQ("",prms.getInDir());
+	}
+
+	FREE_ARGV(7);
+
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"1 10 2");
+	INIT_ARGV(3,"--command-line");
+	INIT_ARGV(4,"coucou");
+	INIT_ARGV(5,"--out-dir");
+	INIT_ARGV(6,"iter.out");
+
+	{
+		Parameters prms(7,argv);
+	
+		ASSERT_EQ(true,prms.isTypeIter());	
+		ASSERT_EQ(1, prms.getIterationStart());
+		ASSERT_EQ(2, prms.getIterationStep());
+		ASSERT_EQ(10, prms.getIterationEnd());
+	}
+
+	FREE_ARGV(7);
+
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"a b c");
+	INIT_ARGV(3,"--command-line");
+	INIT_ARGV(4,"coucou");
+	INIT_ARGV(5,"--out-dir");
+	INIT_ARGV(6,"iter.out");
+
+	// Exception because a b c
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+
+	FREE_ARGV(7);
+
+	INIT_ARGV(0,"parameters_unittest");
+	INIT_ARGV(1,"--in-type");
+	INIT_ARGV(2,"1 ");
+	INIT_ARGV(3,"--command-line");
+	INIT_ARGV(4,"coucou");
+	INIT_ARGV(5,"--out-dir");
+	INIT_ARGV(6,"iter.out");
+
+	// Exception because no end specification
+	ASSERT_THROW(new Parameters(7,argv),runtime_error);
+
+	FREE_ARGV(7);
+	
+}
 
 // Step 3. Call RUN_ALL_TESTS() in main().
 //

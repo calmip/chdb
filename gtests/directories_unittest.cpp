@@ -87,7 +87,8 @@ TEST_P(TestCase1,makeOutDir) {
 		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
 		if ( GetParam()->getDirectoryType()=="UsingBdbh" ) {
 			string out_dir = prms.getOutDir();
-			EXPECT_EQ(true,fileExists(out_dir+"/database"));
+			EXPECT_EQ(true,fileExists(out_dir+"/data"));
+			EXPECT_EQ(true,fileExists(out_dir+"/metadata"));
 		}
 	}
 
@@ -479,6 +480,36 @@ TEST_P(TestCase1,getFiles_Unsorted) {
 	EXPECT_EQ(expected_files,found_files);
 
 	FREE_ARGV(11);
+
+}
+
+// testing getFiles in iter type
+TEST_P(TestCase1,getFiles_iter) {
+	cout << GetParam()->getDescription() << '\n';
+
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"1 10 2");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	INIT_ARGV(9,"--out-dir");
+	INIT_ARGV(10,"iter.out");
+	
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+
+	vector_of_strings found_files=dir.getFiles();
+	vector_of_strings expected_files = {"1","3","5","7","9"};
+	EXPECT_EQ(expected_files,dir.getFiles());
+	found_files=dir.getFiles();
+	EXPECT_EQ(expected_files,dir.getFiles());
+
+	FREE_ARGV(7);
 
 }
 

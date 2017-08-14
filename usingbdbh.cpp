@@ -53,7 +53,9 @@ UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_
 		MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);
 		if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
 	}
-	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,false,in_memory);
+	if (!prms.isTypeIter()) {
+		input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,in_memory);
+	}
 }
 
 // consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
@@ -298,28 +300,30 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	need_consolidation = true;
 
 	// Create the input pathes in tmpdir
-	string in_top  = prms.getInDir();
-	string in_root = in_top.substr(0,in_top.length()-3); // removing .db from end
+	//string in_top  = prms.getInDir();
+	//string in_root = in_top.substr(0,in_top.length()-3); // removing .db from end
 	
 	//string out_top = prms.getOutDir();
 	//string out_root= out_top.substr(0,out_top.length()-3); // removing .db from end
 	string out_root = prms.getOutDir(true);   // Version db_free of output directory
 
 	// Read the input pathes from the database, and copy them to the temporary input directory
-	string temp_input_dir = getTempInDir();
-//	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
-//	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
-	const char* args[] = {"--root","","--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
-	bdbh::Parameters bdbh_prms_r(6,args);
-	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
-	read_cmd.Exec();
-	int bdbh_rvl_r = read_cmd.GetExitStatus();
-	if (bdbh_rvl_r != 0) {
-		ostringstream out;
-		out << "ERROR - could not extract file " << in_pathes[0] << " from the database. Status=" << bdbh_rvl_r;
-		throw(logic_error(out.str()));
+	if ( !prms.isTypeIter() ) {
+		string temp_input_dir = getTempInDir();
+	//	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
+	//	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+		const char* args[] = {"--root","","--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+		bdbh::Parameters bdbh_prms_r(6,args);
+		bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
+		read_cmd.Exec();
+		int bdbh_rvl_r = read_cmd.GetExitStatus();
+		if (bdbh_rvl_r != 0) {
+			ostringstream out;
+			out << "ERROR - could not extract file " << in_pathes[0] << " from the database. Status=" << bdbh_rvl_r;
+			throw(logic_error(out.str()));
+		}
 	}
-
+	
 	// Create the subdirectories if necessary
 	// If out_pathes() starts with out_dir, it's OK. If not, complete them to create the subdirectories
 	// Create also a version WITHOUT out_dir, it will be useful to store to the database
