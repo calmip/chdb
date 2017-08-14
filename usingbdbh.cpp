@@ -54,7 +54,7 @@ UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_
 		if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
 	}
 	if (!prms.isTypeIter()) {
-		input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,false,in_memory);
+		input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,in_memory);
 	}
 }
 

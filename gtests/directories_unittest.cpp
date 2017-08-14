@@ -87,7 +87,8 @@ TEST_P(TestCase1,makeOutDir) {
 		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
 		if ( GetParam()->getDirectoryType()=="UsingBdbh" ) {
 			string out_dir = prms.getOutDir();
-			EXPECT_EQ(true,fileExists(out_dir+"/database"));
+			EXPECT_EQ(true,fileExists(out_dir+"/data"));
+			EXPECT_EQ(true,fileExists(out_dir+"/metadata"));
 		}
 	}
 
