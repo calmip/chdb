@@ -29,6 +29,7 @@ public:
 	string getFileType()  const { return file_type; };
 	string getMpiSlaves() const { return mpi_slaves; };
 	bool isBdBh()         const { return is_bdbh; };
+	bool isInMemory()     const { return is_in_memory; };
 	bool isSizeSort()     const { return is_size_sort; };
 	bool isVerbose()      const { return is_verbose; };
 	bool isAbrtOnErr()    const { return on_error.length()==0; };
@@ -59,6 +60,7 @@ private:
 	string file_type;
 	string mpi_slaves;
 	bool is_bdbh;
+	bool is_in_memory;
 	bool is_size_sort;
 	bool is_verbose;
 	string on_error;

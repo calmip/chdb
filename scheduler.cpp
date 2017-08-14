@@ -8,12 +8,12 @@
  * 
  */
 
-//#include <iostream>
+#include <mpi.h>
+#include <fstream>
 //#include <iterator>
 //#include <set>
 using namespace std;
 
-#include <mpi.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -41,6 +41,7 @@ using namespace std;
  * 
  * @return 
  */
+
 
 Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start_time(-1) {
 	int flg;
@@ -70,6 +71,45 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
 	// Give some infos to dir
 	dir.setRank(rank,comm_size); 
 }
+
+
+/**
+ * @brief Init the checkList, asking the Directory for the list of files
+ * 
+ * @pre The directory object must be initialized
+ * 
+ *****/ 
+void Scheduler::_initCheckList() {
+	const vector_of_strings& files = dir.getFiles();
+	for (vector_of_strings::const_iterator s=files.begin(); s!= files.end(); ++s) {
+		checkList[*s] = false;
+	}
+}
+
+/**
+ * @brief Check the items of the list, ie mark the files are "treated" unless they get an error
+ * 
+ * @pre The ckeckList must be already initialized
+ * 
+ * @param treated_files A list of treated (= used for computation) files
+ * @param return_values A corresponding lis of returend values, the file is checked only if value is 0 
+ *
+ * @exception Throw a logic_error if some file is not in the list
+ * 
+ *********/
+void Scheduler::_checkListItems(const vector_of_strings& treated_files, const vector_of_int& return_values) {
+	for (size_t i=0; i < treated_files.size(); ++i) {
+		string f = treated_files[i];
+		int    v = return_values[i];
+		if (checkList.find(f) == checkList.end()) {
+			string msg = "ERROR - THE FILE " + f + " IS NOT IN THE CHECK LIST !";
+			throw logic_error(msg.c_str());
+		}
+		if (v==0) checkList[f] = true;
+	}
+}
+
+	
 
 /** 
  * @brief Call MPI_Abort
@@ -108,6 +148,27 @@ double Scheduler::getTimer() {
 void Scheduler::finalize() {
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
+}
+
+void Scheduler::SetSignal(int signal) {
+	cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << endl;
+	if (isMaster()) {
+		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
+		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
+		ofs << "# Check your output, you may need to retrieve files from temporary files or databases.\n";
+		
+		for (map<string,bool>::iterator i = checkList.begin(); i != checkList.end(); ++i) {
+			if ( i->second == false) ofs << i->first << endl;
+		}
+		ofs.close();
+		
+		// Close open files, if necessary
+		if (err_file.is_open())    err_file.close();
+		if (report_file.is_open()) report_file.close();
+		
+		_exit(0);
+	}
+	dir.SetSignal(signal);
 }
 
 /*

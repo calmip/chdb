@@ -52,6 +52,7 @@ Parameters::Parameters(int argc,
 					   char* argv[]) throw(runtime_error) :
     tmp_directory(DEFAULT_TMP_DIRECTORY),
 	is_bdbh(false),
+	is_in_memory(false),
 	is_size_sort(DEFAULT_SIZE_SORT),
 	is_verbose(DEFAULT_VERBOSE),
 	block_size(DEFAULT_BLOCK_SIZE) {
@@ -67,7 +68,8 @@ enum {
 	OPT_ENV_SNIPPET,// --create-environment
 	OPT_TMPDIR,     // --tmp-dir
 	OPT_OUTFILES,   // --out-files
-	OPT_BLOCK_SIZE, // --block-size,
+	OPT_BLOCK_SIZE, // --block-size
+	OPT_IN_MEMORY,  // --in-memory
 	OPT_SORT_BY_SIZE,  // --sort-by-size
 	OPT_VERBOSE,       // --verbose
 	OPT_ON_ERROR,      // --on-error
@@ -97,6 +99,7 @@ CSimpleOpt::SOption options[] = {
 	{ OPT_TMPDIR,        "--tmp-dir",      SO_REQ_SEP },
 	{ OPT_OUTFILES,      "--out-files",    SO_REQ_SEP },
 	{ OPT_BLOCK_SIZE,    "--block-size",   SO_REQ_SEP },
+	{ OPT_IN_MEMORY,     "--in-memory",    SO_NONE    },
 	{ OPT_SORT_BY_SIZE,  "--sort-by-size", SO_NONE    },
 	{ OPT_VERBOSE,       "--verbose",      SO_NONE    },
 	{ OPT_ON_ERROR,      "--on-error",     SO_REQ_SEP },
@@ -145,6 +148,9 @@ CSimpleOpt::SOption options[] = {
 				break;
 			case OPT_BLOCK_SIZE:
 				block_size = atoi(arguments.OptionArg());
+				break;
+			case OPT_IN_MEMORY:
+				is_in_memory = true;
 				break;
 			case OPT_SORT_BY_SIZE:
 				is_size_sort = true;
@@ -280,6 +286,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "REQUIRED PARAMETERS:\n";
 	cerr << "  --in-dir inputdir          : Input files are looked for in this directory.\n";
+	cerr << "                               If dirname ends with .db (ie inputdir.db), it MUST be a bdbh data container\n";
 	cerr << "  --in-type ext              : Only filenames terminating with this extension will be considered for input\n";
 	cerr << "  --command-line '...'       : The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
@@ -287,6 +294,7 @@ void Parameters::usage() {
 	cerr << "\n";
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = inputdir.out\n";
+	cerr << "                               If using bdbh data container as input, output will be stored in another data container and the default name is inputdir.out.db\n";
 	cerr << "  --work-dir workdir         : Change to this directory before executing command\n";
 	cerr << "                               WARNING ! \n";
 	cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THIS DIRECTORY\n";
@@ -304,10 +312,13 @@ void Parameters::usage() {
 	cerr << "                               Format: One path per line\n";
 	cerr << "                               NOTE: A generated errors.txt (cf. --on-error) may be specified as in-files parameter \n";
 	cerr << "  --report report.txt        : Generate a report with some timing info about the command (use only for debug !)\n";
-	cerr << "  --mpi-slaves               : The command (launched by slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "  --mpi-slaves <n>           : The command (launched by the slaves) is itself an mpi program, n is the number of mpi processes\n";
+	cerr << "                               you CANNOT launch with chdb mpi programs using more than one node\n";
+	cerr << "                               you CAN launch with chdb several mpi programs per node\n";
 	cerr << "\n";
 	cerr << "OPTIONAL SWITCHES:\n";
 	cerr << "  --sort-by-size             : Sort the input files the bigger first, may be less load balancing issues\n";
+	cerr << "  --in-memory                : Read the whole database in memory. May help if you get poor performance when starting chdb with a lot of files and using bdbh.\n";
 	cerr << "  --verbose                  : Some messages are printed\n";
 	cerr << "  --help                     : Print this screen and leave\n";
 	cerr << "\n";
@@ -321,6 +332,13 @@ void Parameters::usage() {
 	cerr << "  %name%         The file name with the extension (toto.txt)\n";
 	cerr << "  %basename%     The file name without the extension (toto)\n";
 	cerr << "  %dirname%      The directory name relative to the input or output directory (A/B)\n";
+	cerr << "\n";
+	cerr << "ENVIRONMENT VARIABLES:\n";
+	cerr << "The following environment variables are available in the command lauched by chdb:\n";
+	cerr << "$CHDB_RANK : The mpi rank of this slave\n";
+	cerr << "$CHDB_COMM_SIZE : The size of the chdb mpi communicator (ie nb of mpi processes, or nb of slaves + 1)\n";
+	cerr << "\n\n";
+	
 	throw ParametersHelp();
 }
 

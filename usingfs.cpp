@@ -199,7 +199,7 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 		sts = callSystem(sni_cmd);
 	}
 
-	// If snippet was successfull (or no snipped at all)
+	// If snippet was successfull (or no snippet at all)
 	if (sts==0) {
 		// Change command for mpi instructions if necessary
 		string command = cmd;
@@ -297,7 +297,8 @@ void UsingFs::makeTempOutDir() {
 
 /** 
  * @brief Consolidate output data from a directory to the output directory
- *        Files are copied from the source directory and it is removed
+ *        Files are copied from the source (temporary) directory and it is removed
+ *        If src and dst directoreis are same, nothing done
  * 
  * @param from_tmp If true, consolidate from temporary directory, else consolidate from path
  * @param path Used only if from_tmp==false: path to the directory we want to consolidate
@@ -305,29 +306,31 @@ void UsingFs::makeTempOutDir() {
  *
  */
 void UsingFs::consolidateOutput(bool from_tmp, const string& path) {
-	string temp_out = (from_tmp) ? getTempOutDir() : path;
-	if (temp_out.size()==0) {
+	string src_dir = (from_tmp) ? getTempOutDir() : path;
+	if (src_dir.size()==0) {
 		return;
 	}
-	string out      = getOutDir();
+	string dst_dir      = getOutDir();
 
-	// output directory same directory as temp_out nothing to do !
-	if (temp_out!=out) {
+	// output directory same directory as src_dir nothing to do !
+	if (src_dir!=dst_dir) {
 		// If directory to consolidate exists
+		// @todo - Optimization => mv if same volume, cp if different volumes !
+		
 		struct stat sts;
-		if (stat(temp_out.c_str(), &sts)==0) {
+		if (stat(src_dir.c_str(), &sts)==0) {
 			string cmd = "/bin/cp -a ";
-			cmd += temp_out;
+			cmd += src_dir;
 			cmd += "/* ";
-			cmd += out;
+			cmd += dst_dir;
 			cmd += " 2> /dev/null";
 			
-			// We do not want any exception to escape from this function !
+			// We do not want any exception to escape from this function as it is called from destructor
 			callSystem(cmd,false);
 			
 			// remove temporary directory, ignore the error
 			cmd = "rm -r ";
-			cmd += temp_out;
+			cmd += src_dir;
 			callSystem(cmd,false);
 		}
 	}

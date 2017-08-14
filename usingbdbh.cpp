@@ -3,6 +3,9 @@
 //#include <iostream>
 //#include <iterator>
 
+// See L 47 - Bullshit here
+#include <mpi.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
@@ -34,11 +37,18 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
-typedef auto_ptr<bdbh::Command> Command_aptr;
+//typedef auto_ptr<bdbh::Command> Command_aptr;
 
-UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_bdb(NULL),temp_bdb(NULL),need_consolidation(false) {
+UsingBdbh::UsingBdbh(const Parameters& p):Directories(p),input_bdb(NULL),output_bdb(NULL),temp_bdb(NULL),need_consolidation(false),signal_received(false) {
 	bdbh::Initialize();
-	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD);
+	// Switch in-memory: used ONLY by rank 0, if using bdbh
+	bool in_memory = false;
+	
+	// @todo - We cannot use the rank defined by the scheduler because the Scheduler must be created AFTER th e Directory ! Bull shit here !
+	int mpi_rank;
+	MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);
+	if (mpi_rank == 0 && prms.isInMemory()) in_memory = true;
+	input_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(prms.getInDir().c_str(),BDBH_OREAD,false,false,in_memory);
 }
 
 // consolidateOutput may throw an exception (if incompletly initalized) - Ignore it
@@ -60,6 +70,7 @@ public:
 		// if nothing stripped or bad type give up
 		// if input_files not empty check the file is to be kept
 
+		//cerr << "coucou (root,name) " << root << ',' << name << "\n";
 		if (bdbh::StripLeadingStringSlash(root,name) || name.length()==0) {
 			if (isEndingWith(name,file_type)) {
 				if (in_files_empty || input_files.find(name)!=input_files.end()) {
@@ -81,6 +92,7 @@ class PushFilesMeta: public bdbh::LsObserver {
 public:
 	PushFilesMeta(const string& r, const string& t, list<Finfo>& ls, set<string>ss):root(r),file_type(t),files(ls),input_files(ss),in_files_empty(ss.empty()){};
 	void Update(string name,const bdbh::Mdata& mdata) {
+
 		// Strip the root
 		// if nothing stripped or bad type give up
 		// if input_files not empty check the file is to be kept
@@ -108,7 +120,8 @@ private:
 void UsingBdbh::v_readFiles() {
 	if (files.size()==0) {
 		string top = prms.getInDir();
-		string root=top.substr(0,top.length()-3); // input.db -> input
+		//string root=top.substr(0,top.length()-3); // input.db -> input
+		string root = "";
 		string ext = ".";
 		ext += prms.getFileType();
 	
@@ -274,7 +287,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	// Read the input pathes from the database, and copy them to the temporary input directory
 	string temp_input_dir = getTempInDir();
 //	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
-	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+//	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
+	const char* args[] = {"--root","","--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
 	bdbh::Parameters bdbh_prms_r(6,args);
 	bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
 	read_cmd.Exec();
@@ -308,7 +322,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 
 	// if rvl == 0, we save to the database the output files before returning
 	//if (rvl==0) {
-		vector<string> arg;
+		vector_of_strings arg;            // The arg to write output files to the database
+
 		//arg.push_back("--database");
 		//arg.push_back(temp_db_dir);
 		arg.push_back("--root");
@@ -319,7 +334,11 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		arg.push_back("--overwrite");
 		//arg.push_back("--verbose");
 		//arg.push_back("add");
-		bool path_exists=false;
+		// If no output file created, we'll get an exception !
+
+		bool path_exists=false;	          // False if nothing created (which is probably an error)
+
+		// Keep track of the files to be stored and destroyed
 		for (size_t i=0; i<l_out_pathes.size(); ++i) {
 			if (fileExists(out_pathes[i])) {
 				arg.push_back(l_out_pathes[i]);
@@ -327,8 +346,9 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 			}
 		}
 
-		// If no output file created, we'll get an exception !
 		if (path_exists==true) {
+
+			// Store the outputfiles to the database
 			bdbh::Parameters bdbh_prms_w(arg);
 			bdbh::Write write_cmd(bdbh_prms_w,*temp_bdb.get());
 			//cout << "INFO - WRITING DATA TO " << temp_db_dir << '\n';
@@ -344,6 +364,22 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 				}
 				throw(logic_error(out.str()));
 			}
+			
+			// Destroy the output files/directories
+			for (size_t i=0; i<out_pathes.size(); ++i) {
+				string cmd = "rm -rf ";
+				cmd += out_pathes[i];
+				callSystem(cmd,false);
+
+				//rvl = unlink( out_pathes[i].c_str() );
+				//if (rvl != 0) {
+				//	cerr << "WARNING - Could not remove file " << out_pathes[i] << " - " << strerror(rvl) << "\n";
+				//}
+			}
+			
+			// Destroy the input file(s) (ie only in_pathes[0])
+			string f = temp_input_dir + '/' + in_pathes[0];
+			unlink ( f.c_str());
 		}
 		return rvl;
 //	} else {
@@ -410,28 +446,30 @@ void UsingBdbh::makeOutDir(bool rank_flg, bool rep_flg) {
 		callSystem(cmd);
 	}
 
-	// throw a runtime error if directory already exists, else makes directory
-	mkdir (output_dir);
-
-	// Create and open an output BerkeleyDb
-	output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OCREATE);
-
-	//const char* args[] = {"--database",output_dir.c_str(),"create"};
-	//bdbh::Parameters bdbh_prms(3,args);
-	bdbh::Parameters bdbh_prms;
-	bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
-	create_cmd.Exec();
-	int rvl = create_cmd.GetExitStatus();
-	if (rvl != 0) {
-		ostringstream out;
-		out << "ERROR - could not create output " << output_dir << " database. Status=" << rvl;
-		throw(logic_error(out.str()));
+	// Only the MASTER creates the output directory, the slaves will create it only during consolidation
+	if (rank == 0) {
+		// throw a runtime error if directory already exists, else makes directory
+		mkdir (output_dir);
+	
+		// Create and open an output BerkeleyDb
+		output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OCREATE);
+	
+		//const char* args[] = {"--database",output_dir.c_str(),"create"};
+		//bdbh::Parameters bdbh_prms(3,args);
+		bdbh::Parameters bdbh_prms;
+		bdbh::Create create_cmd(bdbh_prms,*output_bdb.get());
+		create_cmd.Exec();
+		int rvl = create_cmd.GetExitStatus();
+		if (rvl != 0) {
+			ostringstream out;
+			out << "ERROR - could not create output " << output_dir << " database. Status=" << rvl;
+			throw(logic_error(out.str()));
+		}
+	
+		// Reopen the output db in write mode
+		output_bdb.reset();
+		output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OWRITE);
 	}
-
-	// Reopen the output db in write mode
-	output_bdb.reset();
-	output_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(output_dir.c_str(),BDBH_OWRITE);
-//	mkdir(output_dir);
 }
 
 /** 
@@ -508,6 +546,10 @@ void UsingBdbh::makeTempOutDir() {
  *
  */
 void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
+	
+	// If a signal is received, inhibit all consolidation !
+	if (signal_received) return;
+	
 	// if from_tmp: exit if nothing to consolidate
 	// else: consolidate anyway, as we cannot know if it is useful or not
 	if (from_tmp==true && need_consolidation==false) {
@@ -517,62 +559,99 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 	// mark the dir to consolidated status
 	need_consolidation = false;
 
-	string temp_out = (from_tmp) ? getTempOutDir() : path;
-	if (temp_out.size()==0) {
+	string src_dir, src_dir_db;
+	
+	// tmp directory has the following structure:
+	// some/path/       ==> src_dir
+	// some/path/db     ==> src_dir_db
+	// some/path/input
+	// some/path/output
+	if (from_tmp) {
+		src_dir = getTempOutDir();
+		src_dir_db = getTempDbDir();
+		temp_bdb.get()->Sync();
+		temp_bdb.reset();
+	} else {
+		src_dir    = path;
+		src_dir_db = path;		
+	}
+
+	if (src_dir.size()==0) {
 		return;
 	}
 
-	string out = getOutDir();
+	string dst_dir = getOutDir();
 
-	// output directory same directory as temp_out nothing to do !
-	if (temp_out!=out) {
+	// If dst_dir directory is same directory as src_dir nothing to do !
+	if (src_dir!=dst_dir) {
 
-		string from_db_dir;
-		// if consol from_tmp, sync and close the database
-		// if consol from_tmp, use temp_db_dir !
-		if ( from_tmp) {
-			//temp_bdb.get()->Sync();
-			temp_bdb.reset();
-			from_db_dir = temp_db_dir;
-		} else {
-			from_db_dir = temp_out;
-		}
-
-		// If directory to consolidate exists
 		struct stat sts;
-		if (stat(temp_out.c_str(), &sts)==0) {
+		if (stat(src_dir.c_str(), &sts)==0) {
 			if (prms.isVerbose()) {
-				cerr << "INFO - rank " << rank << " is now consolidating data " << from_db_dir << " to " << out << "\n";
+				cerr << "INFO - rank " << rank << " is now consolidating data " << src_dir_db << " to " << dst_dir << "\n";
 			}
-			//const char* args[] = {"--database",getOutDir().c_str(),"merge",from_db_dir.c_str()};
-			const char* args[] = {from_db_dir.c_str()};
-			bdbh::Parameters bdbh_prms(1,args);
-			bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
-			merge_cmd.Exec();
-			int rvl = merge_cmd.GetExitStatus();
-			if (rvl != 0) {
-				ostringstream out;
-				out << "ERROR - could not merge database " << temp_out << " to " << out << " Status=" << rvl;
-				throw(logic_error(out.str()));
+			
+			// If destination directory exists, merge source directory to it
+			if (stat(dst_dir.c_str(), &sts)==0) {
+					
+	
+				//const char* args[] = {"--database",getOutDir().c_str(),"merge",src_dir_db.c_str()};
+				const char* args[] = {src_dir_db.c_str()};
+				bdbh::Parameters bdbh_prms(1,args);
+				bdbh::Merge merge_cmd(bdbh_prms,*output_bdb.get());
+				merge_cmd.Exec();
+				int rvl = merge_cmd.GetExitStatus();
+				if (rvl != 0) {
+					ostringstream out;
+					out << "ERROR - could not merge database " << src_dir << " to " << dst_dir << " Status=" << rvl;
+					throw(logic_error(out.str()));
+				}
+	
+				// Sync output data
+				output_bdb.get()->Sync();
 			}
-
-			// Sync output data
-			output_bdb.get()->Sync();
+		
+			// If destination directory does not exist, we just have to cp
+			// Optimization: mv if NOTMP as temp directory should be on same volume as output directory
+			// @todo - Optimization => mv if same volume, cp if different volumes !
+			else {
+#ifdef NOTMP				
+				string cmd = "mv " + src_dir_db + " " + dst_dir;
+#else
+				string cmd = "cp -a " + src_dir_db + " " + dst_dir;
+#endif
+				callSystem(cmd,false);
+			}
+		} else {
+			string msg = "ERROR - could not merge database ";
+			msg += src_dir;
+			msg += " to ";
+			msg += dst_dir;
+			msg += dst_dir;
+			msg += " (";
+			msg += src_dir;
+			msg += " does not exist)";
+			throw(logic_error(msg));
 		}
 
 		// remove temporary directory, ignore the error
+		// It temporary, we remove db, input, output
 		string to_remove;
 		if (from_tmp) {
-			to_remove = temp_dir;
+			to_remove = temp_dir;	// temp_dir is a private variable
+			
+		// Else, we remove only db directory
 		} else {
-			to_remove = path;
+			to_remove = src_dir_db;
 		}
+		
+		
 		if ( prms.isVerbose() ) {
 			cerr << "INFO - rank " << rank << " is now removing " << to_remove << "\n";
 		}
 		string cmd = "rm -rf ";
 		cmd += to_remove;
-		callSystem(cmd,false);
+		callSystem(cmd,false); 
 	}
 }
 
@@ -651,6 +730,22 @@ void UsingBdbh::findOrCreateDir(const string & p) {
 		}
 	}
 }
+
+void UsingBdbh::SetSignal(int signal) {
+	cerr << "UsingBdbh received a signal " << signal << " - Closing output and temporary databases" << endl;
+	signal_received = true;
+	Sync();
+}
+
+/****************
+ * @brief Synchronize output databases
+ * 
+ *********/
+void UsingBdbh::Sync() {
+	if (output_bdb.get() != NULL) output_bdb->Sync(false);
+	if (temp_bdb.get() != NULL)   temp_bdb->Sync(false);
+}
+	
 
 /*
  * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx

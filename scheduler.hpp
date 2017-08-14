@@ -14,8 +14,12 @@
 //#include <vector>
 //#include <string>
 //#include <stdexcept>
-using namespace std;
+#include <csignal>
 
+#include <iostream>
+#include <fstream>
+#include <map>
+using namespace std;
 //#include <cassert>
 
 //#include "gtest/gtest.h"
@@ -37,11 +41,15 @@ public:
 	static void abort();
 
 	virtual void mainLoop()=0;
-	virtual bool errorHandle(ofstream&)=0;
+	virtual bool errorHandle()=0;
 	virtual size_t getTreatedFiles() const=0;
 
 	void startTimer();
 	double getTimer();
+
+	//static void sig_handler(int signal);
+	//static int GetSignal() {return signal_received;};
+	void SetSignal(int s);// { signal_received = s; };
 
 	// for gtests
 	//friend class SchedTestStr_vctToBfrStrings_Test;
@@ -51,14 +59,27 @@ public:
 
 protected:
 
+	void _initCheckList();
+	void _checkListItems(const vector_of_strings&, const vector_of_int&);
+	
 	const Parameters& prms;
 	Directories& dir;
 
 	int comm_size;
 	int rank;
 
+	// Derived classes should know what to do with those files
+	ofstream err_file;
+	ofstream report_file;
+
 private:
 	double start_time;
+	int signal_received;
+	
+	map<string,bool> checkList;
+	
+	// The address of the ONLY Scheduler object (as it is non copyable), useful for sig_hanlder
+	//static Scheduler* sched;
 
 };
 

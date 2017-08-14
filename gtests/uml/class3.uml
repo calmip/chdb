@@ -1,0 +1,16 @@
+@startuml
+
+
+	class ::testing::WithParamInterface<ChdbTestsWithParams*> {
+	}
+
+	ChdbTest1 <|-- TestCase1
+	::testing::WithParamInterface <|-- TestCase1
+
+	ChdbTest2 <|-- TestCase2
+	::testing::WithParamInterface <|-- TestCase2
+
+	ChdbTest3 <|-- TestCase3
+	::testing::WithParamInterface <|-- TestCase3
+
+@enduml

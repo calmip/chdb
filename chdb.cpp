@@ -98,6 +98,42 @@ void writePid() {
 void writePid(){}
 #endif
 
+/************************
+ * @brief Handling some signals: SIGINT (ctrl-c) and SIGTERM (kill) are handled by chdb and if necessary by bdbh code.
+ ************************/
+
+class SignalHandle {
+    public:
+        static class Initializer {
+            public:
+                Initializer() {
+                    struct sigaction new_action;
+                    sigemptyset (&new_action.sa_mask);
+                    new_action.sa_flags = 0;
+                    new_action.sa_handler = sig_handler;
+                
+                    sigaction (SIGINT,  &new_action, NULL);
+                    sigaction (SIGTERM, &new_action, NULL);
+                    //cerr << "Signals programmed\n";
+                }
+        } Init;
+
+        static void ConnectScheduler(Scheduler* s_ptr) { sched_ptr = s_ptr; };
+        static void sig_handler(int s) {
+			if (sched_ptr != NULL) {
+				cerr << "signal received " << s << endl;
+				if (sched_ptr != NULL) sched_ptr->SetSignal(s);
+			}
+		}
+        
+    private:
+		static Scheduler* sched_ptr;
+};
+
+// Initialize SignalHandle, ie run the Initializer to connect the signal handler, and init cmd_ptr and sched_ptr
+Scheduler* SignalHandle::sched_ptr = NULL;
+SignalHandle::Initializer SignalHandle::Init;
+
 /** 
  * @brief A factory to create to correct directory object, depending of the parameters
  * 
@@ -127,8 +163,8 @@ int main(int argc,char* argv[])
 		auto_ptr<Directories> dir_aptr(dirFactory(prms));
 		Directories& dir = *dir_aptr.get();
 
-		//UsingFs dir(prms);
 		BasicScheduler sched(prms,dir);
+		SignalHandle::ConnectScheduler(&sched);
 
 		if (sched.isMaster() && prms.isVerbose()) {
 			sched.startTimer();
