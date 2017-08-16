@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <utime.h>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 #include "parameters.hpp"
@@ -19,11 +20,12 @@ using bdbh::Put;
 using bdbh::Mkdir;
 
 /**
-Call__Exec only for the first key, which must point to a file (NOT a symlink nor a directory)
+    @brief executing put: Reverse the order of the keys to treat the leaf at the end
 */
 void Put::Exec()
 {
-    const vector<Fkey>& fkeys = prm.GetFkeys();
+    vector<Fkey> fkeys = prm.GetFkeys();
+    reverse(fkeys.begin(),fkeys.end());
     
     for (unsigned int i=0; i < fkeys.size(); ++i)
     {
