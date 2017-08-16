@@ -5,14 +5,13 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "exception.hpp"
 #include "SimpleOpt.h"
 
 namespace bdbh {
 
-// We store ONLY files less than 2 Mb
-#define MAX_FILE_SIZE 2*1024*1024
+// We store ONLY files less than 4 Mb
+#define MAX_FILE_SIZE 4*1024*1024
 
 // We refuse to put in memory database files larger than 4 Gb
 #define MAX_INMEMORY_SIZE 4*1024*1024*1024L
@@ -27,34 +26,35 @@ namespace bdbh {
 #define BDBH_PUT     4
 #define BDBH_RM      5
 #define BDBH_LS      6
-#define BDBH_INFO    7
-#define BDBH_CHMOD   8
-#define BDBH_MKDIR   9
-#define BDBH_SHELL  10
-#define BDBH_QUIT   11
-#define BDBH_SYNC   12
-#define BDBH_MERGE  13
-#define BDBH_HELP   14
-#define BDBH_CONVERT  15
-#define BDBH_LISTKEYS 16
+#define BDBH_MV      7
+#define BDBH_INFO    8
+#define BDBH_CHMOD   9
+#define BDBH_MKDIR  10
+#define BDBH_SHELL  11
+#define BDBH_QUIT   12
+#define BDBH_SYNC   13
+#define BDBH_MERGE  14
+#define BDBH_HELP   15
+#define BDBH_CONVERT  16
+#define BDBH_LISTKEYS 17
 
-#define BDBH_MAX_COMMAND 16
+#define BDBH_MAX_COMMAND 17
 
 /** The corresponding legal commands, with an char* representation
 */
-#define LEGAL_COMMANDS "create","cat","extract","add","put","rm","ls","info","chmod","mkdir","shell","q","sync","merge","help","convert","lk"
+#define LEGAL_COMMANDS "create","cat","extract","add","put","rm","ls","mv","info","chmod","mkdir","shell","q","sync","merge","help","convert","lk"
 
 /** some commands need files, other need keys 
 */
 #define COMMANDS_NEED_FILES "add","merge"
 #define COMMANDS_NEED_FILES_MAX 1
-#define COMMANDS_NEED_KEYS "cat","rm","put","mkdir"
-#define COMMANDS_NEED_KEYS_MAX 3
+#define COMMANDS_NEED_KEYS "cat","rm","put","mkdir","mv"
+#define COMMANDS_NEED_KEYS_MAX 4
 
 /** The legal switches, used only for readline completion - Thus we skip here database, compress, stamp
 */
 
-#define LEGAL_SWITCHES "--root","-t","--directory","-C","--recursive","-r","--overwrite","-o", "--verbose","-v","--long_list","-l","-m","--level","-L","--mode","--value","--cluster" 
+#define LEGAL_SWITCHES "--root","-t","--directory","-C","--recursive","-r","--overwrite","-o", "--verbose","-v","--long_list","-l","-m","--level","-L","--mode","--value"
 #define BDBH_MAX_SWITCH 20
 
 
@@ -130,13 +130,14 @@ namespace bdbh {
 		// Go up in the hierarchy... if possible !
 		bool Up();
 
-		// Go down in the hierarchy, alwats possible but we need a parameter
+		// Go down in the hierarchy, always possible but we need a parameter
 		void Down(const string &);
 
 		const string& GetFileName() const {return file_name;};
 		const string& GetKey() const {return key;};
 		bool IsLeaf() const {return leaf;};
 		bool IsRecurs() const {return recurs;};
+		void SetRecurs() { recurs = true; };
 		static string root;
 		static string directory;
 		static bool sort_by_f;
@@ -158,6 +159,11 @@ namespace bdbh {
 		}
 	}
 	
+//	/** Operator== we test only the file name */
+//	inline bool operator==(const Fkey& fk1, const Fkey& fk2) {
+//		return fk1.GetFileName()==fk2.GetFileName();
+//	}
+	
     /** \brief This class parses and keeps in memory the command line 
 	 */
 	class Parameters {
@@ -166,21 +172,20 @@ namespace bdbh {
 		Parameters();
 
 		// The constructor for bdbh
-		Parameters(int, char**, void(*)()) throw(BdbhUsageException,BdbhException);
+		Parameters(int, char**, void(*)());
 
 		// A constructor with const char*
-		Parameters(int, const char*[]) throw(BdbhUsageException,BdbhException);
+		Parameters(int, const char*[]);
 
 		// A constructor with a vector of strings
-		Parameters(const vector<string>&) throw(BdbhUsageException,BdbhException);
+		Parameters(const vector<string>&);
 
 		/*Parameters(const string& db, int command);*/
-		void ReadNewCommand(int, char**) throw(BdbhUsageException,BdbhException);
+		void ReadNewCommand(int, char**);
 		const string& GetDatabase() const { return database;};
 		const string& GetRoot() const { return root;};
 		int GetRootLevel() const { return root_level;};
 		bool GetCompress() const { return compress;};
-		bool GetCluster() const {return cluster;};
 		bool GetVerbose() const {return verbose; };
 		bool GetOverWrite() const { return overwrite;};
 		bool GetInmemory() const { return inmemory; };
@@ -201,9 +206,10 @@ namespace bdbh {
 		// The default for the API is to AVOID strict checking
 		// strict checking is useful for use with bdbh himself
 		static void SetStrictCheckMode() { strict_check_mode = true; };
+		static void UnsetStrictCheckMode() { strict_check_mode = false; };
 
-		void __Init (int argc, char** argv, void(*help)())  throw(BdbhUsageException,BdbhException);
-		void __InitFkeys(char ** files, unsigned int file_count, bool recursive) throw(BdbhUsageException,BdbhException);
+		void __Init (int argc, char** argv, void(*help)());
+		void __InitFkeys(char ** files, unsigned int file_count, bool recursive);
 		void __InitFkeysLeaf (char ** files, unsigned int file_count, bool recursive);
 		void __InitFkeysIntermediateDir();
 
@@ -225,7 +231,6 @@ namespace bdbh {
 		bool long_list;
 		bool size_sort;
 		bool reverse_sort;
-		bool cluster;
 		int level;
 		string mode;
 		string val;

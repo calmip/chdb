@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -16,8 +15,8 @@ namespace bdbh {
  */
 	class Write: public Command {
     public:
-		Write(const Parameters& p, BerkeleyDb& d) throw(DbException): Command(p,d){};
-		virtual void Exec() throw(BdbhException,DbException);
+		Write(const Parameters& p, BerkeleyDb& d): Command(p,d){};
+		virtual void Exec();
     
     private:
 		void __ExecSymLink(const Fkey&);

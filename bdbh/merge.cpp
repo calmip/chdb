@@ -15,7 +15,7 @@ using bdbh::Merge;
              
 */
 
-Merge::Merge(const Parameters& p, BerkeleyDb& d, Merge* to) throw(DbException): Command(p,d),destination(to)
+Merge::Merge(const Parameters& p, BerkeleyDb& d, Merge* to): Command(p,d),destination(to)
 {
     bdb.IgnoreCompressionFlag();
 }
@@ -26,7 +26,7 @@ Merge::Merge(const Parameters& p, BerkeleyDb& d, Merge* to) throw(DbException): 
     If destination == NULL, call __Exec, for each fkey specified
 
 */
-void Merge::Exec() throw(BdbhException,DbException)
+void Merge::Exec()
 {
     if (destination != NULL)
     {
@@ -57,12 +57,12 @@ void Merge::Exec() throw(BdbhException,DbException)
 \param fkey The fkey encapsulation the database file to merge from
 
 */
-void Merge::__Exec(const Fkey& fkey) throw(BdbhException,DbException)
+void Merge::__Exec(const Fkey& fkey)
 {
     string from_db_name = fkey.GetFileName();
     
     bool in_memory = prm.GetInmemory();
-    BerkeleyDb from_db(from_db_name.c_str(),BDBH_OREAD,false,false,in_memory);
+    BerkeleyDb from_db(from_db_name.c_str(),BDBH_OREAD,false,in_memory);
     if (from_db.GetCompressionFlag() != bdb.GetCompressionFlag())
         throw (BdbhException("All databases must have the same compression status"));
     
@@ -82,7 +82,7 @@ void Merge::__Exec(const Fkey& fkey) throw(BdbhException,DbException)
     Copy every key to the destination database
     
 */
-void Merge::__ExecFrom() throw(BdbhException,DbException)
+void Merge::__ExecFrom()
 {
     // expand the wilcards, getting the toplevel list of files/directories
     vector<string> k_exp = _ExpandWildcard("*");
@@ -102,7 +102,7 @@ void Merge::__ExecFrom() throw(BdbhException,DbException)
 \param key The key to copy
 
 */
-void Merge::__ExecFromKey(const string& key) throw(BdbhException,DbException)
+void Merge::__ExecFromKey(const string& key)
 {
     
 
@@ -143,7 +143,7 @@ void Merge::__ExecFromKey(const string& key) throw(BdbhException,DbException)
 \param mdata The corresponding metadata
         
 */
-void Merge::__ExecFromDir(const string& key, Mdata mdata) throw(BdbhException,DbException)
+void Merge::__ExecFromDir(const string& key, Mdata mdata)
 {
 
    int rvl=0;    
@@ -153,10 +153,11 @@ void Merge::__ExecFromDir(const string& key, Mdata mdata) throw(BdbhException,Db
     {
         // Write the key, with 0-sized data buffer, to the destination
         GetDataBfr().SetSize(0);
+        mdata.ino = destination->_NextInode();
         destination->_WriteKeyData(key,mdata);
         
         // Update the destination's global information
-        destination->__UpdateDbSize(0,0,key.size(),0,1);
+        destination->_UpdateDbSize(0,0,key.size(),0,1,0);
         
         // Create also the marker
         mdata.mode = S_IFREG | 0666;
@@ -164,7 +165,7 @@ void Merge::__ExecFromDir(const string& key, Mdata mdata) throw(BdbhException,Db
         destination->_WriteKeyData(marker,mdata);
         
         // Do not count the file, only the key size
-        destination->__UpdateDbSize(0,0,marker.size(),0,0);          
+        destination->_UpdateDbSize(0,0,marker.size(),0,0,0);          
         
         prm.Log("key " + key + " merged (directory)",cerr);
     }
@@ -214,16 +215,18 @@ void Merge::__ExecFromDir(const string& key, Mdata mdata) throw(BdbhException,Db
 \param mdata The corresponding metadata
 
 */
-void Merge::__ExecFromFile(const string& key, Mdata& mdata) throw(BdbhException)
+void Merge::__ExecFromFile(const string& key, Mdata& mdata)
 {
     if (!destination->_IsInDb(key.c_str()))
     {
         
         // Write data to the destination
+        // Ask for a new inode
+        mdata.ino = destination->_NextInode();
         destination->_WriteKeyData(key,mdata);
         
         // Update the destination's global information
-        destination->__UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0);
+        destination->_UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0,0);
         
         // message in verbose mode
         destination->prm.Log("key " + key + " merged (regular file or symlink)",cerr);

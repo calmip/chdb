@@ -13,52 +13,42 @@ using namespace std;
 
 /** Create the database and write the info_data record
 */
-void bdbh::Create::Exec() throw(BdbhException,DbException)
+void bdbh::Create::Exec()
 {
     // Prepare the metadata
     
     Mdata mdata;
-    mdata.mode = S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;    // It is a regular file, mode rw-rw-rw-
-    mdata.uid = getuid();
-    mdata.gid = getgid();
-    mdata.size=sizeof(InfoData);
+    //mdata.ino = _NextInode();
+    //mdata.mode = S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;    // It is a regular file, mode rw-rw-rw-
+    //mdata.uid = getuid();
+    //mdata.gid = getgid();
+    //mdata.size=sizeof(InfoData);
     
     // time information = get the current time
-    timeval tv;
-    gettimeofday(&tv,NULL);
-    mdata.atime = tv.tv_sec;
-    mdata.mtime = tv.tv_sec;
+    //timeval tv;
+    //gettimeofday(&tv,NULL);
+    //mdata.atime = tv.tv_sec;
+    //mdata.mtime = tv.tv_sec;
 
     // build the InfoData structure
-    InfoData info(prm.GetCompress());
-    info.date_created = tv.tv_sec;
-    info.date_modified = tv.tv_sec;
+    //InfoData info(prm.GetCompress());
+    //info_data.SetComp();
+    //info.date_created = tv.tv_sec;
+    //info.date_modified = tv.tv_sec;
+    _UpdateComp(prm.GetCompress());
     
-    // write data and metadata to the db
-    GetDataBfr().SetSize((int32_t) sizeof(InfoData));
-    memcpy(GetDataBfr().GetData(),(const void*) &info, sizeof(InfoData));
-    _WriteKeyData(INFO_KEY,mdata);
-
-#if NOCLUSTER
-#else
-    // Create the lock file
-    string lock_file_name = prm.GetDatabase() + "/lock";
-    int lock_file = open(lock_file_name.c_str(),O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRUSR|S_IWUSR);
-    if (lock_file==-1)
-    {
-        ostringstream err;
-        err << "Cannot open the lock file " << lock_file_name << " (error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-    close(lock_file);
-#endif
+    // write data and metadata to the db - INODE 0
+    //GetDataBfr().SetSize((int32_t) sizeof(InfoData));
+    //memcpy(GetDataBfr().GetData(),(const void*) &info, sizeof(InfoData));
+    //_WriteKeyData(INFO_KEY,mdata);
 
     prm.Log("Database " + prm.GetDatabase() + " created",cerr);
 }
 
 /** write back the info_data record with the correct release
 */
-void bdbh::Convert::Exec() throw(BdbhException,DbException)
+/*
+void bdbh::Convert::Exec()
 {
     // Read the INFO record
     Mdata mdata;
@@ -101,10 +91,10 @@ void bdbh::Convert::Exec() throw(BdbhException,DbException)
     msg += '0'+V_MINOR;
     prm.Log("Database " + prm.GetDatabase() + msg ,cerr);
 }
-
+*/
 /** Print the info_data record
 */
-void bdbh::Info::Exec() throw(BdbhException,DbException)
+void bdbh::Info::Exec()
 {
 	//_Sync();
     info_data = _GetInfoData();
@@ -117,21 +107,27 @@ void bdbh::Info::Exec() throw(BdbhException,DbException)
 		cout << setw(33) << setfill(' ') << "last modified " << Time(info_data.date_modified) << "\n";
 		cout << setw(33) << setfill(' ') << "number of links+files " << info_data.nb_of_files << "\n";
 		cout << setw(33) << setfill(' ') << "number of directories " << info_data.nb_of_dir << "\n";
+		//cout << setw(33) << setfill(' ') << "number of inodes      " << info_data.nb_of_inodes << "\n";
+		cout << setw(33) << setfill(' ') << "last inode            " << info_data.next_inode << "\n";
+
 		if (info_data.data_compressed)
 		{
 			cout << setw(33) << setfill(' ') <<  "compression " << "DATA COMPRESSED\n";
 			cout << setw(33) << setfill(' ') <<  "data size (uncompressed) " << info_data.data_size_uncompressed << "\n";
 			cout << setw(33) << setfill(' ') <<  "data size (compressed) " << info_data.data_size_compressed << "\n";
-			cout << setw(33) << setfill(' ') <<  "largest data size (uncompressed) " << info_data.max_data_size_uncompressed << "\n";
+			// largest data size becomes invalid when you ReMove a file
+			//cout << setw(33) << setfill(' ') <<  "largest data size (uncompressed) " << info_data.max_data_size_uncompressed << "\n";
 		}
 		else
 		{
 			cout << setw(33) << setfill(' ') <<  "compression " << "no\n";
 			cout << setw(33) << setfill(' ') <<  "data size " << info_data.data_size_uncompressed << "\n";
-			cout << setw(33) << setfill(' ') <<  "largest data size " << info_data.max_data_size_uncompressed << "\n";
+			// largest data size becomes invalid when you ReMove a file
+			//cout << setw(33) << setfill(' ') <<  "largest data size " << info_data.max_data_size_uncompressed << "\n";
 		}
 		cout << setw(33) << setfill(' ') <<  "key size " << info_data.key_size << "\n";
-		cout << setw(33) << setfill(' ') <<  "largest key size " << info_data.max_key_size << "\n";
+		// largest key size becomes invalid when you ReMove or MoVe a file
+		//cout << setw(33) << setfill(' ') <<  "largest key size " << info_data.max_key_size << "\n";
 		//cout << setw(33) << setfill(' ') <<  "metadata size " << sizeof(Mdata) << "\n";
 	}
 }
@@ -158,15 +154,18 @@ bdbh::InfoData bdbh::GetInfo(const string& database) {
 
 /** Print the usage of this program
 */
-void bdbh::Help::Exec() throw(BdbhException,DbException)
+void bdbh::Help::Exec()
 {
     Usage();
 }
 
 void bdbh::Usage()
 {
+    cout << "bdbh Version    : " << BDBH_VERSION << endl;
+    cout << "Database version: " << V_MAJOR << "." << V_MINOR << endl;
+    
     cout << "bdbh [--database file.db] <switches> [command] [file or key] [...] \n";
-	cout << "NOTE - A key is a path of a file or directory stored in the database\n";
+    cout << "NOTE - A key is a path of a file or directory stored in the database\n";
     cout << "The command may be: create/info/add/extract/put/mkdir/cat/ls/rm/chmod/shell[/sync/q]\n";
     cout << "Default command: shell (go to interactive mode)\n";
     cout << "See also the environment variable BDBH_DATABASE\n";
@@ -182,7 +181,7 @@ void bdbh::Usage()
     cout << "The symbolic links are not followed\n";
     cout << "See also the switches: --root, --recursive, --overwrite\n";
     cout << "See also the environment variable BDBH_ROOTA\n";
-	cout << "WARNING - You CANNOT add a file bigger than " <<  MAX_FILE_SIZE/1024 << "kb\n";
+    cout << "WARNING - You CANNOT add a file bigger than " <<  MAX_FILE_SIZE/1024 << "kb\n";
     
     cout << "\nCOMMAND: extract\n";
     cout << "Several keys may be specified\n";
@@ -272,10 +271,6 @@ void bdbh::Usage()
     cout << "                            f0400 (files only) or d0500 (directories only)\n";
     cout << "   --value arg              with put: pass the value to put instead of reading from stdin\n";
     cout << "   --stamp arg              with shell: pass a stamp, will be returned with the status\n";
-#if NOCLUSTER
-#else
-    cout << "   --cluster                You can write simulatenously from several nodes of a cluster\n";
-#endif
 }
 
 

@@ -13,7 +13,6 @@
 #include <memory>
 using namespace std;
 
-#include "constypes.hpp"
 #include "exception.hpp"
 #include "parameters.hpp"
 #include <db_cxx.h>
@@ -46,14 +45,19 @@ namespace bdbh {
 #define BDBH_ERR_NF 12  // Key not found
 #define BDBH_ERR_RE 13  // Recursive not specified
 
+// The program version
+#define BDBH_VERSION "2.0.0"
+
 // The version number (not the program version, just the data file version)
 #define V_MAJOR 1
-#define V_MINOR 2
+#define V_MINOR 3
 
 // Some special files and directories
 // DIRECTORY_MARKER = MUST start with / !!!
 #define DIRECTORY_MARKER "/ "
-#define INFO_KEY " "
+#define INFO_KEY    " "
+#define DATA_NAME   "data"
+#define METADATA_NAME "metadata"
 
 /* 
    Some helper classes
@@ -78,11 +82,11 @@ class Coucou {
 	*/
 	class Buffer {
     public:
-    Buffer(u_int32_t s=MAX_FILE_SIZE) throw(DbException);
+    Buffer(u_int32_t s=MAX_FILE_SIZE);
     ~Buffer();
 
-    void SetCapacity(u_int32_t) throw(BdbhException);
-    void SetSize(int32_t) throw(BdbhException);
+    void SetCapacity(u_int32_t);
+    void SetSize(int32_t);
     void* GetData() const {return bfr;};
     u_int32_t GetSize() const {return size;};
     
@@ -126,8 +130,10 @@ class Coucou {
 /** \brief   The metadata of each file/directory/symlink
  */
 
+	typedef u_int32_t bdbh_ino_t;
 	struct Mdata {
-		Mdata():mode(0),uid(0),gid(0),size(0),csize(0),cmpred(false),atime(0),mtime(0){};
+		Mdata():ino(0),mode(0),uid(0),gid(0),size(0),csize(0),cmpred(false),atime(0),mtime(0){};
+		bdbh_ino_t ino;   /* inode (in bdbh) */
 		mode_t mode;    /* protection and type of object (dir,link,file) */
 		uid_t  uid;
 		gid_t  gid;
@@ -141,31 +147,35 @@ class Coucou {
 /** \brief  Global information about the database, 
  */
 
-	struct InfoData
-	{
-    public:
+	class InfoData {
+	public:
 		InfoData(bool compression_status=false) : v_major(V_MAJOR),v_minor(V_MINOR), data_size_uncompressed(0),
-												  data_size_compressed(0),max_data_size_uncompressed(0),key_size(0),max_key_size(0),nb_of_files(0),nb_of_dir(0),date_created(0),date_modified(0),
+												  data_size_compressed(0),max_data_size_uncompressed(0),key_size(0),max_key_size(0),nb_of_files(0),nb_of_dir(0),nb_of_inodes(0),next_inode(0),date_created(0),date_modified(0),
 												  data_compressed(compression_status) {};
-		void Reset() {data_size_uncompressed=0;data_size_compressed=0;key_size=0;nb_of_files=0;nb_of_dir=0;};
-		void Update(int size_uncompressed,int size_compressed,int key,int files,int dir);
-		InfoData& AddInfo(const InfoData& i);
-    
+
+    private:
+		int64_t NextInode() { return ++next_inode; };
+		void Update(int size_uncompressed,int size_compressed,int key,int files,int dir,int inodes);
 		int v_major;
 		int v_minor;
-		int32_t data_size_uncompressed;
-		int32_t data_size_compressed;
+		int64_t data_size_uncompressed;
+		int64_t data_size_compressed;
 		u_int32_t max_data_size_uncompressed;
-		int32_t key_size;
+		int64_t key_size;
 		u_int32_t max_key_size;
-		int32_t nb_of_files;
-		int32_t nb_of_dir;
+		int64_t nb_of_files;
+		int64_t nb_of_dir;
+		int64_t nb_of_inodes;
+		int64_t next_inode;
 		time_t date_created;
 		time_t date_modified;
 		bool data_compressed;
+
+		friend class BerkeleyDb;
+		friend class Info;
+		//friend class Convert;
 	};
 
-//class bdbh::Parameters;
 	class Command;
 
 /** \brief TriBuff groups 3 objects Buffer 
@@ -199,7 +209,7 @@ class Coucou {
 	class BerkeleyDb
 	{
     public:
-		BerkeleyDb(const char* name,int o_mode,bool verb=false, bool cluster=false, bool in_memory=false) throw(DbException);
+		BerkeleyDb(const char* name,int o_mode,bool verb=false, bool in_memory=false);
 		~BerkeleyDb();
 
 		int GetOpenMode() const { return open_mode; };
@@ -207,71 +217,58 @@ class Coucou {
 		/// Sync the database
 		void Sync(bool with_consolidate_info=false);
     
-#if NOCLUSTER
-#define INFO_DATA info_data
-#else
-#define INFO_DATA cons_info_data
-#endif
 		/// Accessor: what is the max data size stored inside info_data ?
-		size_t GetMaxDataSize() const { return INFO_DATA.max_data_size_uncompressed; };
+		size_t GetMaxDataSize() const { return info_data.max_data_size_uncompressed; };
     
 		/// Accessor: Are data compressed ?
-		bool GetCompressionFlag() const { return INFO_DATA.data_compressed;}; 
+		bool GetCompressionFlag() const { return info_data.data_compressed;}; 
     
 		/// Accessor: Get InfoData for display purpose
-		const InfoData& GetInfoData() const {return INFO_DATA;};
+		const InfoData& GetInfoData() const {return info_data;};
     
 		/// Mutator: Ignore any compression status
 		void IgnoreCompressionFlag() {ignore_comp=true;};
     
 		/// Throw an exception if the db has the same dev,inode pair as the parameters
-		void IsDbItself(const char *file) const  throw(BdbhException);
-		void IsDbItself(const struct stat&) const throw(BdbhException); 
+		void IsDbItself(const char *file) const;
+		void IsDbItself(const struct stat&) const; 
+
+		/// Generate and return the next inode number
+		bdbh_ino_t NextInode() { return info_data.NextInode(); };
 
 		/// Update the data_info from the parameters
-		void UpdateDbSize(int size_uncompressed, int size_compressed, int size_key, int files, int dir) throw(DbException);
+		void UpdateDbSize(int size_uncompressed, int size_compressed, int size_key, int files, int dir, int inodes);
+		
+		/// Update the compression status in data_info (it works because we are friend !)
+		void UpdateComp(bool comp) { info_data.data_compressed = comp ; };
 
 		/// Read/Write info_data
-		void __ReadInfoData() throw(DbException,BdbhException);
-#if NOCLUSTER
-		void __WriteInfoData() throw(DbException);
-#else
-		void __WriteInfoData(bool in_qinfo=true) throw(DbException);
-		void __ConsolidateInfoData() throw(DbException,BdbhException);
-#endif
+		void __ReadInfoData();
+		void __WriteInfoData();
     
 		/// Read/write data
-		int ReadKeyData(const string& key, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data) throw(DbException,BdbhException);
-		int ReadKeyData(const string& key, string& rtn_key, Mdata& metadata, Buffer& key_bfr, Buffer& data_bfr, Buffer& c_data_bfr, int lvl, bool first=true, bool with_data=false, bool reverse=false ) throw(DbException,BdbhException);
-		int WriteKeyData(const string& key, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data, bool to_db, bool overwrite ) throw(DbException,BdbhException);
+		int ReadKeyData(const string& key, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data);
+		int ReadKeyData(const string& key, string& rtn_key, Mdata& metadata, Buffer& key_bfr, Buffer& data_bfr, Buffer& c_data_bfr, int lvl, bool first=true, bool with_data=false, bool reverse=false );
+		int WriteKeyData(const string& key, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data, bool to_db, bool overwrite );
     
-		/// Remove using a correctly positioned cursor
-		int RemoveKeyDataCursor(int lvl) throw(DbException) { return __SelectCurrentCursor(lvl)->del(0);};
+		/// Remove metadata and eventually data, using a correctly positioned cursor
+		int RemoveKeyDataCursor(int lvl,Mdata*);
    
     protected:
     
     private:
     
-		void __InitDb(const char* name,int flg) throw(DbException);
-		void __OpenCreate(const char*) throw(DbException);
-		void __OpenRead(const char*, Db_aptr&, const char*) throw(DbException);
-		void __OpenWrite(const char*, Db_aptr&, const char*) throw(DbException,BdbhException);
+		void __InitDb(const char* name,int flg);
+		void __OpenCreate(const char*);
+		void __OpenRead(const char*);
+		void __OpenWrite(const char*);
+		void __Open(const char*, uint32_t);
 
-#if NOCLUSTER
-		void __InMemory(const string&) throw(BdbhException); // Put the whole database in memory to increase performance
+		void __InMemory(const string&); // Put the whole database in memory to increase performance
     	bool __aligned_p(void*);
-		uint32_t __bytes2pages(uint64_t) throw (BdbhException);
+    	void __path2dbt_key(const string &);
+		uint32_t __bytes2pages(uint64_t);
 		bool __is_mincore_page_resident(char p);
-#else
-		// Lock or unlock, used only if the switch --cluster was specified
-		bool cluster;               // The switch --cluster was specified: we must lock/unlock the database
-		const string db_name;       // For now, used only for lock mechanism
-		int lock_file;              // The file descriptor of the lock file (to be able to close it in the destructor)
-		bool lock_inf_written;      // true if something was written to lock.inf (is true, we'll remove the file at the end)
-		void __LockWrite(const char *name) throw(BdbhException);
-		void __LockRead(const char *name) throw(BdbhException);
-		void __Unlock(const char *name) throw(BdbhException);
-#endif
 		bool verbose;               // The switch --verbose was specified
 		bool in_memory;				// the switch --in_memory was specified
     
@@ -281,10 +278,6 @@ class Coucou {
 		// Data for info_data
 		InfoData info_data;
 		int update_cnt;
-#if NOCLUSTER
-#else
-		InfoData cons_info_data;    // info_data for consolidation
-#endif
 
 		bool ignore_comp;
     
@@ -293,24 +286,18 @@ class Coucou {
     
 		/// Dbt objects for read-write data
 		Dbt dbt_key;
+		Dbt dbt_inode;
 		Dbt dbt_data;
 		Dbt dbt_mdata;
+		bdbh_ino_t c_inode; // the current inode
 
-		/// The environment
-		DbEnv_aptr db_env;
-
-		/// The db itself
+		/// The db itself: dbi for the metadata (i=inodes), db for the data
+		Db_aptr dbi;
 		Db_aptr db;
 		
 		/// The pagesize on our platform
 		long pagesize;
 
-#if NOCLUSTER
-#else
-		/// The queue database for the info modifications
-		Db_aptr qinfo;
-#endif
-    
 		/// A vector of cursors: 1 cursor / level
 		vector<Dbc*> cursors;
 		Dbc* __SelectCurrentCursor(unsigned int lvl);
@@ -345,7 +332,7 @@ class Coucou {
 			This results in an exit status, retrieved with GetExitStatus
 		*/
 	
-		virtual void Exec() throw(BdbhException,DbException) = 0;
+		virtual void Exec() = 0;
 		int GetExitStatus() const {return exit_status;};
 
 		// Signal handling: the signal handler should call SetSignal. 
@@ -358,15 +345,19 @@ class Coucou {
 		friend void Initialize();
 		friend void Terminate();
     
-		/// The parameters, analyzed by the command line
-		const bdbh::Parameters& prm; 
-	
 		/// The exit status, set by the Exec() functions
 		int exit_status;           
     
 		/// Accessing data_bfr
 		Buffer& GetDataBfr() {return bfr3.data_bfr;};
-	
+
+	protected:
+		/// The parameters, analyzed by the command line
+		const bdbh::Parameters& prm; 
+
+		/// Accessing the BerkeleyDb object (sometimes useful, see Mv)
+		BerkeleyDb& _GetBerkeleyDb() { return bdb;};
+		
 	private:
 		/// Accessing c_data_bfr (private)
 		Buffer& GetCDataBfr() {return bfr3.key_bfr;};
@@ -385,15 +376,16 @@ class Coucou {
 		void _Mkdir (const Fkey& fkey);
 		void _Mkdir (const Fkey& fkey, Mdata & mdata);
 	
+		// Generate and return the next inode number
+		bdbh_ino_t _NextInode() { return bdb.NextInode(); };
+		
 		// Write a pair (key, data) to the database
-		int _WriteKeyData(const string& key,Mdata& metadata, bool with_data=true, bool overwrite=true) 
-			throw(BdbhException,DbException) {
+		int _WriteKeyData(const string& key,Mdata& metadata, bool with_data=true, bool overwrite=true){
 			return bdb.WriteKeyData(key,metadata,GetDataBfr(),GetCDataBfr(),with_data,true,overwrite);
 		};
 	
-		// _ReadKeyData (2 versions): Read a pair (key, data) from the database
-		int _ReadKeyData(const string& key,Mdata&metadata,bool with_data=false) 
-			throw(DbException,BdbhException) {
+		// _ReadKeyData: Read a pair (key, data) from the database
+		int _ReadKeyData(const string& key,Mdata&metadata,bool with_data=false){
 			return bdb.ReadKeyData(key,metadata,GetDataBfr(),GetCDataBfr(),with_data);
 		};
 	
@@ -402,17 +394,19 @@ class Coucou {
 			return bdb.ReadKeyData(key,rtn_key,metadata,GetKeyBfr(),GetDataBfr(),GetCDataBfr(),lvl,first,with_data,reverse);
 		};
 	
-		// _RemoveUsingCursor
-		int _RemoveUsingCursor(int lvl) throw(DbException) { 
-			return bdb.RemoveKeyDataCursor(lvl);
+		// Remove metadata and eventually data, using a cursor
+		int _RemoveUsingCursor(int lvl, Mdata* mdata_ptr=nullptr) { 
+			return bdb.RemoveKeyDataCursor(lvl,mdata_ptr);
 		};
     
 		/// Throw an exception if the db has the same dev,inode pair as the parameters
-		void _IsDbItself(const char *file) const  throw(BdbhException) {bdb.IsDbItself(file);};
-		void _IsDbItself(const struct stat& st) const throw(BdbhException) {bdb.IsDbItself(st);};
+		void _IsDbItself(const char *file) const {bdb.IsDbItself(file);};
+		void _IsDbItself(const struct stat& st) const {bdb.IsDbItself(st);};
 	
-		/// Return true if the key is found in the database
+		/// Return true if the key is found in the database, and if true return the metadata
 		bool _IsInDb(const char* key, Mdata& mdata) {return _ReadKeyData(key,mdata)==0;};
+		
+		/// Return true if the key is found in the database, the metadata are lost
 		bool _IsInDb(const char* key) {Mdata mdata; return _ReadKeyData(key,mdata)==0;};
     
 		/// Return true if the file is found in the file system
@@ -422,7 +416,8 @@ class Coucou {
 		///Dbc* _GetCursor() {return bdb.GetCursor();};
     
 		// Update the data_info from the parameters
-		void __UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir) throw(DbException);
+		void _UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir, int inodes);
+		void _UpdateComp(bool comp) { bdb.UpdateComp(comp); };
 	
 		/// Return true if a signal was received recently
 		bool _IsSignalReceived() {return signal_received!=0;};
@@ -439,10 +434,10 @@ class Coucou {
 		}
     
 		/// Expand the wilcard: /toto/titi/*/tutu
-		vector<string> _ExpandWildcard(const string& k) throw(DbException,BdbhException);
+		vector<string> _ExpandWildcard(const string& k);
 	
 		/// Adjust the databuffers' capacity
-		void _AdjustBufferCapacity() throw(BdbhException);
+		void _AdjustBufferCapacity();
     
 	private: 
 	
@@ -510,7 +505,7 @@ class Coucou {
 /**
    Update an InfoData struct (only in memory)
 */
-	inline void InfoData::Update(int size_uncompressed,int size_compressed,int key,int files,int dir)
+	inline void InfoData::Update(int size_uncompressed,int size_compressed,int key,int files,int dir, int inodes)
 	{
 		data_size_uncompressed += size_uncompressed;
 		if (size_uncompressed > 0 && size_uncompressed > (int) max_data_size_uncompressed)
@@ -520,19 +515,20 @@ class Coucou {
 		key_size += key;
 		if (key > (int) max_key_size)
 			max_key_size = key;
-		nb_of_files += files;
-		nb_of_dir += dir;
+		nb_of_files  += files;
+		nb_of_dir    += dir;
+		nb_of_inodes += inodes;
 	}
 
 /**
    Update info_data in memory, write it to the database from time to time 
 */
-	inline void Command::__UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir) throw(DbException) {
-		bdb.UpdateDbSize(size_uncompressed, size_compressed, key, files, dir);
+	inline void Command::_UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir, int ino) {
+		bdb.UpdateDbSize(size_uncompressed, size_compressed, key, files, dir, ino);
 	}
 
-	inline void BerkeleyDb::UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir) throw(DbException) {
-		info_data.Update(size_uncompressed,size_compressed,key,files,dir);
+	inline void BerkeleyDb::UpdateDbSize(int size_uncompressed, int size_compressed, int key, int files, int dir, int ino) {
+		info_data.Update(size_uncompressed,size_compressed,key,files,dir,ino);
 		update_cnt++;
 		if (update_cnt==1000)
 		{

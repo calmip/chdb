@@ -4,7 +4,6 @@
 
 using namespace std;
 
-#include "constypes.hpp"
 #include <stdexcept>
 #include <string.h>
 #include <string>

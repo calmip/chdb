@@ -23,6 +23,7 @@ using namespace std;
 #include "write.hpp"
 #include "ls.hpp"
 #include "rm.hpp"
+#include "mv.hpp"
 #include "put.hpp"
 #include "chmod.hpp"
 #include "merge.hpp"
@@ -360,7 +361,6 @@ char * command_generator (const char* text, int state)
 void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, Command_aptr& command) throw(DbException,BdbhException)
 {
 	bool verb=params.GetVerbose();
-	bool clus=params.GetCluster();
     bool inmemory=params.GetInmemory();
     
     switch (params.GetCommand())
@@ -372,6 +372,7 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
             command = (Command_aptr) new Create(params,*bdb.get());
             break;
         }
+        /*
         case BDBH_CONVERT:
         {
             if (bdb.get()==NULL)
@@ -453,46 +454,47 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
             command = (Command_aptr) new Convert(params,*bdb.get());
             break;
         }
+        */
         case BDBH_CAT:
         case BDBH_EXTRACT:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb);
             command = (Command_aptr) new Read(params,*bdb.get());
             break;
         }
         case BDBH_ADD:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb);
             command = (Command_aptr) new Write(params,*bdb.get());
             break;
         }
         case BDBH_PUT:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb);
             command = (Command_aptr) new Put(params,*bdb.get());
             break;
         }
         case BDBH_MKDIR:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb);
             command = (Command_aptr) new Mkdir(params,*bdb.get());
             break;
         }
         case BDBH_RM:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb);
             command = (Command_aptr) new Rm(params,*bdb.get());
             break;
         }
         case BDBH_LS:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb,clus,inmemory);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OREAD,verb,inmemory);
             command = (Command_aptr) new Ls(params,*bdb.get());
 			// Attach the LsPrint observer
 			LsPrint ls_print_obs(params, cout);
@@ -500,24 +502,31 @@ void ExecCommand(const Parameters& params, BerkeleyDb_aptr& bdb, TriBuff& bfr3, 
 			ls_cmd->AttachObserver(ls_print_obs);
             break;
         }
+        case BDBH_MV:
+        {
+            if (bdb.get()==NULL)
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,verb);
+            command = (Command_aptr) new Mv(params,*bdb.get());
+            break;
+        }
         case BDBH_INFO:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OINFO,verb,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OINFO,verb);
             command = (Command_aptr) new Info(params,*bdb.get());
             break;
         }
         case BDBH_CHMOD:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE);
             command = (Command_aptr) new Chmod(params,*bdb.get());
             break;
         }
         case BDBH_MERGE:
         {
             if (bdb.get()==NULL)
-                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE,clus);
+                bdb = (BerkeleyDb_aptr) new BerkeleyDb(params.GetDatabase().c_str(),BDBH_OWRITE);
             command = (Command_aptr) new Merge(params,*bdb.get());
             break;
         }
@@ -621,12 +630,29 @@ bool Parse (const char* c, vector<string>& v)
     The keys are listed. That's all
 
 \pre none
- \arg database The database to open
+ \arg database The FILE (ie data or metadata) to open
 
 */
 
+bool isEndingWith(const string& name, const string& ext) {
+        size_t ext_len = ext.length();
+        size_t nme_len = name.length();
+        if ( ext_len < nme_len ) {
+            string nme_ext = name.substr(nme_len-ext_len);
+            return ( nme_ext == ext );
+        } else {
+            return false;
+        }
+}
+
 void ListKeys(const string& database)
 {
+    
+    bool flg_data = true;
+    if ( isEndingWith(database, METADATA_NAME )) {
+        flg_data = false;
+    }
+
     Db db(0,0);
     db.open(NULL,database.c_str(),NULL,DB_UNKNOWN,DB_RDONLY,0);
     Dbc* cursor;
@@ -635,23 +661,43 @@ void ListKeys(const string& database)
     Dbt dbt_key;
     Dbt dbt_val;
     
-    void * key_area = malloc(1024*1024);    // 1 Mb
-    void * val_area = malloc(1024*1024);
+    void * key_area = calloc(1024*1024,1);    // 1 Mb
+    void * val_area = calloc(1024*1024,10);
+
     dbt_key.set_flags(DB_DBT_USERMEM);
     dbt_key.set_data(key_area);
     dbt_key.set_ulen(1024*1024);
-    dbt_val.set_flags(DB_DBT_USERMEM|DB_DBT_PARTIAL);
+
+    dbt_val.set_flags(DB_DBT_USERMEM);
     dbt_val.set_data(val_area);
     dbt_val.set_ulen(1024*1024);
+    //dbt_val.set_dlen(1024*1024);
+    //dbt_val.set_doff(0);
     
     int rvl=0;
     cout.setf(ios::left,ios::adjustfield);  
     while(rvl==0)
     {
         rvl = cursor->get(&dbt_key,&dbt_val,DB_NEXT);
-        if (rvl==0)
-            cout << setw(132) << setfill('-') << (char*) dbt_key.get_data() << "\n";
+        if (rvl==0) {
+            if (!flg_data) {
+                Mdata* mdata = (Mdata*) dbt_val.get_data();
+                bdbh_ino_t inode = mdata->ino;
+                cout << setw(132) << setfill('-') << (char*) dbt_key.get_data() << " " << inode << '\n';
+            } else {
+                bdbh_ino_t* inode = (bdbh_ino_t*) dbt_key.get_data();
+                cout << setw(10) << setfill(' ') << *inode;
+                char* val = (char*) dbt_val.get_data();
+                //val += sizeof(Mdata);
+                if (strlen(val) > 122) {
+                    val[122]='\0';
+                }
+                cout << setw(122) << setfill('-') << val << '\n';
+            }
+        }
     }
+    free(key_area);
+    free(val_area);
 }
 
     
