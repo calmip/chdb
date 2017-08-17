@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <utime.h>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 #include "parameters.hpp"
@@ -20,11 +21,14 @@ using bdbh::Read;
 
 */
 
-void Read::Exec() throw(BdbhException,DbException)
+void Read::Exec()
 {
     Mdata mdata;
     
     vector<Fkey> fkeys = prm.GetFkeys();
+    
+    // Sort the fkeys, from the lowest levels - Important to be sure creating the top directories first !
+    sort(fkeys.begin(),fkeys.end(),[](const Fkey& f1, const Fkey& f2) { return CountLevel(f1.GetFileName().c_str())<CountLevel(f2.GetFileName().c_str()); });
 
     for (unsigned int i=0; i<fkeys.size(); ++i)
     {
@@ -95,7 +99,7 @@ void Read::Exec() throw(BdbhException,DbException)
         
 */
 
-void Read::__Exec(const Fkey& fkey) throw(BdbhException,DbException)
+void Read::__Exec(const Fkey& fkey)
 {
     Mdata mdata;
     string key = fkey.GetKey();
@@ -175,7 +179,7 @@ void Read::__Exec(const Fkey& fkey) throw(BdbhException,DbException)
 \param mdata The corresponding metadata
         
 */
-void Read::__ExecDir(const Fkey& fkey, Mdata mdata) throw(BdbhException,DbException)
+void Read::__ExecDir(const Fkey& fkey, Mdata mdata)
 {
 
     // Make the directory
@@ -261,7 +265,7 @@ void Read::__ExecDir(const Fkey& fkey, Mdata mdata) throw(BdbhException,DbExcept
 \param mdata The corresponding metadata
 
 */
-void Read::__ExecFile(const Fkey& fkey, Mdata& mdata) throw(BdbhException)
+void Read::__ExecFile(const Fkey& fkey, Mdata& mdata)
 {
     string file_name = fkey.GetFileName();
     if (prm.GetCommand()==BDBH_CAT)
@@ -308,7 +312,7 @@ void Read::__ExecFile(const Fkey& fkey, Mdata& mdata) throw(BdbhException)
 \param fkey The fkey to extract
 
 */
-void Read::__ExecSymLink(const Fkey& fkey) throw(BdbhException)
+void Read::__ExecSymLink(const Fkey& fkey)
 {
     const char* link_name = fkey.GetFileName().c_str();
     GetDataBfr().SetSize(GetDataBfr().GetSize()+1);

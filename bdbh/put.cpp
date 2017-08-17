@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <utime.h>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 #include "parameters.hpp"
@@ -19,11 +20,12 @@ using bdbh::Put;
 using bdbh::Mkdir;
 
 /**
-Call__Exec only for the first key, which must point to a file (NOT a symlink nor a directory)
+    @brief executing put: Reverse the order of the keys to treat the leaf at the end
 */
-void Put::Exec() throw(BdbhException,DbException)
+void Put::Exec()
 {
-    const vector<Fkey>& fkeys = prm.GetFkeys();
+    vector<Fkey> fkeys = prm.GetFkeys();
+    reverse(fkeys.begin(),fkeys.end());
     
     for (unsigned int i=0; i < fkeys.size(); ++i)
     {
@@ -114,6 +116,12 @@ void Put::__Exec(const Fkey& fkey)
             }
 
             // Store the (key,data) pair inside the database
+            // Reuse the inode if overwrite, or ask for a new inode number
+            if (!is_in_db) {
+                mdata.ino = _NextInode();
+            } else {
+                mdata.ino = mdata_in_db.ino;
+            }
             _WriteKeyData(key,mdata);
             
             // Update info_data - If overwriting some file, we update 2 times:
@@ -121,12 +129,12 @@ void Put::__Exec(const Fkey& fkey)
             // -1 time for adding the new version, may be modifying the max data size
             if (is_in_db)
             {
-                __UpdateDbSize(-mdata_in_db.size,-mdata_in_db.csize,0,0,0);
-                __UpdateDbSize(mdata.size,mdata.csize,0,0,0);
+                _UpdateDbSize(-mdata_in_db.size,-mdata_in_db.csize,0,0,0,0);
+                _UpdateDbSize(mdata.size,mdata.csize,0,0,0,0);
             }
             else
             {
-                __UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0);
+                _UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0,0);
             }
 
             // message in verbose mode
@@ -143,7 +151,7 @@ void Put::__Exec(const Fkey& fkey)
 /**
 Call__Exec for each key, creating directories 
 */
-void Mkdir::Exec() throw(BdbhException,DbException)
+void Mkdir::Exec()
 {
     const vector<Fkey>& fkeys = prm.GetFkeys();
     

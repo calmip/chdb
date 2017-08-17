@@ -20,7 +20,7 @@ using bdbh::Write;
 /**
 For each file and directory in the command line, call __Exec
 */
-void Write::Exec() throw(BdbhException,DbException)
+void Write::Exec()
 {
     const vector<Fkey>& fkeys = prm.GetFkeys();
 
@@ -124,9 +124,13 @@ void Write::__Exec(const Fkey& fkey)
                     throw(BdbhException(file_name,errno));
                 
                 // Store the (key,data) pair inside the database
-                // Check the return value: there could be a race condition if several processes try to add
-                // the same files and we are NOT in --overwrite mode
-                // In --overwrite mode, this race condition cannot be detected
+                // Reuse the inode if overwrite, or ask for a new inode number
+                if (!is_in_db) {
+                    mdata.ino = _NextInode();
+                } else {
+                    mdata.ino = mdata_in_db.ino;
+                }
+                    
                 int rvl = _WriteKeyData(key,mdata,true,prm.GetOverWrite());
                 if (rvl !=0)
                 {
@@ -139,12 +143,12 @@ void Write::__Exec(const Fkey& fkey)
                     // -1 time for adding the new version, may be modifying the max data size
                     if (is_in_db)
                     {
-                        __UpdateDbSize(-mdata_in_db.size,-mdata_in_db.csize,0,0,0);
-                        __UpdateDbSize(mdata.size,mdata.csize,0,0,0);
+                        _UpdateDbSize(-mdata_in_db.size,-mdata_in_db.csize,0,0,0,0);
+                        _UpdateDbSize(mdata.size,mdata.csize,0,0,0,0);
                     }
                     else
                     {
-                        __UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0);
+                        _UpdateDbSize(mdata.size,mdata.csize,key.size(),1,0,0);
                     }
                 }                
                 // message in verbose mode
@@ -206,6 +210,7 @@ void Write::__ExecDir(const Fkey& fkey, Mdata & mdata)
     {
         // Alloc an empty buffer, so that only the metadata will be stored
         GetDataBfr().SetSize(0);
+        mdata.ino = _NextInode();
         int rvl = _WriteKeyData(key,mdata,false,false);
         if (rvl!=0)
         {
@@ -213,7 +218,7 @@ void Write::__ExecDir(const Fkey& fkey, Mdata & mdata)
         }
         else
         {
-            __UpdateDbSize(0,0,key.size(),0,1);          // adding a directory to the count
+            _UpdateDbSize(0,0,key.size(),0,1,0);          // adding a directory to the count
             prm.Log("key " + key + " updated (directory)",cerr);
             
             // Create the special empty file direc
@@ -223,7 +228,7 @@ void Write::__ExecDir(const Fkey& fkey, Mdata & mdata)
             GetDataBfr().SetSize(0);
             
             _WriteKeyData(k,mdata,false,false);
-            __UpdateDbSize(0,0,k.size(),0,0);          // Do not count the file, only the key size
+            _UpdateDbSize(0,0,k.size(),0,0,0);          // Do not count the file, only the key size
         }
     }
 
@@ -275,6 +280,7 @@ void Write::__ExecSymLink(const Fkey& fkey)
     if (rvl==-1)
         throw(BdbhException(f,errno));
     
+    mdata.ino   = _NextInode();
     mdata.mode  = st_bfr.st_mode;
     mdata.uid   = st_bfr.st_uid;
     mdata.gid   = st_bfr.st_gid;
@@ -290,10 +296,11 @@ void Write::__ExecSymLink(const Fkey& fkey)
     GetDataBfr().SetSize(rvl);      // Resize the buffer to the number of characters read
     
     // Store the (key,data) pair inside the database
-    _WriteKeyData(k,mdata,true,prm.GetOverWrite());
+    _WriteKeyData(k,mdata,true,false);
+    //_WriteKeyData(k,mdata,true,prm.GetOverWrite());
     
     // Update the size
-    __UpdateDbSize(mdata.size,mdata.csize,k.size(),1,0);
+    _UpdateDbSize(mdata.size,mdata.csize,k.size(),1,0,0);
     
     prm.Log("key " + k + " updated (symlink)",cerr);
 }

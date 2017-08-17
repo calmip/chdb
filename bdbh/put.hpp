@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -15,8 +14,8 @@ namespace bdbh {
  */
 	class Put: public Command {
     public:
-		Put(const Parameters& p, BerkeleyDb& d) throw(DbException): Command(p,d){};
-		virtual void Exec() throw(BdbhException,DbException);
+		Put(const Parameters& p, BerkeleyDb& d): Command(p,d){};
+		virtual void Exec();
     
 //    protected:
 //		void __ExecDir(const Fkey& fkey, Mdata & mdata);
@@ -31,8 +30,8 @@ namespace bdbh {
 */
 	class Mkdir: public Put {
     public:
-		Mkdir(const Parameters& p, BerkeleyDb& d) throw(DbException): Put(p,d){};
-		virtual void Exec() throw(BdbhException,DbException);
+		Mkdir(const Parameters& p, BerkeleyDb& d): Put(p,d){};
+		virtual void Exec();
     
 //    private:
 //		virtual void __Exec(const Fkey& fkey);    

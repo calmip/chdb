@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <algorithm>
 #include <set>
 #include <unistd.h>
 #include <errno.h>
@@ -291,7 +292,7 @@ bool Fkey::Up() {
 	\param help   The help function
 
 */
-Parameters::Parameters(int argc, char** argv, void(*help)())  throw(BdbhUsageException,BdbhException): 
+Parameters::Parameters(int argc, char** argv, void(*help)()): 
 database(""),
 compress(false),
 shell_mode(false)
@@ -335,7 +336,7 @@ Parameters::Parameters() :
 	\param argv   An array of const char*
 
 */
-Parameters::Parameters(int argc, const char* argv[])  throw(BdbhUsageException,BdbhException): 
+Parameters::Parameters(int argc, const char* argv[]): 
 			database(""),
 			compress(false),
 			shell_mode(false)
@@ -345,11 +346,11 @@ Parameters::Parameters(int argc, const char* argv[])  throw(BdbhUsageException,B
 	char ** wr_argv = __ArgvAlloc(argc,argv);
 	// Call __Init
 	try {
-		__Init(argc, wr_argv, NULL);
+	    __Init(argc, wr_argv, NULL);
 	} catch(exception& e) {
-		cerr << e.what() << '\n';
-		__ArgvFree(argc,wr_argv);
-		throw(e);
+	    cerr << e.what() << '\n';
+	    __ArgvFree(argc,wr_argv);
+	    throw(e);
 	}
 	if (GetCommand() == BDBH_SHELL)
 		shell_mode = true;
@@ -360,11 +361,10 @@ Parameters::Parameters(int argc, const char* argv[])  throw(BdbhUsageException,B
 
 /** Yet Another constructor
 	\brief You may pass to this constructor a vector of strings
-	\param argc   passed to main by the system
-	\param argv   passed to main by the system
+	\param args   They arguments as strings
 
 */
-Parameters::Parameters(const vector<string>& args )  throw(BdbhUsageException,BdbhException): 
+Parameters::Parameters(const vector<string>& args ):
 			database(""),
 			compress(false),
 			shell_mode(false)
@@ -452,7 +452,7 @@ If something is wrong with the new command, it is just ignored.
 \param argv The arguments
 
 */
-void Parameters::ReadNewCommand(int argc, char**argv)  throw(BdbhUsageException,BdbhException)
+void Parameters::ReadNewCommand(int argc, char**argv)
 {
 	__Init(argc,argv,NULL);
 }
@@ -500,7 +500,7 @@ bool Parameters::__CommandNeedsKeys() const {
 \param help   The help function (may be NULL)
 
 */
-void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageException,BdbhException)
+void Parameters::__Init(int argc, char** argv, void(*help)())
 { 	
     // define the ID values to identify the option
     enum { 
@@ -522,7 +522,6 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 	OPT_MODE,       // --mode arg
 	OPT_VALUE,      // --value arg
 	OPT_STAMP,      // --stamp arg,
-	OPT_CLUSTER,    // --cluster
 	OPT_CMD         // create,info,add,extract,put,mkdir,cat,ls,rm,chmod,shell,sync,q
     };
     
@@ -544,6 +543,7 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 	{ BDBH_PUT,      (char *)"put",        SO_NONE    },
 	{ BDBH_RM,       (char *)"rm",         SO_NONE    },
 	{ BDBH_LS,       (char *)"ls",         SO_NONE    },
+	{ BDBH_MV,       (char *)"mv",         SO_NONE    },
 	{ BDBH_INFO,     (char *)"info",       SO_NONE    },
 	{ BDBH_CHMOD,    (char *)"chmod",      SO_NONE    },
 	{ BDBH_MKDIR,    (char *)"mkdir",      SO_NONE    },
@@ -583,7 +583,6 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 	{ OPT_MODE,      (char *)"--mode",      SO_REQ_SEP },
 	{ OPT_VALUE,     (char *)"--value",     SO_REQ_SEP },
 	{ OPT_STAMP,     (char *)"--stamp",     SO_REQ_SEP },
-	{ OPT_CLUSTER,   (char *)"--cluster",   SO_REQ_SEP },
 	SO_END_OF_OPTIONS                       // END
     };
 
@@ -597,7 +596,6 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
     long_list     = false;
     size_sort     = false;
     reverse_sort  = false;
-    cluster       = false;
     level         = -1;
     mode          = "";
     stamp         = "";
@@ -668,9 +666,6 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 	    }
 	    else if (arguments.OptionId() == OPT_STAMP) {
 		stamp = arguments.OptionArg();
-	    }
-	    else if (arguments.OptionId() == OPT_CLUSTER) {
-		cluster = true;
 	    }
 	}
     }
@@ -788,7 +783,7 @@ void Parameters::__Init(int argc, char** argv, void(*help)())  throw(BdbhUsageEx
 \param recursive true if recursivity is wanted
 
 */
-void Parameters::__InitFkeys(char ** files, unsigned int file_count, bool recursive) throw(BdbhUsageException,BdbhException)
+void Parameters::__InitFkeys(char ** files, unsigned int file_count, bool recursive)
 {
     fkeys.clear();
 
@@ -801,35 +796,35 @@ void Parameters::__InitFkeys(char ** files, unsigned int file_count, bool recurs
         }
         else
         {
-			Fkey::sort_by_f = false;
-			__InitFkeysLeaf(files,file_count, recursive);
-			__InitFkeysIntermediateDir();
-		}
+	    Fkey::sort_by_f = false;
+	    __InitFkeysLeaf(files,file_count, recursive);
+	    __InitFkeysIntermediateDir();
 	}
+    }
 
-	// The command needs keys as parameters
+    // The command needs keys as parameters
     else if (__CommandNeedsKeys())
     {
         if (file_count==0)
         {
             throw (BdbhException("Keys not specified - "));
         }
-		else
-		{
-			Fkey::sort_by_f = true;
-			__InitFkeysLeaf(files,file_count,recursive);
-			__InitFkeysIntermediateDir();
-		}
-    }
-
-	// The command may be run without parameters, if there are they are keys
-	// \todo houlala pas beau
-	else
-	{
+	    else
+	    {
 		Fkey::sort_by_f = true;
 		__InitFkeysLeaf(files,file_count,recursive);
 		__InitFkeysIntermediateDir();
-	}
+	    }
+    }
+
+    // The command may be run without parameters, if there are they are keys
+    // \todo houlala pas beau
+    else
+    {
+	Fkey::sort_by_f = true;
+	__InitFkeysLeaf(files,file_count,recursive);
+	__InitFkeysIntermediateDir();
+    }
 
 /*
 	cout << fkeys.size() << " FKEYS - ROOT=" << Fkey::root << " DIRECTORY=" << Fkey::directory << " SORT BY F= " << Fkey::sort_by_f << '\n';
@@ -845,50 +840,63 @@ void Parameters::__InitFkeys(char ** files, unsigned int file_count, bool recurs
 */
 void Parameters::__InitFkeysLeaf(char** files, unsigned int file_count, bool recursive)
 {
-	for (unsigned int i=0; i < file_count; ++i)
-	{
-		if ((string) files[i] == "/")
-			throw BdbhException("Sorry, you cannot specify / as a directory or key name");
-		
-		fkeys.push_back(Fkey(files[i],true,recursive));
-	}
+    for (unsigned int i=0; i < file_count; ++i)
+    {
+	if ((string) files[i] == "/")
+	    throw BdbhException("Sorry, you cannot specify / as a directory or key name");
+	
+	fkeys.push_back(Fkey(files[i],true,recursive));
+    }
 
-	if (fkeys.size()==0) {
-		// \todo houlala pas beau !!!
-		switch(command) {
-		case BDBH_EXTRACT:
-		case BDBH_LS: fkeys.push_back(Fkey("*",true,true));
-		}
+    if (fkeys.size()==0) {
+	// \todo houlala pas beau !!!
+	switch(command) {
+	case BDBH_EXTRACT:
+	case BDBH_LS: fkeys.push_back(Fkey("*",true,true));
 	}
+    }
 }
 
 /**
    \brief mark for insertion in the database every intermediate directory
-          The fkeys generated are not leaves 
+          The fkeys generated are not leaves, they are inserted to fkeys AFTER the leaves
+	  The command line order is preserved, this is important for some commands (mv)
+    \pre  __InitFkeysLeaf were already called, as we start from the leafs to find the directories
 */
 
 void Parameters::__InitFkeysIntermediateDir()
 {
  
-	//            We use a set, to avoid any duplicate
+	//  We use a set, to avoid any duplicate
             
 	set<Fkey> set_fkeys;
 	for (vector<Fkey>::iterator i = fkeys.begin(); i != fkeys.end(); ++i)
 	{
-		string k = i->GetKey();
-		string f = i->GetFileName();
-		//cout << f << " " << k << " " << i->IsLeaf() << "\n";
-
-		bool end_of_loop=false;
-		while(!end_of_loop) {
-			set_fkeys.insert(set_fkeys.begin(),*i);
-			end_of_loop = i->Up();
-		}
+	    //string k = i->GetKey();
+	    //string f = i->GetFileName();
+	    //cout << f << " " << k << " " << i->IsLeaf() << "\n";
+	    
+	    // Work on a copy, avoiding to destroy the Fkey already stored
+	    Fkey key = *i;
+	    bool end_of_loop=false;
+	    while(!end_of_loop) {
+		set_fkeys.insert(set_fkeys.begin(),key);
+		end_of_loop = key.Up();
+	    }
 	}
 		
-	// Now, copy data from the set to the vector
-	fkeys.clear();
-	fkeys.insert(fkeys.begin(),set_fkeys.begin(),set_fkeys.end());
+	// Now, copy new data from the set to the vector
+	//for ( auto fk : set_fkeys ) cout << "coucou " << fk.GetKey() << " " << fk.IsLeaf() << endl;
+	for ( auto fk : set_fkeys ) {
+	    if ( none_of(
+		fkeys.begin(),
+		fkeys.end(),
+		[&fk] (const Fkey& f) { return f.GetKey()==fk.GetKey() && f.GetFileName()==fk.GetFileName(); })) fkeys.push_back(fk);
+	}
+
+	//fkeys.clear();
+	//fkeys.insert(fkeys.begin(),set_fkeys.begin(),set_fkeys.end());
+	//for ( auto fk : fkeys ) cout << "coucou " << fk.GetFileName() << " " << fk.GetKey() << " " << fk.IsLeaf() << endl;
 }
 
 /** Log something, only if verbose
