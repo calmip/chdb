@@ -22,9 +22,9 @@ using bdbh::Chmod;
 /** \brief For each key specified in the parameters, read and change its metadata
 */
 
-void Chmod::Exec() throw(BdbhException,DbException)
+void Chmod::Exec()
 {
-    Mdata mdata;
+    //Mdata mdata;
     mode_t to_mode;
     const mode_t mask = 0007777;        // The permission bits
 
@@ -90,7 +90,7 @@ void Chmod::Exec() throw(BdbhException,DbException)
         
 */
 
-void Chmod::__Exec(const string& key, bool is_recurs,mode_t f_sel, mode_t to_mode) throw(BdbhException,DbException)
+void Chmod::__Exec(const string& key, bool is_recurs,mode_t f_sel, mode_t to_mode)
 {
     Mdata mdata;
     string nkey;
@@ -127,7 +127,7 @@ void Chmod::__Exec(const string& key, bool is_recurs,mode_t f_sel, mode_t to_mod
         
 */
                 
-void Chmod::__ExecDir(const string& key, Mdata mdata, bool is_recurs, mode_t f_sel, mode_t to_mode) throw(BdbhException,DbException)
+void Chmod::__ExecDir(const string& key, Mdata mdata, bool is_recurs, mode_t f_sel, mode_t to_mode)
 {
     __Mode(key,mdata,f_sel,to_mode);
     if (is_recurs)
@@ -179,7 +179,7 @@ void Chmod::__ExecDir(const string& key, Mdata mdata, bool is_recurs, mode_t f_s
 
 */
 
-void Chmod::__Mode(const string& key, Mdata mdata, mode_t f_sel, mode_t to_mode) throw(BdbhException,DbException)
+void Chmod::__Mode(const string& key, Mdata mdata, mode_t f_sel, mode_t to_mode)
 {
     const mode_t mask = 0007777;        // The permission bits
     

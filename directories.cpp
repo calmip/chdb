@@ -34,7 +34,8 @@ using namespace std;
 int operator<(const Finfo& a, const Finfo& b) { return a.st_size < b.st_size; }
 
 /** 
- * @brief set the protected member rank and comm_size
+ * @brief set the protected member rank and comm_size, 
+ *        if rank=0 call check_parameters
  * 
  * @param r 
  * @param s 
@@ -48,6 +49,9 @@ void Directories::setRank(int r, int s) {
 	}
 	rank=r;
 	comm_size=s;
+	// We check the parameters only for the master process
+	// If problem detected throw runtime_error
+	if (rank==0) checkParameters();
 }
 
 /**
@@ -125,6 +129,7 @@ void Directories::buildMpiCommand(string& cmd) const {
 	if ( mpi_slaves != "" ) { 
 		const char * mpi_cmd_c = getenv("CHDB_MPI_CMD");
 		if (mpi_cmd_c != NULL) {
+			//cerr << "MOUMOUMOU #" << mpi_cmd_c << "#\n";
 			string mpi_cmd = mpi_cmd_c;
 			string h;
 			getHostName(h);
@@ -136,6 +141,8 @@ void Directories::buildMpiCommand(string& cmd) const {
 			throw runtime_error("ERROR -The env variable CHDB_MPI_CMD does not exists");
 		}
 	}
+	//cerr << "COUCOUCOU #" << cmd << "#\n";
+
 }
 
 /** 
@@ -173,21 +180,63 @@ void Directories::initInputFiles() const {
 	}
 }
 
+/******************
+ * @brief Read the files to process
+ *        If dir or file type, call v_readFiles
+ *        If iter type, do the iterations
+ * 
+ ****************************/ 
+
+void Directories::readFiles() {
+	if (files.empty()) {
+		if ( !prms.isTypeIter()) {
+			v_readFiles();
+			files_size = count_if(files.begin(), files.end(), isNotNullStr);
+			if ( ! files.empty()) {
+				blk_ptr=files.begin();
+			}
+		} else {
+			// Init the list of input files if any
+			initInputFiles();
+			if (input_files.empty()) {
+				for (unsigned int i = prms.getIterationStart(); i <= prms.getIterationEnd(); i += prms.getIterationStep() ) {
+					files.push_back(to_string(i));
+				}
+			} else {
+				for (unsigned int i = prms.getIterationStart(); i <= prms.getIterationEnd(); i += prms.getIterationStep() ) {
+					string f=to_string(i);
+					if (input_files.find(f)!=input_files.end()) {
+						files.push_back(f);
+					}
+				}
+			}
+			files_size = files.size();
+			if ( ! files.empty() ) {
+				blk_ptr = files.begin();
+			}
+		}
+	}
+}
+
 /** 
  * @brief Check the name extension versus the required extension (file type)
+ *        Check also the file type (Regular file or Directory)
  * 
  * @param name 
+ * @param is_a_dir (true = directory)
  * 
  * @return true if the type is OK, false if not
  */
-bool Directories::isCorrectType(const string & name) const {
-	string ext     = '.' + prms.getFileType();
-	return isEndingWith(name,ext);
+bool Directories::isCorrectType(const string & name,bool is_a_dir) const {
+	string ext  = '.' + prms.getFileType();
+	bool ext_ok = isEndingWith(name,ext);
+	bool dir_ok = (is_a_dir == prms.isTypeDir());
+	return ext_ok && dir_ok;
 }
 
 /** 
  * 
- * @brief Prepare the f vector for a balanced distribution of jobs:
+ * @brief Prepare the f vector for a balanced distribution of jobs (useful only if isSizeSort())
  *        1/ The f_info list is sorted from the longest to the shortest file
  *        2/ The file names are copied to f using an interleaved algorithm
  * 

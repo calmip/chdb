@@ -25,7 +25,7 @@ using bdbh::LsPrint;
 /** For each key specified in the parameters, read its metadata and update the observer
  */
 
-void Ls::Exec() throw(BdbhException,DbException)
+void Ls::Exec()
 {
     Mdata mdata;
     
@@ -75,7 +75,7 @@ void Ls::Exec() throw(BdbhException,DbException)
         
 */
 
-void Ls::__Exec(const string& key, bool is_recurs) throw(BdbhException,DbException)
+void Ls::__Exec(const string& key, bool is_recurs)
 {
     Mdata mdata;
     string nkey;
@@ -94,19 +94,11 @@ void Ls::__Exec(const string& key, bool is_recurs) throw(BdbhException,DbExcepti
         }
         else
         {
-			__obs->Update(key,mdata);
+	    __obs->Update(key,mdata);
             //__List(key,mdata,cout);
         }
     }
 }
-
-/** This struct is used for sorting the files before printing them - see __ExecDir */
-struct finfo {
-	finfo(const string& n, Mdata& m): name(n),mdata(m) {};
-	string name;
-	Mdata mdata;
-};
-int operator<(const finfo& a, const finfo& b) { return a.mdata.size < b.mdata.size; }
 
 /** (may be recursively) List the directory passed by parameter
 
@@ -120,78 +112,78 @@ int operator<(const finfo& a, const finfo& b) { return a.mdata.size < b.mdata.si
         
 */
                 
-void Ls::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhException,DbException)
+void Ls::__ExecDir(const string& key, Mdata mdata, bool is_recurs)
 {
-	__obs->Update(key,mdata);
-	//__List(key,mdata,cout);
-	if (is_recurs)
+    __obs->Update(key,mdata);
+    //__List(key,mdata,cout);
+    if (is_recurs)
     {
-		int rvl=0;
-		int lvl = CountLevel(key.c_str())+1;
-		if (_IsNotTooDeep(lvl)!=0)
-        {
+	int rvl=0;
+	int lvl = CountLevel(key.c_str())+1;
+	if (_IsNotTooDeep(lvl)!=0)
+	{
 
-			// This is used for sorting files before printing them
-			list<finfo> lf;
+	    // This is used for sorting files before printing them
+	    list<finfo> lf;
 
-			string nkey;
-			string marker = key+DIRECTORY_MARKER;
-			rvl=_ReadKeyDataCursor(marker,nkey,mdata,lvl,true);
-			if (rvl==DB_NOTFOUND)
+	    string nkey;
+	    string marker = key+DIRECTORY_MARKER;
+	    rvl=_ReadKeyDataCursor(marker,nkey,mdata,lvl,true);
+	    if (rvl==DB_NOTFOUND)
             {
-				string msg = "Problem in the database: the special file #" + marker +"# does not exsit"; 
-				throw(BdbhException(msg));
+		string msg = "Problem in the database: the special file #" + marker +"# does not exsit"; 
+		throw(BdbhException(msg));
             }
             
-			while(rvl!=DB_NOTFOUND)
-			{
-				rvl=_ReadKeyDataCursor(key,nkey,mdata,lvl,false);
-				if (rvl != DB_NOTFOUND)
+	    while(rvl!=DB_NOTFOUND)
+	    {
+		rvl=_ReadKeyDataCursor(key,nkey,mdata,lvl,false);
+		if (rvl != DB_NOTFOUND)
                 {
-					if (S_ISDIR(mdata.mode))
+		    if (S_ISDIR(mdata.mode))
                     {
-						__ExecDir(nkey,mdata,is_recurs);
+			__ExecDir(nkey,mdata,is_recurs);
                     }
-					else
+		    else
                     {
-						if ( prm.GetSorted() )
-						{
-							lf.push_back(finfo(nkey,mdata));
-						}
-						else
-						{
-							__obs->Update(nkey,mdata);
-							//__List(nkey,mdata,cout);
-						}
+			if ( prm.GetSorted() )
+			{
+			    lf.push_back(finfo(nkey,mdata));
+			}
+			else
+			{
+			    __obs->Update(nkey,mdata);
+			    //__List(nkey,mdata,cout);
+			}
                     }
                 }
 
-				if (_IsSignalReceived())
-					break;
+		if (_IsSignalReceived())
+		    break;
             }
-			if ( prm.GetSorted() )
-			{
-				lf.sort();
-				if ( !prm.GetSortedReverse() )
-				{
-					for ( list<finfo>::iterator i=lf.begin(); i!=lf.end();++i)
-					{
-						__obs->Update(i->name,i->mdata);
-						//__List(i->name,i->mdata,cout);
-					}
-				}
-				else
-				{
-					for ( list<finfo>::reverse_iterator i=lf.rbegin(); i!=lf.rend();++i)
-					{
-						__obs->Update(i->name,i->mdata);
-						//__List(i->name,i->mdata,cout);
-					}
-				}
-			}
+	    if ( prm.GetSorted() )
+	    {
+		lf.sort();
+		if ( !prm.GetSortedReverse() )
+		{
+		    for ( list<finfo>::iterator i=lf.begin(); i!=lf.end();++i)
+		    {
+			__obs->Update(i->name,i->mdata);
+			//__List(i->name,i->mdata,cout);
+		    }
+		}
+		else
+		{
+		    for ( list<finfo>::reverse_iterator i=lf.rbegin(); i!=lf.rend();++i)
+		    {
+			__obs->Update(i->name,i->mdata);
+			//__List(i->name,i->mdata,cout);
+		    }
+		}
+	    }
         }
     }
-	return;
+    return;
 }
 
 /** Print the metadata of this key 
@@ -203,7 +195,7 @@ void Ls::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhExc
 void LsPrint::Update(string name, const Mdata& mdata)
 {
     string root = prm.GetRoot();
-	StripTrailingSlash(root);
+    StripTrailingSlash(root);
     
     // If root not stripped or if nothing to display, return
     if (!StripLeadingStringSlash(root,name) || name.length()==0)
@@ -212,12 +204,14 @@ void LsPrint::Update(string name, const Mdata& mdata)
     // Display the name
     if (prm.GetLongList())
     {
+	os << setw(8) << setfill(' ') << mdata.ino;
+	
         if (S_ISREG(mdata.mode))
-            os << 'f';
+            os << " f";
         else if (S_ISDIR(mdata.mode))
-            os << 'd';
+            os << " d";
         else 
-            os << 'l';
+            os << " l";
         
         int m = 07777&mdata.mode;
         os << setw(5) << setfill(' ') << oct << m << "  ";

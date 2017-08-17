@@ -13,7 +13,7 @@ USAGE="Usage: ./install ~|/usr/local ~/privatemodules|/usr/local/modules/modulef
 BINDST=$1
 MODDST=$2
 MPI=$3
-VERSION=$(awk '/CHDB_VERSION/ {print $3}' version.hpp )
+VERSION=$(awk -F'"' '/CHDB_VERSION/ {print $2}' version.hpp )
 
 # *SRC = The SOURCE directories
 # *SRCF= Some SOURCE files
@@ -34,9 +34,9 @@ MODDIRF="$MODDIR/$VERSION"
 [ ! -d "$BINDIR"  ] && echo "ERROR - $BINDIR  DOES NOT EXIST" && exit 1
 
 
-cp "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$BINDIR"
-( cd $BINDIR; chmod 755 $EXE $CHDB slave-wrapper.sh )
+cp "bdbh/bdbh" "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$WRAPSRC/env-wrapper.sh" "$WRAPSRC/mod-wrapper.sh" "$BINDIR"
+( cd $BINDIR; chmod 755 bdbh chdb chdb.exe *-wrapper.sh )
 
-sed -e "s!BINDIR!$BINDIR!" <$MODSRCF >$MODDIRF
+sed -e "s!BINDIR!$BINDIR!g" <$MODSRCF >$MODDIRF
 chmod 644 $MODDIRF
 

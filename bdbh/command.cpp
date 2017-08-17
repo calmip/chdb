@@ -32,7 +32,7 @@ int Command::signal_received = 0;
  \exception      If impossible to allocate memory
 */
 
-Buffer::Buffer(u_int32_t sze) throw(DbException): size(0),capacity(sze)
+Buffer::Buffer(u_int32_t sze): size(0),capacity(sze)
 {
     bfr = malloc(capacity);
     if (bfr==NULL)
@@ -58,7 +58,7 @@ Buffer::~Buffer()
  \exception If the wanted size is higher than the capacity
 */
 
-void Buffer::SetCapacity(u_int32_t c) throw(BdbhException)
+void Buffer::SetCapacity(u_int32_t c)
 {
     if (c < 1024 || c < capacity)
         return;
@@ -85,7 +85,7 @@ void Buffer::SetCapacity(u_int32_t c) throw(BdbhException)
  \exception If the wanted size is higher than the capacity
 */
 
-void Buffer::SetSize(int32_t s) throw(BdbhException)
+void Buffer::SetSize(int32_t s)
 {
     if (s<=-1)
     {
@@ -110,54 +110,55 @@ void Buffer::SetSize(int32_t s) throw(BdbhException)
 
 */
  
-Command::Command(const Parameters   & p, BerkeleyDb& d): prm(p),exit_status(0),bdb(d),bfr3(__InitBfr3()) {}
+Command::Command(const Parameters   & p, BerkeleyDb& d): exit_status(0),prm(p),bdb(d),bfr3(__InitBfr3()) {}
 bdbh::TriBuff* Command::bfr3_ptr = NULL;
 
 /** BerkeleyDb initialization
 
 \param name The file name
 \param o_mode The opening mode
-\param cluster If true, we lock the database before opening it (the --cluster switch was specified)
 \param verbose If true, we are in verbose mode (the --verbose switch was specified)
+\param inmem If true, read the whole datafile, getting the file in the I/O cache memory
 Init the Dbt objects, open the database, read the info_data and create a cursor
 */
-BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool clus, bool inmem) throw(DbException): 
-#if NOCLUSTER
-#else
-	cluster(clus),
-	lock_file(-1),
-	lock_inf_written(false),
-	update_cnt(0),
-	db_name(name),
-#endif
+BerkeleyDb::BerkeleyDb(const char* name,int o_mode, bool verb, bool inmem):
 	verbose(verb),
     in_memory(inmem),
 	ignore_comp(false),
-	db_env(NULL),
+    dbi(NULL),
 	db(NULL),
     pagesize(sysconf(_SC_PAGESIZE)),
-#if NOCLUSTER
-#else
-	qinfo(NULL),
-#endif
 	open_mode(o_mode),
 	data_bfr(1000),
 	key_bfr(1000)
 {
 	open_mode = o_mode;
+    
     // Init the Dbt objects
+    // ... for the keys
     dbt_key.set_flags(DB_DBT_USERMEM);
 
-    dbt_mdata.set_flags(DB_DBT_USERMEM|DB_DBT_PARTIAL);
+    // ... for the metadata
+    dbt_mdata.set_flags(DB_DBT_USERMEM);
     dbt_mdata.set_doff(0);
     dbt_mdata.set_dlen(sizeof(Mdata));
     dbt_mdata.set_ulen(sizeof(Mdata));
     dbt_mdata.set_size(sizeof(Mdata));
 
-    dbt_data.set_flags(DB_DBT_USERMEM|DB_DBT_PARTIAL);
-    dbt_data.set_doff(sizeof(Mdata));
+    // ... for the inodes
+    dbt_inode.set_flags(DB_DBT_USERMEM);
+    dbt_inode.set_doff(0);
+    dbt_inode.set_dlen(sizeof(bdbh_ino_t));
+    dbt_inode.set_ulen(sizeof(bdbh_ino_t));
+    dbt_inode.set_size(sizeof(bdbh_ino_t));
+    dbt_inode.set_data((void*)&c_inode);
 
-    // Init the metadata for info
+    // ... for the data
+    // dbt_data.set_flags(DB_DBT_USERMEM|DB_DBT_PARTIAL);
+    // dbt_data.set_doff(sizeof(Mdata));
+    dbt_data.set_flags(DB_DBT_USERMEM);
+
+    // Init the data for info
     minfo_data.size = sizeof(InfoData);
     minfo_data.csize= sizeof(InfoData);
     
@@ -190,7 +191,7 @@ bool BerkeleyDb::__aligned_p(void *p) {
  \return size in pages
  
 */
-uint32_t BerkeleyDb::__bytes2pages(uint64_t size) throw (BdbhException) {
+uint32_t BerkeleyDb::__bytes2pages(uint64_t size) {
     uint64_t szp = (size+pagesize-1) / pagesize;
 
 // We could compile in c++11 to avoid this stupid stuff
@@ -216,16 +217,13 @@ bool BerkeleyDb::__is_mincore_page_resident(char p) {
 
 /** Open the database
 
-\brief Open the two databases: db (all modes) and qinfo (only in create or write modes) 
+\brief Open the db database
 \param name The database name
 \param flg A flag to pass to db->open
 \exception db->open may throw some exception
 */
-void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
+void BerkeleyDb::__InitDb(const char* name, int flg)
 {
-    // Set the cache size to 64 Mbytes
-    //DOES NOT WORK WITH THE ENVIRONMENTS
-    //db->set_cachesize(0,1<<26,1);
 
     switch(flg)
     {
@@ -239,7 +237,7 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
         // Read mode: try to open the environment or at least the "database" file
         case BDBH_OREAD:
         {
-            __OpenRead(name,db,"database");
+            __OpenRead(name);
 
             // Checking the database
             __ReadInfoData();
@@ -249,11 +247,7 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
         // Try to open the environment and both databases, or throw an exception
         case BDBH_OWRITE:
         {
-            __OpenWrite(name,db,"database");
-#if NOCLUSTER
-#else
-            __OpenWrite(name,qinfo,"info");
-#endif
+            __OpenWrite(name);
             // Checking the database and initializing cons_info_data
             __ReadInfoData();
             break;
@@ -262,22 +256,15 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
         // Same as OWRITE, but consolidate info and do not reset info_data
         case BDBH_OSHELL:
         {
-#if NOCLUSTER
-            __OpenWrite(name,db,"database");
+            __OpenWrite(name);
             __ReadInfoData();
-#else
-            __OpenWrite(name,db,"database");
-            __OpenWrite(name,qinfo,"info");
-            __ReadInfoData();
-            __ConsolidateInfoData();
-#endif
             break;
         }
 
         // Try to open the environment and database only, or throw an exception
         case BDBH_OCONVERT:
         {
-            __OpenWrite(name,db,"database");
+            __OpenWrite(name);
             break;
         }
         
@@ -286,22 +273,11 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
         {
             try
             {
-#if NOCLUSTER
-                __OpenRead(name,db,"database");
+                __OpenRead(name);
                 __ReadInfoData();
-#else
-                __OpenWrite(name,db,"database");
-                __OpenWrite(name,qinfo,"info");
-                __ReadInfoData();
-                __ConsolidateInfoData();
-#endif
             }
             catch(exception& e){
-                __OpenRead(name,db,"database");
-#if NOCLUSTER
-#else
-                qinfo = (Db_aptr)NULL;
-#endif
+                __OpenRead(name);
                 __ReadInfoData();
             };
             break;
@@ -318,7 +294,7 @@ void BerkeleyDb::__InitDb(const char* name, int flg) throw(DbException)
 \note This code is inspired by vmtouch, by Doug Hoyte and contributors. cf. https://github.com/hoytech/vmtouch
 
 */ 
-void BerkeleyDb::__InMemory(const string& db_name) throw(BdbhException) {
+void BerkeleyDb::__InMemory(const string& db_name) {
 
     string msg;
     
@@ -396,135 +372,95 @@ void BerkeleyDb::__InMemory(const string& db_name) throw(BdbhException) {
     }
 }
 
-/** Create the environment and the databases
+/** Create the databases
 
-NOTE - We DO NOT USE THE BERKELEYDB ENVIRONMENT IF NOCLUSTER IS DEFINED
+NOTE - We DO NOT USE THE BERKELEYDB ENVIRONMENT
 
 \param name The database name
 \exception db->open may throw some exception
 */
-#if NOCLUSTER
-void BerkeleyDb::__OpenCreate(const char* name) throw(DbException)
+void BerkeleyDb::__OpenCreate(const char* name)
 {
     mkdir (name,0777);
 	string name_db=name;
 	name_db += '/';
-	string name_database = name_db + "database";
-	string name_info     = name_db + "info";
+
+    // The inodes
+    string name_inodes   = name_db + METADATA_NAME;
+	dbi    = (Db_aptr) new Db(NULL,0);
+    dbi->open(NULL,name_inodes.c_str(),NULL,
+			 DB_BTREE,DB_CREATE|DB_EXCL,S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+    
+    // The data
+	string name_database = name_db + DATA_NAME;
 	db     = (Db_aptr) new Db(NULL,0);
     db->open(NULL,name_database.c_str(),NULL,
 			 DB_BTREE,DB_CREATE|DB_EXCL,S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-#if NOCLUSTER
-#else
-	qinfo  = (Db_aptr) new Db(NULL,0);
-    qinfo->set_re_len(sizeof(Mdata)+sizeof(InfoData));
-    qinfo->open(NULL,name_info.c_str(),NULL,
-				DB_QUEUE,DB_CREATE|DB_EXCL,S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-#endif
 }
-#else
-void BerkeleyDb::__OpenCreate(const char* name) throw(DbException)
-{
-    mkdir (name,0777);
-    db_env = (DbEnv_aptr) new DbEnv(0);
-    db_env->open(name,DB_CREATE|DB_INIT_CDB|DB_INIT_MPOOL|DB_CDB_ALLDB,0);
-    db     = (Db_aptr) new Db(db_env.get(),0);
-    db->open(NULL,"database",NULL,DB_BTREE,DB_CREATE|DB_EXCL,S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-    qinfo  = (Db_aptr) new Db(db_env.get(),0);
-    qinfo->set_re_len(sizeof(Mdata)+sizeof(InfoData));
-    qinfo->open(NULL,"info",NULL,DB_QUEUE,DB_CREATE|DB_EXCL,S_IFREG|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-}
-#endif
 
-/** Open the environment and one database for a read only access
+/** Open the database for a read only access
 
-\brief If name is a directory, try to open the environment (unless already opened), or at least the database_name file (read only).
-If name is a file, try to open (read only) this file.
+\brief Open the two databases (for the data and for the inodes)
 
-\param name The database name
-\param database The database to open (database or info)
-\param database_name The database file name
+\param name The database (=directory) name
 \exception db->open may throw some exception
 */
-#if NOCLUSTER
-void BerkeleyDb::__OpenRead(const char* name,Db_aptr& dbse, const char * database_name) throw(DbException)
+void BerkeleyDb::__OpenRead(const char* name)
+{
+    __Open(name,DB_RDONLY);
+}
+
+/** Open the database for a write access
+
+\brief Open the two databases (for the data and for inodes) 
+
+\param name The database name
+\exception db->open may throw some exception
+*/
+void BerkeleyDb::__OpenWrite(const char* name)
+{
+    __Open(name,0);
+}
+
+/** Open the database
+
+\brief Called by __OpenRead and __OpenWrite, does the job
+
+\param name The database name
+\param flag The flag (read or write)
+\exception db->open may throw some exception
+*/
+void BerkeleyDb::__Open(const char* name, u_int32_t flag)
 {
     string db_name = name;
     stat(name,&bd_stat);       // Keep track of (device, inode)
-    
-    // If a directory, try to open the environment. If it succeeds, try to open database, if it fails try something else
-    if (S_ISDIR(bd_stat.st_mode))
-    {
-		db_name += "/";
-		db_name += database_name;
-    }
 
+    if (!S_ISDIR(bd_stat.st_mode))
+    {
+        string msg = db_name;
+        msg += " should be a directory.\n";
+        throw(BdbhException(msg));
+    }
+        
+    db_name += "/";
+    db_name += DATA_NAME;
+
+    db = (Db_aptr) new Db(0,0);
+    db->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,flag,0);
+
+    string dbi_name = name;
+    dbi_name += "/";
+    dbi_name += METADATA_NAME;
+    
     // in-memory treatments: read the database file in cache before any treatment 
-    if (in_memory) __InMemory(db_name);
+    if (in_memory) __InMemory(dbi_name);
 
-    dbse = (Db_aptr) new Db(0,0);
-    dbse->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,DB_RDONLY,0);
+    dbi = (Db_aptr) new Db(0,0);
+    dbi->open(NULL,dbi_name.c_str(),NULL,DB_UNKNOWN,flag,0);
 }
-#else
-void BerkeleyDb::__OpenRead(const char* name,Db_aptr& dbse, const char * database_name) throw(DbException)
-{
-    stat(name,&bd_stat);       // Keep track of (device, inode)
-    
-    // If a directory, try to open the environment. If it succeeds, try to open database, if it fails try something else
-    if (S_ISDIR(bd_stat.st_mode))
-    {
-        try
-        {
-            __LockRead(name);
-        }
-        catch(BdbhException& e)
-        {
-            string msg = e.what();
-            msg += "\n";
-            msg += "ERROR - May be created with bdbh 1.1 ? Please try the convert command";
-            throw(BdbhException(msg.c_str()));
-        }
-        try
-        {
-            if (db_env.get()==NULL)
-            {
-                db_env = (DbEnv_aptr) new DbEnv(0);
-                db_env->open(name,DB_CREATE|DB_INIT_CDB|DB_INIT_MPOOL|DB_CDB_ALLDB,0);
-            }
-            dbse = (Db_aptr) new Db(db_env.get(),0);
-			dbse->set_error_stream(NULL);
-            dbse->open(NULL,database_name,NULL,DB_UNKNOWN,DB_RDONLY,0);
-        }
-        // Couldn't open properly the database. Try to open just the database file (this makes sense in readonly)
-        catch(DbException& e)
-        {
-            string db_name = name;
-            db_name += "/";
-            db_name += database_name;
-            dbse = (Db_aptr) new Db(0,0);
-            dbse->open(NULL,db_name.c_str(),NULL,DB_UNKNOWN,DB_RDONLY,0);
-        }
-    }
-    // This is not a directory: just try to open as a file
-    else
-    {
-        dbse = (Db_aptr) new Db(0,0);
-        dbse->open(NULL,name,NULL,DB_UNKNOWN,DB_RDONLY,0);
-    }
-}
-#endif
 
-/** Open the environment and one database for a write access
-
-\brief If name is a directory, try to open the environment (unless already opened) and the database
-
-\param name The database name
-\param database The database to open (database or info)
-\param database_name The database file name
-\exception db->open may throw some exception
-*/
-#if NOCLUSTER
-void  BerkeleyDb::__OpenWrite(const char* name, Db_aptr& dbse, const char* database_name) throw(DbException,BdbhException)
+/*
+void  BerkeleyDb::__OpenWrite(const char* name)
 {
     stat(name,&bd_stat);       // Keep track of (device, inode)
     if (S_ISDIR(bd_stat.st_mode))
@@ -541,178 +477,11 @@ void  BerkeleyDb::__OpenWrite(const char* name, Db_aptr& dbse, const char* datab
         throw(BdbhException("ERROR - May be created with bdbh 1.1 ? Please try the convert command"));
     }
 }
-#else
-    try
-    {
-        __LockWrite(name);
-    }
-    catch(BdbhException& e)
-    {
-        string msg = e.what();
-        msg += "\n";
-        msg += "ERROR - May be created with bdbh 1.1, or permission problem";
-        throw(BdbhException(msg.c_str()));
-    }
-    
-    stat(name,&bd_stat);       // Keep track of (device, inode)
-    if (S_ISDIR(bd_stat.st_mode))
-    {
-        if (db_env.get()==NULL)
-        {
-            db_env = (DbEnv_aptr) new DbEnv(0);
-            db_env->open(name,DB_CREATE|DB_INIT_CDB|DB_INIT_MPOOL|DB_CDB_ALLDB,0);
-        }
-        dbse     = (Db_aptr) new Db(db_env.get(),0);
-        dbse->open(NULL,database_name,NULL,DB_UNKNOWN,0,0);
-    }
-    else
-    {
-        throw(BdbhException("ERROR - May be created with bdbh 1.1 ? Please try the convert command"));
-    }
-}
-#endif
-
-#if NOCLUSTER
-#else
-
-/** Create a lock, when the lock will be granted nobody else will be enable to access (read or write) the database
-
-\brief We lock (write lock) a file in the environment directory, initializing members lock_xxx
-
-\param name The directory name
-\exception a BdbhException is thrown if the lock cannot be put
 */
-
-void BerkeleyDb::__LockWrite(const char* name) throw(BdbhException)
-{
-    if (!cluster)
-        return;
-    
-    string lock_file_name = db_name + "/lock";
-    string lock_inf_file_name = lock_file_name + ".inf";
-    flock lck;
-    lck.l_type   = F_WRLCK;
-    lck.l_whence = SEEK_SET;
-    lck.l_start  = 0;
-    lck.l_len    = 0;
-    
-    // Open the lock file, using the low level C library (because of the lock)
-    lock_file = open(lock_file_name.c_str(),O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRUSR|S_IWUSR);
-    if (lock_file==-1)
-    {
-        ostringstream err;
-        err << "Cannot open the lock file " << lock_file_name << " (error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-
-    // Lock the file
-    int rvl = fcntl(lock_file,F_SETLKW,&lck);
-    if (rvl == -1)
-    {
-       ostringstream err;
-        err << "Cannot lock the database (file " << lock_file_name << ", error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-        
-    // Open the lock info file
-    int lock_inf_file = open(lock_inf_file_name.c_str(),O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRUSR|S_IWUSR);
-    if (lock_inf_file==-1)
-    {
-        ostringstream err;
-        err << "Cannot open the lock file " << lock_inf_file_name << " (error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-
-    // get some info about the process and the host
-    char* hst = (char*) malloc(100*sizeof(char));
-    gethostname(hst,99);
-    pid_t pid = getpid();
-    ostringstream msg;
-    msg << "this database is locked by the process " << pid << " running on the node " << hst << '\n';
-    int len = msg.str().length();
-   
-    // write this info to the lock info file
-    write(lock_inf_file,msg.str().c_str(),len);
-    
-    // close the lock_inf_file
-    close(lock_inf_file);
-    
-    // Remember the lock
-    lock_inf_written = true;
-}
-
-/** Create a lock, when the lock will be granted nobody else will be enable to write the database
-
-\brief We lock (read lock) a file in the environment directory, initializing only the member lock_file
-
-\param name The directory name
-\exception a BdbhException is thrown if the lock cannot be put
-*/
-
-void  BerkeleyDb::__LockRead(const char* name) throw(BdbhException)
-{
-       if (!cluster)
-           return;
-    
-    // using a local variable for lock_file_name
-    string lock_file_name = db_name + "/lock";
-    string lock_inf_file_name = lock_file_name + ".inf";
-
-    flock lck;
-    lck.l_type   = F_RDLCK;
-    lck.l_whence = SEEK_SET;
-    lck.l_start  = 0;
-    lck.l_len    = 0;
-    
-    // Open the lock file, using the low level C library (because of the lock)
-    // using the member lock_file (will be closed by destructor)
-    lock_file = open(lock_file_name.c_str(),O_RDONLY);
-    if (lock_file==-1)
-    {
-        ostringstream err;
-        err << "Cannot open the lock file " << lock_file_name << " (error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-
-    // Lock the file
-    int rvl = fcntl(lock_file,F_SETLKW,&lck);
-    if (rvl == -1)
-    {
-       ostringstream err;
-        err << "Cannot lock the database (file " << lock_file_name << ", error " << errno << ")";
-        throw(BdbhException(err.str().c_str()));
-    }
-    
-    // try to open the lock_inf file
-    int lock_inf_file = open(lock_inf_file_name.c_str(),O_CREAT|O_WRONLY|O_TRUNC|O_SYNC,S_IRUSR|S_IWUSR);
-    if (lock_inf_file!=-1)
-    {
-
-        // get some info about the process and the host
-        char* hst = (char*) malloc(100*sizeof(char));
-        gethostname(hst,99);
-        pid_t pid = getpid();
-        ostringstream msg;
-        msg << "this database is locked by the process " << pid << " running on the node " << hst << '\n';
-        int len = msg.str().length();
-        
-        // write this info to the lock info file
-        write(lock_inf_file,msg.str().c_str(),len);
-
-        // close the lock_inf_file
-        close(lock_inf_file);
-
-    }
-    
-    // Remember the lock
-    lock_inf_written = "true";    
-}
-#endif
 
 /** Close the database
 
 */
-#if NOCLUSTER
 BerkeleyDb::~BerkeleyDb()
 {
     Sync();
@@ -720,20 +489,6 @@ BerkeleyDb::~BerkeleyDb()
 	// close db
 	if (db.get() != NULL) db->close(0);
 }
-#else
- BerkeleyDb::~BerkeleyDb()
-{
-    // If the lock was used (see the switch --cluster), remove and close the lock_file, this will release the lock
-    if (lock_inf_written)
-    {
-        string lock_inf_file_name = db_name + "/lock.inf";
-        unlink (lock_inf_file_name.c_str());
-    }
-    if (lock_file != -1)
-        close(lock_file);
-    Sync();
-}
-#endif
 
 /** Sync the database
 
@@ -744,16 +499,12 @@ BerkeleyDb::~BerkeleyDb()
 void BerkeleyDb::Sync(bool with_consolidate_info)
 
 {
-	if (open_mode==BDBH_OWRITE || open_mode==BDBH_OSHELL)
+	if (open_mode==BDBH_OWRITE || open_mode==BDBH_OSHELL || open_mode==BDBH_CREATE)
 		//if (open_mode!=BDBH_OREAD)
     {
         __WriteInfoData();
-#if NOCLUSTER
-#else
-        if (with_consolidate_info)
-            __ConsolidateInfoData();
-#endif
     	db->sync(0);
+        dbi->sync(0);
     }
 }
 
@@ -794,7 +545,7 @@ void Command::_Mkdir(const Fkey& fkey)
     GetDataBfr().SetSize(0);
     
     _WriteKeyData(key,mdata);
-    __UpdateDbSize(0,0,key.size(),0,0);          // Do not count the file, only the key size
+    _UpdateDbSize(0,0,key.size(),0,0,0);          // Do not count the file, only the key size
 
 }
 
@@ -813,45 +564,35 @@ void Command::_Mkdir(const Fkey& fkey, Mdata& mdata)
 
 		 // Alloc an empty buffer, so that only the metadata will be stored
 		 GetDataBfr().SetSize(0);
-		 _WriteKeyData(key,mdata);
-		 __UpdateDbSize(0,0,key.size(),0,1);          // adding a directory to the count
+         mdata.ino = _NextInode();
+		 _WriteKeyData(key,mdata,false);
+		 _UpdateDbSize(0,0,key.size(),0,1,0);          // adding a directory to the count
 		 
 		 // Create the special empty file to mark the start of directory list
 		 key += DIRECTORY_MARKER;
 		 mdata.mode = S_IFREG | 0666;
 		 GetDataBfr().SetSize(0);
 		 
-		 _WriteKeyData(key,mdata);
-		 __UpdateDbSize(0,0,key.size(),0,0);          // Do not count the file, only the key size
+         // Write the key-data
+		 _WriteKeyData(key,mdata,false);
+		 _UpdateDbSize(0,0,key.size(),0,0,0);
 		 
 		 prm.Log("key " + key + " updated (directory)",cerr);
 	 }
 }
 
-/** Write a (key,data) pair 
-
-\pre The data to write must be deposited inside data_bfr
- 
- \param skey The key 
- \param[in,out] metadata - The metadata, modified in compression mode
- \param[in,out] data_bfr - The data buffer
- \param[in,out] c_data_bfr A buffer used for compressed data (could be a local variable, but passed here for performance)
- \param[in] with_data If false, only the metadata are written
- \param[in] to_db If true (default), we write to db - If false, we write to qinfo
- \param[in] overwrite If true (default), it is OK to overwrite a key
- \return The value return by Db::put
- \exception db->put may throw exception, We throw also an exception if compress returns an error 
-
-*/
-int BerkeleyDb::WriteKeyData(const string& skey, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data, bool to_db, bool overwrite ) throw(BdbhException,DbException)
-{
-
-    const char* key = skey.c_str();
+/**
+ * \brief From the file path, build the dbt_key
+ *        The key is formed by a maj letter (A,B, ...) to code the level (number de directories), followed by the path
+ * 
+ * \param The path
+ * 
+ *****/
+ void BerkeleyDb::__path2dbt_key(const string & path) {
+    const char* key = path.c_str();
     
     // Prepare the dbt for the key
     size_t key_size = strlen(key)+sizeof(char)+1;      // With the level and the \0
-    if (!to_db && key_size < 50)     // qinfo is a queue database, it will return a generated key, make enough size for it
-        key_size = 10;
     
     dbt_key.set_ulen(key_size);		
     dbt_key.set_size(key_size);
@@ -865,13 +606,40 @@ int BerkeleyDb::WriteKeyData(const string& skey, Mdata& metadata, Buffer& data_b
     // copy the key to key_bfr, keeping 1 char in front of the key
     memcpy(k_base, (const void*) key, key_size-sizeof(char));
     *(char*)base = 'A' + CountLevel(key);
-    
+}
+
+     
+/** 
+ * 
+ \brief Write a (key,data) pair to the two databases db (data) and dbi (metadata)
+ \pre The data to write must be deposited inside data_bfr
+ 
+ \param path The path (ie the key)
+ \param[in,out] metadata - The metadata, modified in compression mode and for inode initialization
+ \param[in,out] data_bfr - The data buffer
+ \param[in,out] c_data_bfr A buffer used for compressed data (could be a local variable, but passed here for performance)
+ \param[in] with_data If false, only the metadata are written
+ \param[in] to_db NOT USED !!!
+ \param[in] overwrite If true (default), it is OK to overwrite a key
+ \return The value return by Db::put
+ \exception db->put may throw exception, We throw also an exception if compress returns an error 
+
+*/
+int BerkeleyDb::WriteKeyData(const string& path, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data, bool to_db, bool overwrite )
+{
+
+    // Prepare the dbt for the key
+    __path2dbt_key(path);
+
     // Prepare the dbt for the metadata
     dbt_mdata.set_data((void*)&metadata);
 
     // the following useful only if data must be stored
     if (with_data)
     {
+        // Copy the inode to c_inode, the dbt_inode points to it
+        c_inode = metadata.ino;
+        
         // Compress or not the data and prepare the dbt for the data
         if (GetCompressionFlag() && !ignore_comp && data_bfr.GetSize() >= COMPRESSION_THRESHOLD)
         {
@@ -907,48 +675,61 @@ int BerkeleyDb::WriteKeyData(const string& skey, Mdata& metadata, Buffer& data_b
         };
     };        
 
-    // Store the (key,metadata) pair
-    // We write to db
-    int rvl=-1;
-    if (to_db)
+    // Store the (inode,data) pair only if there are data to store
+    // We start with the data because it is not so serious having a problem storing metadata than data
+    int rvl=0;
+    u_int32_t flag = overwrite ? 0 : DB_NOOVERWRITE;
+    if (with_data && data_bfr.GetSize() != 0)
     {
-        u_int32_t flag = overwrite ? 0 : DB_NOOVERWRITE;
-        rvl = db->put (0, &dbt_key, &dbt_mdata, flag);
-        if (rvl !=0)
-            return rvl;
-        
-        // Store the (key,data) pair only if there are data to store
-        if (with_data && data_bfr.GetSize() != 0)
-        {
-            rvl = db->put (0, &dbt_key, &dbt_data, 0);
-            return rvl;
-        }
+        rvl = db->put (0, &dbt_inode, &dbt_data, flag);
     }
-#if NOCLUSTER
-#else    
-    // We write to qinfo
-    // First write = The key is given by the database (using the Append mode)
-    else
-    {
-        rvl = qinfo->put (0, &dbt_key, &dbt_mdata, DB_APPEND);
-        if (rvl !=0)
-            return rvl;
-        
-        // Store the (returned key, data) pair if there are data to store
-        if (with_data && data_bfr.GetSize() != 0)
-        {
-            rvl = qinfo->put(0, &dbt_key, &dbt_data, 0);
-            return rvl;
-        }
+
+    // If all is OK, Store the (key,metadata) pair
+    if (rvl==0) {
+        rvl = dbi->put (0, &dbt_key, &dbt_mdata, flag);
     }
-#endif
+//    if (rvl !=0)
+//        return rvl;
+
+//    rvl = db->put (0, &dbt_key, &dbt_mdata, flag);
+//    if (rvl !=0)
+//        return rvl;
+        
+    
     return rvl;
 }
+
+/*****
+ * @brief Remove metadata and data using a cursor
+ * @pre The cursor selected by lvl must be positioned on the metadata to remove
+ * @pre If the metadata is passed, remove also the data
+ * 
+ * @param The level, for selecting the good metadata cursor
+ * @param mdata A ptr to the metadata, if nullptr data are not removed
+ * @return 0 is OK
+ * 
+ *************************/
+int BerkeleyDb::RemoveKeyDataCursor(int lvl, Mdata* metadata_ptr) {
+    // Delete the data, unless metadata_ptr not specified
+    if (metadata_ptr != nullptr) {
+        // Directories do not have data
+        if (!S_ISDIR(metadata_ptr->mode)) {
+            c_inode = metadata_ptr->ino;
+            int rvl = db->del(NULL, &dbt_inode, 0);
+            if (rvl != 0 ) {
+                throw BdbhException("INTERNAL ERROR");
+            }
+        }
+    }
+        
+    // Delete the metadata and return
+    return __SelectCurrentCursor(lvl)->del(0);
+}   
 
 /** Read the metadata and the data from the database, using the key
 
  \post The data are deposited in data_bfr and metadata is set
- \param skey The key (a string) (NOT USED IF FROM_DB FALSE, because info is a QUEUE)
+ \param path a path (ie a key, a string)
  \param[in,out] metadata - The metadata, modified in compression mode
  \param[in,out] data_bfr - The data buffer
  \param[in,out] c_data_bfr A buffer used for compressed data (could be a local variable, but passed here for performance)
@@ -959,37 +740,26 @@ int BerkeleyDb::WriteKeyData(const string& skey, Mdata& metadata, Buffer& data_b
  We throw also an exception if compress returns an error 
 */
 
-int BerkeleyDb::ReadKeyData(const string& skey, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data) throw(DbException,BdbhException)
+int BerkeleyDb::ReadKeyData(const string& path, Mdata& metadata, Buffer& data_bfr, Buffer& c_data_bfr, bool with_data)
 {
 
-    const char* key = skey.c_str();
+    // Prepare the dbt for the key
+    __path2dbt_key(path);
     
-    // Prepare the dbt for the key    
-    size_t key_size = strlen(key)+sizeof(char)+1;      // With the level and the \0
-    dbt_key.set_ulen(key_size);		
-    dbt_key.set_size(key_size);
-    //dbt_key.set_data((void*)key);
-    key_bfr.SetSize(key_size);
-    
-    void * base = key_bfr.GetData();
-    char * k_base = (char*) base + sizeof(char);
-    dbt_key.set_data(base);
-    
-    // copy the key to key_bfr, keeping 1 char in front of the key
-    memcpy(k_base, (const void*) key, key_size-sizeof(char));
-    *(char*)base = 'A' + CountLevel(key);
-
     // Prepare the dbt for the metadata
     dbt_mdata.set_data((void*) &metadata);
     
     // read the metadata
-    int rvl = db->get(0,&dbt_key,&dbt_mdata,0);
+    int rvl = dbi->get(0,&dbt_key,&dbt_mdata,0);
     if (rvl == DB_NOTFOUND)
         return rvl;
     
     // If we do not need the data, it's finished
     if (!with_data)
         return rvl;
+
+    // Store the retrieved inode to c_inode, it will be used by the get operations
+    c_inode = metadata.ino;
     
     // Data compressed: read data in c_data_bfr and uncompress them to data_bfr
     if (metadata.cmpred && !ignore_comp)
@@ -1004,7 +774,8 @@ int BerkeleyDb::ReadKeyData(const string& skey, Mdata& metadata, Buffer& data_bf
         dbt_data.set_data(c_data_bfr.GetData());
 
         // Read the data from the database
-        rvl = db->get (0, &dbt_key, &dbt_data, 0);
+        rvl = db->get (0, &dbt_inode, &dbt_data, 0);
+        //rvl = db->get (0, &dbt_key, &dbt_data, 0);
         if (rvl == DB_NOTFOUND)     // Should not happen
             return rvl;
     
@@ -1037,7 +808,8 @@ int BerkeleyDb::ReadKeyData(const string& skey, Mdata& metadata, Buffer& data_bf
         dbt_data.set_data(data_bfr.GetData());
     
         // Read the data from the database
-        rvl = db->get (0, &dbt_key, &dbt_data, 0);
+        rvl = db->get (0, &dbt_inode, &dbt_data, 0);
+        // rvl = db->get (0, &dbt_key, &dbt_data, 0);
     };
     return rvl;
 }
@@ -1072,7 +844,8 @@ int BerkeleyDb::ReadKeyData(const string& skey, Mdata& metadata, Buffer& data_bf
  \return 0 if success, DB_NOTFOUND if key not found
  \exception  db->get may throw exception We throw also an exception if compress returns an error 
 */
-int BerkeleyDb::ReadKeyData(const string& skey, string& rtn_key, Mdata& metadata, Buffer& key_bfr, Buffer& data_bfr, Buffer& c_data_bfr, int lvl, bool first, bool with_data, bool reverse) throw(DbException,BdbhException)
+
+int BerkeleyDb::ReadKeyData(const string& skey, string& rtn_key, Mdata& metadata, Buffer& key_bfr, Buffer& data_bfr, Buffer& c_data_bfr, int lvl, bool first, bool with_data, bool reverse)
 {
     int rvl = 0;
     u_int32_t flags;
@@ -1188,6 +961,8 @@ int BerkeleyDb::ReadKeyData(const string& skey, string& rtn_key, Mdata& metadata
     // data to retrieve...
     if (with_data)
     {
+        // Copy the retrieved inode to c_inode
+        c_inode = metadata.ino;
         
         // Things to uncompress
         if (metadata.cmpred && !ignore_comp)
@@ -1202,7 +977,9 @@ int BerkeleyDb::ReadKeyData(const string& skey, string& rtn_key, Mdata& metadata
             dbt_data.set_data(c_data_bfr.GetData());
             
             // Read the data from the database
-            rvl = cursor->get (&dbt_key, &dbt_data, DB_SET);
+            ////rvl = cursor->get (&dbt_key, &dbt_data, DB_SET);
+            ////db->get (0, &dbt_key, &dbt_data, 0);
+            db->get (0, &dbt_inode, &dbt_data, 0);
             if (rvl == DB_NOTFOUND)     // Should not happen
                 return rvl;
             
@@ -1236,7 +1013,9 @@ int BerkeleyDb::ReadKeyData(const string& skey, string& rtn_key, Mdata& metadata
             dbt_data.set_data(data_bfr.GetData());
             
             // Read the data from the database
-            rvl = cursor->get (&dbt_key, &dbt_data, DB_SET);
+            ////rvl = cursor->get (&dbt_key, &dbt_data, DB_SET);
+            //db->get (0, &dbt_key, &dbt_data, 0);        }
+            db->get (0, &dbt_inode, &dbt_data, 0);
         }
     }
     return rvl;
@@ -1258,13 +1037,7 @@ Dbc* BerkeleyDb::__SelectCurrentCursor(unsigned int lvl)
         for (unsigned int i=cursors.size(); i<=lvl; i++)
         {
             Dbc* cursor;
-#if NOCLUSTER
-			db->cursor(0,&cursor,0);
-#else
-            // Not sure the DB_WRITECURSOR flag is useful, however it works with an env specified			
-            u_int32_t c_flg = (open_mode==BDBH_OWRITE||open_mode==BDBH_OSHELL ? DB_WRITECURSOR : 0);
-            db->cursor(0,&cursor,c_flg);
-#endif
+			dbi->cursor(0,&cursor,0);
             cursors.push_back(cursor);
         }
     }
@@ -1275,7 +1048,7 @@ Dbc* BerkeleyDb::__SelectCurrentCursor(unsigned int lvl)
 \param file_name A file name
 \exception throw an exception if the file is the database file
 */
-void BerkeleyDb::IsDbItself(const char* file_name) const throw(BdbhException)
+void BerkeleyDb::IsDbItself(const char* file_name) const
 {
     struct stat st;
     lstat(file_name, &st);
@@ -1286,7 +1059,7 @@ void BerkeleyDb::IsDbItself(const char* file_name) const throw(BdbhException)
 \param st A return from stat ou fstat on some file
 \exception throw an exception if the file is the database file
 */
-void BerkeleyDb::IsDbItself(const struct stat& st) const throw(BdbhException)
+void BerkeleyDb::IsDbItself(const struct stat& st) const
 {
     if (st.st_dev==bd_stat.st_dev && st.st_ino == bd_stat.st_ino)
         throw(BdbhException("Whouoh, This file represents myself. I can't support it."));
@@ -1307,158 +1080,31 @@ ostream& bdbh::operator<<(ostream& os,const Time& t)
     The data are read from the database file
 */
 
-void BerkeleyDb::__ReadInfoData() throw(DbException,BdbhException)
+void BerkeleyDb::__ReadInfoData()
 {
     // Read data - NOTE The compression buffer is not be used here
     int rvl = ReadKeyData(INFO_KEY,minfo_data, data_bfr, data_bfr, true);
     if (rvl==DB_NOTFOUND)
-        throw(BdbhException("This is not a database created by bdbdh"));
+        throw(BdbhException("This is not a database created by bdbh"));
     InfoData* inf_ptr = (InfoData*) data_bfr.GetData();
     //cerr << "__ReadInfoData " << inf_ptr->v_major << "\n";
 
     if (inf_ptr->v_major!=V_MAJOR || inf_ptr->v_minor>V_MINOR)
         throw(BdbhException("I cannot read this database (on which architecture did you create it ?)"));
 
-#if NOCLUSTER
 	info_data = *inf_ptr;
-#else
-    cons_info_data = *inf_ptr;
-#endif
 
     // Consolidate info_data only in OINFO mode
     //if (open_mode==BDBH_OINFO && qinfo.get() != NULL)
     //    __ConsolidateInfoData();
 }
 
-#if NOCLUSTER
-#else
-/** InfoData::AddInfo
-
- - v_major, v_minor, date_created, data_compressed are never changed (and not checked)
- - max_key_size, max_data_size_uncompressed are updated if relevant
- - date_modified is updated
- - The other fields (may be < 0) are added
-
-*/
-
-InfoData& InfoData::AddInfo(const InfoData& i)
-{
-    if (i.max_data_size_uncompressed > max_data_size_uncompressed)
-        max_data_size_uncompressed = i.max_data_size_uncompressed;
-    if (i.max_key_size > max_key_size)
-        max_key_size = i.max_key_size;
-
-    data_size_uncompressed += i.data_size_uncompressed;
-    data_size_compressed   += i.data_size_compressed;
-    key_size    += i.key_size;
-    nb_of_files += i.nb_of_files;
-    nb_of_dir   += i.nb_of_dir;
-
-    date_modified = i.date_modified;
-
-    return *this;
-}
-
-/** Read every record from qinfo, deleting the record, add the read record to cons_info_data
-    For each read record, update minfo_data
-    Then, call __WriteInfodata, writing InfoData to database
-
-*/
-void BerkeleyDb::__ConsolidateInfoData() throw(DbException,BdbhException)
-{
-    // Check the info database to know the number of records (we cannot use DB_FAST_STAT, let's hope the database is not too huge)
-    
-    DB_QUEUE_STAT *stat_data=NULL;
-    qinfo->stat(NULL, (void*) &stat_data, 0);
-    u_int32_t ndata = stat_data->qs_ndata;
-    //u_int32_t re_len= stat_data->qs_re_len;
-    //u_int32_t first_recno= stat_data->qs_first_recno;
-    free (stat_data);
-    
-    if (ndata==0)
-        return;
- 
-	// TODO - Utiliser Parameters::Log ? Ou log4cxx ?
-	if (verbose)
-		cerr << "INFO - Completing information from the last added files: " << ndata << " record to add\n";
-    //cerr << "hello, record_ length= " << re_len << '\n';
-    //cerr << "hello, first rec nb  = " << first_recno << '\n';
-    
-    // Check to know if the environment was opened. If not, throw an exception
-    try
-    {
-        u_int32_t flags;
-        db_env->get_open_flags(&flags);
-    }
-    catch (DbException & e)
-    {
-        throw (BdbhException("ERROR - Info data cannot be consolidated - May be a permission problem ?"));
-    }
-    
-    // If not empty, we have some data to read from qinfo
-    // The allocated databuffer size is the reclen of qinfo
-    data_bfr.SetSize(sizeof(Mdata)+sizeof(InfoData));
-    
-    // Prepare the dbt for the key
-    key_bfr.SetSize(-1);   // 1 Mb, this should be enough for the key
-    dbt_key.set_data(key_bfr.GetData());
-    dbt_key.set_ulen(key_bfr.GetSize());
-    
-    // Prepare a new dbt for the data
-    // NB This not too clean but we use a DB_CONSUME flag, so the parameters are NOT the same as for the "normal" db
-    
-    // Prepare the dbt for the data
-    Dbt dbt_idata;
-    dbt_idata.set_flags(DB_DBT_USERMEM);
-    dbt_idata.set_dlen(data_bfr.GetSize());
-    dbt_idata.set_ulen(data_bfr.GetSize());
-    dbt_idata.set_size(data_bfr.GetSize());
-    dbt_idata.set_data(data_bfr.GetData());
-    dbt_idata.set_doff(0);
-    
-    // Access to the metadata/infodata from the buffer
-    // WARNING - IS IT PORTABLE ? PAS SUR
-    Mdata* tmp_minfo_data_ptr   = (Mdata*) data_bfr.GetData();
-    InfoData* tmp_info_data_ptr = (InfoData*) (tmp_minfo_data_ptr+1);
-    
-    Mdata& tmp_minfo_data = *tmp_minfo_data_ptr;
-    InfoData& tmp_info_data = *tmp_info_data_ptr;
-    
-    // We know the number of records to retrieve
-    while(ndata-- > 0)
-    {
-        // Read the data from the database
-        int rvl = qinfo->get (0, &dbt_key, &dbt_idata, DB_CONSUME);
-        if (rvl != 0)
-        {
-            ostringstream tmp;
-            tmp << "Bdb error, reading data from qinfo - qinfo->get returned " << rvl;
-            throw (BdbhException(tmp.str()));
-        }
-        
-        cons_info_data.AddInfo(tmp_info_data);
-        // cerr << "coucou " << tmp_info_data.v_major << " " << info_data.nb_of_dir << "  " << info_data.nb_of_files << "\n";
-    }
-    
-    // minfo_data is set to the LAST meta-info record read (only the date is useful)
-    minfo_data = tmp_minfo_data;
-    
-    // Write the info_data to db
-    __WriteInfoData(false);
-    
-    //Synchronize everything
-    //db->sync(0);
-    //qinfo->sync(0);
-}
-#endif
-
-#if NOCLUSTER
 /** Write the info_data struct to the database
 
 	\brief the cons_info_data struct is written to db
 
 */
-void BerkeleyDb::__WriteInfoData() throw(DbException)
+void BerkeleyDb::__WriteInfoData()
 {
 	timeval tv;
 	gettimeofday(&tv,NULL);
@@ -1470,45 +1116,20 @@ void BerkeleyDb::__WriteInfoData() throw(DbException)
 	info_data.date_modified = tv.tv_sec;
 	data_bfr.SetSize(sizeof(InfoData));
         
-	//InfoData* inf_ptr = to_qinfo ? &info_data : &cons_info_data;
 	InfoData* inf_ptr = &info_data;
 	memcpy(data_bfr.GetData(),(const void*) inf_ptr, sizeof(InfoData));
 	WriteKeyData(INFO_KEY,minfo_data,data_bfr,data_bfr,true,true,true);
 }
-#else
-/** Write the info_data struct to the database
-
-\param to_qinfo If true (default), the info_data struct is enqueued to qinfo, then reset
-If false, the cons_info_data struct is written to db
-
-*/
-void BerkeleyDb::__WriteInfoData(bool to_qinfo) throw(DbException)
-{
-	timeval tv;
-	gettimeofday(&tv,NULL);
-	info_data.date_modified = tv.tv_sec;
-	data_bfr.SetSize(sizeof(InfoData));
-        
-	InfoData* inf_ptr = to_qinfo ? &info_data : &cons_info_data;
-	memcpy(data_bfr.GetData(),(const void*) inf_ptr, sizeof(InfoData));
-	WriteKeyData(INFO_KEY,minfo_data,data_bfr,data_bfr,true,!to_qinfo,true);
-	if (to_qinfo)
-	{
-		// Resetting info_data
-		info_data.Reset();
-	}
-}
-#endif
 
 /** Adjust the databuffers capacity 
 */
-void Command::_AdjustBufferCapacity() throw(BdbhException)
+void Command::_AdjustBufferCapacity()
 {
     GetDataBfr().SetCapacity(bdb.GetMaxDataSize());
     GetCDataBfr().SetCapacity(bdb.GetMaxDataSize()+bdb.GetMaxDataSize()/10);
 }
 
-vector<string> Command::_ExpandWildcard(const string& k) throw(DbException,BdbhException)
+vector<string> Command::_ExpandWildcard(const string& k)
 {
     const string wc = "/*/";
 

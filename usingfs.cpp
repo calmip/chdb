@@ -23,6 +23,16 @@ using namespace std;
 //#include <sys/types.h>
 #include <dirent.h>
 
+
+
+/***
+ *   \brief Check the parameters (member prms)
+ * 
+ *   Throw a runtime error if something wrong
+ * 
+ *******************/
+void UsingFs::checkParameters() {}
+
 /**
    \brief Read the file names from the input directory and push them to files
           If files is already filled, do nothing
@@ -74,7 +84,6 @@ void UsingFs::readDir(const string &top,size_t head_strip) const {
  */
 
 void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& files_tmp,bool is_size_sort) const {
-	bool in_files_empty=input_files.empty();
 	DIR* fd_top=opendir(top.c_str());
 	struct dirent* dir_entry=NULL;
 	do {
@@ -104,21 +113,42 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 				throw(runtime_error(msg));
 			}
 
-			// Select the file only if in input_files... or if input_files is empty, select it anyway
-            // If in size sort, we use files_tmp for temporary storage
+			// Should be a directory or a regular file, else we skip it 
+			// ==> symlinks are skipped !
+			bool is_a_dir;
 			if (S_ISREG(st_bfr.st_mode)) {
-				if (isCorrectType(s_file_name))
-					if (in_files_empty || input_files.find(s_file_name)!=input_files.end()) {
-						if (is_size_sort) {
-							Finfo tmp_f(s_file_name,st_bfr.st_size);
-							files_tmp.push_back(tmp_f);
-						} else {
-							files.push_back(s_file_name);
-						}
-					}
+				is_a_dir = false;
 			} else if (S_ISDIR(st_bfr.st_mode)) {
-				readDirRecursive(file_name,head_strip,files_tmp,is_size_sort);
+				is_a_dir = true;
+			} else {
+				continue;
 			}
+
+			if (! is_size_sort) {
+				// if file extension and type is correct !
+				if (isCorrectType(s_file_name,is_a_dir)) {
+					// If in the list of input files
+					if (input_files.empty() || input_files.find(s_file_name)!=input_files.end()) {
+						files.push_back(s_file_name);
+					}
+				}
+				
+			// Sort in size: keep in files_tmp a Finfo of the files
+			} else {
+				// if file extension and type is correct !
+				if (isCorrectType(s_file_name,is_a_dir)) {
+					// If in the list of input files
+					if (input_files.empty() || input_files.find(s_file_name)!=input_files.end()) {
+						Finfo tmp_f(s_file_name,st_bfr.st_size);
+						files_tmp.push_back(tmp_f);
+					}
+				}
+			}
+			
+			// Call the subdirectory 
+			if (is_a_dir) {
+				readDirRecursive(file_name,head_strip,files_tmp,is_size_sort);
+			}				
 		}
 	} while ( dir_entry != NULL );
 	closedir(fd_top);
@@ -127,7 +157,7 @@ void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& 
 /** 
  * @brief Execute the external command, using complete in_pathes as input and complete out_pathes as output
  * 
- * @pre The cmd is ready to be executed (templates subsititution already done)
+ * @pre The cmd is ready to be executed (templates substitution already done)
  *
  * @param in_pathes input pathes, relative to the input directory (ie inputdir/A/B.txt ==> A/B.txt)
  * @param cmd 
@@ -145,15 +175,18 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 									const string& snippet) {
 
     // throw a logic error if one of the input pathes is not readable
-	string in_dir = getTempInDir();
-	for (size_t i=0; i<in_pathes.size(); ++i) {
-		string f = in_dir;
-		f += '/';
-		f += in_pathes[i];
-		if (!fileExists(f)) {
-			string msg = "ERROR - File does not exist:  ";
-			msg += in_pathes[i];
-			throw(logic_error(msg));
+    // (but NOT in iter type)
+    if (!prms.isTypeIter()) {
+		string in_dir = getTempInDir();
+		for (size_t i=0; i<in_pathes.size(); ++i) {
+			string f = in_dir;
+			f += '/';
+			f += in_pathes[i];
+			if (!fileExists(f)) {
+				string msg = "ERROR - File does not exist:  ";
+				msg += in_pathes[i];
+				throw(logic_error(msg));
+			}
 		}
 	}
 
@@ -266,6 +299,11 @@ void UsingFs::makeTempOutDir() {
 
 	// Generating an exception if outdir is not yet initialized !
 	string outdir = getOutDir();
+	
+	// .. not if iter type
+	if (prms.isTypeIter() && outdir=="") {
+		outdir = "chdb.out";
+	}
 	string tmpdir="";
 	if (prms.isTmpDir()) {
 		string tmp = prms.getTmpDir();

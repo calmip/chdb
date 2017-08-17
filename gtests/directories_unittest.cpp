@@ -26,7 +26,7 @@ using ::testing::Values;
 
 /**
    \brief compute output directory name from input directory and from directory type
-          Suppported directories = UsingFs or UsingBdbh
+          Supported directories = UsingFs or UsingBdbh
  */
 
 string computeOutputDir(const string& input_dir,const string& directory_type) {
@@ -87,7 +87,8 @@ TEST_P(TestCase1,makeOutDir) {
 		// NOTE - This test may NOT WORK CORRECTLY an an nfs filesystem !
 		if ( GetParam()->getDirectoryType()=="UsingBdbh" ) {
 			string out_dir = prms.getOutDir();
-			EXPECT_EQ(true,fileExists(out_dir+"/database"));
+			EXPECT_EQ(true,fileExists(out_dir+"/data"));
+			EXPECT_EQ(true,fileExists(out_dir+"/metadata"));
 		}
 	}
 
@@ -106,15 +107,15 @@ TEST_P(TestCase1,makeOutDir) {
 		string out_1 = getInputDir();
 #ifdef OUTDIRPERSLAVE
 		out_1 += ".out.1";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_NO_THROW(callSystem(cmd,true));
 		cmd = "rm -r " + out_1;
 		EXPECT_NO_THROW(callSystem(cmd,true));
 #else
 		out_1 += ".out";
-		cmd = "ls -ld " + out_1 + " >&/dev/null";
+		cmd = "ls -ld " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
-		cmd = "rm -r " + out_1 + " >&/dev/null";;
+		cmd = "rm -r " + out_1 + " >/dev/null 2>&1";
 		EXPECT_THROW(callSystem(cmd,true),runtime_error);
 #endif
 
@@ -159,7 +160,7 @@ TEST_P(TestCase1,MakeTempOutDir) {
 	string output_dir = computeOutputDir(getInputDir(),GetParam()->getDirectoryType());
 	string out = output_dir + "_??????";
 	cmd += out;
-	cmd += " &>/dev/null";
+	cmd += " >/dev/null 2>&1";
 
 	// TESTING usingfs
 	if (GetParam()->getDirectoryType() == "UsingFs" ) {
@@ -285,6 +286,44 @@ TEST_P(TestCase1,getTempOut_or_InDir) {
 	FREE_ARGV(11);
 }
 
+// Testing Directory WITHOUT the --out-files parameter
+// Parameters are checked when setRank is called... 
+TEST_P(TestCase1,withoutOutfiles) {
+	cout << GetParam()->getDescription() << '\n';
+	
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"txt");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	//INIT_ARGV(9,"--out-files");
+	//INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(9,argv);
+
+	// Create a directory with rank 0 --> Parameters are checked
+	auto_ptr<Directories> aptr_dir_master(GetParam()->createDirectory(prms));
+	Directories& dir_master = *aptr_dir_master.get();
+
+	// Create a directory with rank 1 --> Parameters are NOT checked
+	auto_ptr<Directories> aptr_dir_slave(GetParam()->createDirectory(prms));
+	Directories& dir_slave = *aptr_dir_slave.get();
+	
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		EXPECT_THROW(dir_master.setRank(0,2),runtime_error);
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	} else {
+		EXPECT_NO_THROW(dir_master.setRank(0,2));
+		EXPECT_NO_THROW(dir_slave.setRank(1,2));
+	}
+}	
+	
 // testing Directory::completeFilePath, with or without temporary directory
 TEST_P(TestCase1,completeFilePath) {
 	cout << GetParam()->getDescription() << '\n';
@@ -441,6 +480,36 @@ TEST_P(TestCase1,getFiles_Unsorted) {
 	EXPECT_EQ(expected_files,found_files);
 
 	FREE_ARGV(11);
+
+}
+
+// testing getFiles in iter type
+TEST_P(TestCase1,getFiles_iter) {
+	cout << GetParam()->getDescription() << '\n';
+
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"coucou");
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"1 10 2");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	INIT_ARGV(9,"--out-dir");
+	INIT_ARGV(10,"iter.out");
+	
+	Parameters prms(11,argv);
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+
+	vector_of_strings found_files=dir.getFiles();
+	vector_of_strings expected_files = {"1","3","5","7","9"};
+	EXPECT_EQ(expected_files,dir.getFiles());
+	found_files=dir.getFiles();
+	EXPECT_EQ(expected_files,dir.getFiles());
+
+	FREE_ARGV(7);
 
 }
 
@@ -950,6 +1019,50 @@ TEST_P(TestCase1,SortFiles2) {
 	FREE_ARGV(13);
 }
 
+// testing file type dir
+// testing buildBlocks
+//         distribution in blocks size 5, from a sorted array, size 33
+TEST_P(TestCase4,filetypedir) {
+	cout << GetParam()->getDescription() << '\n';
+
+	// Init prms
+	char* argv[11];
+	INIT_ARGV(0,"directories_unittest");
+	INIT_ARGV(1,"--command-line");
+	INIT_ARGV(2,"touch out.txt");
+	INIT_ARGV(3,"--in-dir");
+	INIT_ARGV(4,getInputDir().c_str());
+	INIT_ARGV(5,"--in-type");
+	INIT_ARGV(6,"dir");
+	INIT_ARGV(7,"--tmp-dir");
+	INIT_ARGV(8,GetParam()->getTmpDir().c_str());
+	INIT_ARGV(9,"--out-files");
+	INIT_ARGV(10,"%out-dir%/%path%");
+
+	Parameters prms(11,argv);
+
+	auto_ptr<Directories> aptr_dir(GetParam()->createDirectory(prms));
+	Directories& dir = *aptr_dir.get();
+
+	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
+		EXPECT_THROW(dir.setRank(0,2),runtime_error);
+	} else {
+		EXPECT_NO_THROW(dir.setRank(0,2));
+	
+		vector_of_strings files = dir.getFiles();
+		vector_of_strings expected_input_files;
+		
+		expected_input_files.push_back("0.dir");
+		expected_input_files.push_back("0.dir/1.dir");
+		expected_input_files.push_back("3.dir");
+		expected_input_files.push_back("4.dir");
+		expected_input_files.push_back("C/2.dir");
+		EXPECT_EQ(expected_input_files,files);
+	}
+	
+	FREE_ARGV(11);
+}
+
 // Calling "none" for tmp-dir is just a trick: "none" does not exist, so there is NO tmp-dir
 // If you do NOT specify --tmp-dir, you get the default tmpdir, which may - or not - be defined
 // See parameters.cpp
@@ -959,10 +1072,15 @@ auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithPara
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
 auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
 
-
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase1,
-//	Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get(),test_case_Bdbh_withtmp.get())
+//	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+);
+INSTANTIATE_TEST_CASE_P(
+	tmpOrNotSeveralDirectories,
+	TestCase4,
 	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );

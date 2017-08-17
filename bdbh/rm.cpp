@@ -29,9 +29,10 @@ using bdbh::Rm;
 /** For each key specified in the parameters, read its metadata and call __List
 */
 
-void Rm::Exec() throw(BdbhException,DbException)
+void Rm::Exec()
 {
     Mdata mdata;
+    exit_status = BDBH_ERR_OK;
     
     vector<Fkey> fkeys = prm.GetFkeys();
     if (fkeys.size()==0)
@@ -76,7 +77,7 @@ void Rm::Exec() throw(BdbhException,DbException)
         
 */
 
-void Rm::__Exec(const string& key, bool is_recurs) throw(BdbhException,DbException)
+void Rm::__Exec(const string& key, bool is_recurs)
 {
     Mdata mdata;
     string nkey;
@@ -94,8 +95,8 @@ void Rm::__Exec(const string& key, bool is_recurs) throw(BdbhException,DbExcepti
         }
         else
         {
-            __Remove(key,mdata,CountLevel(key.c_str()));
-            __UpdateDbSize(-mdata.size,-mdata.csize,-nkey.size(),-1,0);
+            __Remove(key,&mdata,CountLevel(key.c_str()));
+            _UpdateDbSize(-mdata.size,-mdata.csize,-nkey.size(),-1,0,0);
         }
     }
 }
@@ -112,7 +113,7 @@ void Rm::__Exec(const string& key, bool is_recurs) throw(BdbhException,DbExcepti
         
 */
                 
-void Rm::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhException,DbException)
+void Rm::__ExecDir(const string& key, Mdata mdata, bool is_recurs)
 {
     if (is_recurs)
     {
@@ -138,8 +139,8 @@ void Rm::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhExc
                 }
                 else
                 {
-                    __Remove(nkey,mdata,lvl);
-                    __UpdateDbSize(-mdata.size,-mdata.csize,-nkey.size(),-1,0);
+                    __Remove(nkey,&mdata,lvl);
+                    _UpdateDbSize(-mdata.size,-mdata.csize,-nkey.size(),-1,0,0);
                 }
             }
             // If a signal is received, return instead of breaking: do not remove marker and directory
@@ -156,12 +157,14 @@ void Rm::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhExc
         }
         
         // Remove the marker, then the directory
-        __Remove(marker,mdata,lvl);
-        __Remove(key,mdata,lvl-1);
+        __Remove(marker,nullptr,lvl);
+        __Remove(key,nullptr,lvl-1);
        
         // Update the global info
-        __UpdateDbSize(0,0,-key.size()-marker.size(),0,-1);
+        _UpdateDbSize(0,0,-key.size()-marker.size(),0,-1,0);
         
+    } else {
+        exit_status = BDBH_ERR_RE;
     }
     return;
 }
@@ -170,16 +173,16 @@ void Rm::__ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhExc
 
 If the key if home/manu, All the home/manu/ keys will be removed 
 \param key The key
-\param mdata The metadata (not used)
-\param lvl The level of he key (leading to the correct cursor)
+\param mdata_ptr The metadata
+\param lvl The level of the key (leading to the correct cursor)
 
 */
 
-void Rm::__Remove(const string& key, Mdata mdata, int lvl) throw(BdbhException,DbException)
+void Rm::__Remove(const string& key, Mdata* mdata_ptr, int lvl)
 {
     // Remove the key, using the cursor
     int rvl=0;
-    rvl = _RemoveUsingCursor(lvl);
+    rvl = _RemoveUsingCursor(lvl,mdata_ptr);
     if (rvl != 0)
     {
         string msg = "Error: the directory " + key +" could not be removed"; 

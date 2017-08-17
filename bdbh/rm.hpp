@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -15,13 +14,13 @@ namespace bdbh {
  */
 	class Rm: public Command {
     public:
-		Rm(const Parameters& p, BerkeleyDb& d) throw(DbException): Command(p,d){};
-		virtual void Exec() throw(BdbhException,DbException);
+		Rm(const Parameters& p, BerkeleyDb& d): Command(p,d){};
+		virtual void Exec();
     
     private:
-		void __Exec(const string& key, bool is_recurs) throw(BdbhException,DbException);
-		void __ExecDir(const string& key, Mdata mdata, bool is_recurs) throw(BdbhException,DbException);
-		void __Remove(const string& key, Mdata mdata, int lvl) throw(BdbhException,DbException);
+		void __Exec(const string& key, bool is_recurs);
+		void __ExecDir(const string& key, Mdata mdata, bool is_recurs);
+		void __Remove(const string& key, Mdata* mdata_ptr, int lvl);
 	};
 }
 #endif

@@ -31,7 +31,7 @@ TEST_P(TestCase1,Block1) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -116,7 +116,7 @@ TEST_P(TestCase1,Block2) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents_with_rank["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents_with_rank["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -153,7 +153,7 @@ TEST_P(TestCase1,Block5) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -192,7 +192,7 @@ TEST_P(TestCase1,onerror) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -236,7 +236,7 @@ TEST_P(TestCase1,onefile) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(false,existsFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(false,existsFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -274,7 +274,7 @@ TEST_P(TestCase1,twoslaves_blk3) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -309,7 +309,7 @@ TEST_P(TestCase1,fiveslaves) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["B.txt"],readFileFromBdbh(output_dir,output_root+"/B.txt"));
 		EXPECT_EQ(expected_file_contents["C/C.txt"],readFileFromBdbh(output_dir,output_root+"/C/C.txt"));
@@ -368,7 +368,7 @@ TEST_P(TestCase2,errBlock2Slaves2) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["0.txt"],readFileFromBdbh(output_dir,output_root+"/0.txt"));
 		EXPECT_EQ(expected_file_contents["1.txt"],readFileFromBdbh(output_dir,output_root+"/1.txt"));
@@ -430,7 +430,7 @@ TEST_P(TestCase3,errBlock2Slaves2) {
 	if ( GetParam()->getDirectoryType() == "UsingBdbh" ) {
 		string output_dir = getInputDir();
 		output_dir = output_dir.substr(0,output_dir.length()-3);
-		string output_root = output_dir + ".out";
+		string output_root = output_dir + ".out" + '/' + output_dir;
 		output_dir += ".out.db";
 		EXPECT_EQ(expected_file_contents["0.txt"],readFileFromBdbh(output_dir,output_root+"/0.txt"));
 		EXPECT_EQ(expected_file_contents["1.txt"],readFileFromBdbh(output_dir,output_root+"/1.txt"));
@@ -464,26 +464,26 @@ TEST_P(TestCase3,errBlock2Slaves2) {
 
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithParamsUsingFs("none"));
 auto_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
-//auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
+auto_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
 
 
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase1,
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get())
-	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get())
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase2,
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
-	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );
 INSTANTIATE_TEST_CASE_P(
 	tmpOrNotSeveralDirectories,
 	TestCase3,
-	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
-	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+	//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get());
+	Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );
 
 

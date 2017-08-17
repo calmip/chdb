@@ -67,6 +67,8 @@ private:
 	string temp_db_dir;
 	mutable bool need_consolidation;
 	bool signal_received;
+	void checkParameters();
+
 };
 
 #endif

@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -15,15 +14,15 @@ namespace bdbh {
  */
 	class Merge: public Command {
     public:
-		Merge (const Parameters& p, BerkeleyDb& d, Merge* to=NULL) throw(DbException);
-		virtual void Exec() throw(BdbhException,DbException);
+		Merge (const Parameters& p, BerkeleyDb& d, Merge* to=NULL);
+		virtual void Exec();
     
     private:
-		void __Exec(const Fkey&) throw(BdbhException,DbException);
-		void __ExecFrom() throw(BdbhException,DbException);
-		void __ExecFromKey(const string&) throw(BdbhException,DbException);
-		void __ExecFromDir(const string&, Mdata) throw(BdbhException,DbException);
-		void __ExecFromFile(const string&, Mdata&) throw(BdbhException);
+		void __Exec(const Fkey&);
+		void __ExecFrom();
+		void __ExecFromKey(const string&);
+		void __ExecFromDir(const string&, Mdata);
+		void __ExecFromFile(const string&, Mdata&);
 
 		Merge* destination;
 	};

@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -22,16 +21,16 @@ namespace bdbh {
 /** \brief this object is used when using the commands read or extract */
 	class Read: public Command {
     public:
-		Read(const Parameters& p, BerkeleyDb& d) throw(DbException): Command(p,d){
+		Read(const Parameters& p, BerkeleyDb& d): Command(p,d){
 			_AdjustBufferCapacity();
 		};
-		virtual void Exec() throw(BdbhException,DbException);
+		virtual void Exec();
     
     private:
-		void __Exec(const Fkey& ) throw(BdbhException,DbException);
-		void __ExecDir(const Fkey& fkey, Mdata mdata)  throw (BdbhException, DbException);
-		void __ExecSymLink(const Fkey&) throw(BdbhException);
-		void __ExecFile(const Fkey& fkey, Mdata& mdata) throw(BdbhException);
+		void __Exec(const Fkey& );
+		void __ExecDir(const Fkey& fkey, Mdata mdata);
+		void __ExecSymLink(const Fkey&);
+		void __ExecFile(const Fkey& fkey, Mdata& mdata);
 
 		void __RestoreTime(const string& file_name, const Mdata& mdata);
 		vector<DirectoryEntry> directories;

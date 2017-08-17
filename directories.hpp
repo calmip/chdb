@@ -39,8 +39,11 @@ struct Finfo {
 class Directories: private NonCopyable {
 
 public:
-	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()){};
+	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()) {};
 	virtual ~Directories(){};
+	
+	// setRank should be set ONLY ONE TIME (this is checked)
+	// ONLY IF master, setRank calls checkParameters and throws a runtime_exception if there is something wrong
 	void setRank(int,int);
 
 	virtual void   makeOutDir(bool,bool) = 0;
@@ -59,13 +62,10 @@ public:
 		readFiles();
 		return files;
 	}
-	void readFiles() {
-		v_readFiles();
-		files_size = count_if(files.begin(), files.end(), isNotNullStr);
-		if ( ! files.empty()) {
-			blk_ptr=files.begin();
-		}
-	}
+	
+	// If in iter mode, generate the list of files
+	// Else, delegate this to v_readFiles, a virtual pure.
+	void readFiles();
 
 	vector_of_strings nextBlock();
 	void completeFilePath(const string& p, string& text, bool force_out=false);
@@ -83,7 +83,7 @@ public:
 	
 protected:
 	void initInputFiles() const;
-	bool isCorrectType(const string &) const;
+	bool isCorrectType(const string &, bool) const;
 
 	const Parameters& prms;
 	
@@ -101,6 +101,9 @@ private:
 	mutable vector_of_strings::iterator blk_ptr;
 //	void replaceTmpl(const string& tmpl, const string& value, string& text);
 	virtual void v_readFiles() = 0;
+	// Check the parameters, they should be coherent, but this depends on the derived classes
+	virtual void checkParameters() = 0;
+
 };
 
 #endif

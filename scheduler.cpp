@@ -64,9 +64,17 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
 
 	os_tmp << comm_size;
 	int rvl2 = setenv("CHDB_COMM_SIZE",os_tmp.str().c_str(),true);
+	
+	// @todo - Let the user modify herself the environment ???
+	string chdb_env = "CHDB_RANK CHDB_COMM_SIZE";
+	if (prms.isVerbose()) {
+		setenv("CHDB_VERBOSE","1",true);
+		chdb_env += " CHDB_VERBOSE";
+	}
+	int rvl3 = setenv("CHDB_ENVIRONMENT",chdb_env.c_str(), true);
 
-	if (rvl1!=0 || rvl2!=0)
-		throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK or CHD_COMM_SIZE");
+	if (rvl1!=0 || rvl2!=0 || rvl3!=0)
+		throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK, CHDB_COMM_SIZE or CHDB_ENVIRONMENT");
 
 	// Give some infos to dir
 	dir.setRank(rank,comm_size); 

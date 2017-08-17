@@ -6,7 +6,6 @@
 #include <string>
 using namespace std;
 
-#include "constypes.hpp"
 #include "command.hpp"
 #include <db_cxx.h>
 
@@ -16,20 +15,20 @@ namespace bdbh {
  */
 	class Create: public Command {
     public:
-		Create(const Parameters& p, BerkeleyDb& d) throw (exception,DbException): Command(p,d) {
+		Create(const Parameters& p, BerkeleyDb& d): Command(p,d) {
 			if (d.GetOpenMode() != BDBH_OCREATE) {
 				throw(logic_error("The database should be opened in CREATE mode"));
 			}
 		};
-		virtual void Exec() throw(BdbhException,DbException);
+		virtual void Exec();
 	};
 
 /** \brief This object is used with the convert command 
  */
 	class Convert: public Command {
     public:
-		Convert(const Parameters& p, BerkeleyDb& d) throw (DbException): Command(p,d) {};
-		virtual void Exec() throw(BdbhException,DbException);
+		Convert(const Parameters& p, BerkeleyDb& d): Command(p,d) {};
+		virtual void Exec();
 	};
 
 /**
@@ -43,11 +42,11 @@ namespace bdbh {
  */
 	class Info: public Command {
     public:
-		Info(const Parameters& p, BerkeleyDb& d) throw (DbException): Command(p,d),no_print(false),data_ready(false) {};
+		Info(const Parameters& p, BerkeleyDb& d): Command(p,d),no_print(false),data_ready(false) {};
 		void InhibitPrinting()      { no_print = true; };
 		void DoNotInhibitPrinting() { no_print = false; };
 		InfoData GetInfoData()      { __DataReady(); return info_data; };
-		virtual void Exec() throw(BdbhException,DbException);
+		virtual void Exec();
 		friend InfoData GetInfo(BerkeleyDb & bdb);
 
 	private:
@@ -64,8 +63,8 @@ namespace bdbh {
  */
 	class Help: public Command {
     public:
-		Help(const Parameters& p, BerkeleyDb& d) throw (DbException): Command(p,d) {};
-		virtual void Exec() throw(BdbhException,DbException);
+		Help(const Parameters& p, BerkeleyDb& d): Command(p,d) {};
+		virtual void Exec();
 	};
 
 	void Usage();
