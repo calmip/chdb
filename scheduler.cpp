@@ -100,7 +100,7 @@ void Scheduler::_initCheckList() {
  * @pre The ckeckList must be already initialized
  * 
  * @param treated_files A list of treated (= used for computation) files
- * @param return_values A corresponding lis of returend values, the file is checked only if value is 0 
+ * @param return_values A corresponding list of returned values, the file is checked only if value is 0 
  *
  * @exception Throw a logic_error if some file is not in the list
  * 
@@ -158,9 +158,20 @@ void Scheduler::finalize() {
 	MPI_Finalize();
 }
 
+/****
+ * @brief Called by main to inform the scheduler that a signal was received !
+ *        See the SignalHandle class
+ *        If master, call _exit and never returns
+ *        If slave, inform the directory that a signal was received
+ * 
+ * @param signal The signal received
+ * 
+ * @return If master, DOES NOT RETURN (call _exit)
+ * 
+ *****/
 void Scheduler::SetSignal(int signal) {
-	cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << endl;
 	if (isMaster()) {
+		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Creating CHDB-INTERRUPTION.txt and exiting" << endl;
 		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
 		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
 		ofs << "# Check your output, you may need to retrieve files from temporary files or databases.\n";
@@ -175,8 +186,10 @@ void Scheduler::SetSignal(int signal) {
 		if (report_file.is_open()) report_file.close();
 		
 		_exit(0);
+	} else {
+		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Propagating to Directory object" << endl;
+		dir.SetSignal(signal);
 	}
-	dir.SetSignal(signal);
 }
 
 /*

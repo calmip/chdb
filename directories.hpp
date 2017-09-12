@@ -15,6 +15,7 @@
 
 //#include <vector>
 //#include <string>
+#include <iostream>
 #include <list>
 //#include <stdexcept>
 #include <algorithm>
@@ -79,7 +80,9 @@ public:
 
 	// Derived classes may override those functions if they have something to close in emergency...
 	virtual void Sync() {};
-	virtual void SetSignal(int signal) {};
+	virtual void SetSignal(int signal) {
+		cerr << "Directory rank="<< rank <<" received a signal - " << signal << " - Ignoring it !" << endl;
+	};
 	
 protected:
 	void initInputFiles() const;

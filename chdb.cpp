@@ -121,8 +121,8 @@ class SignalHandle {
         static void ConnectScheduler(Scheduler* s_ptr) { sched_ptr = s_ptr; };
         static void sig_handler(int s) {
 			if (sched_ptr != NULL) {
-				cerr << "signal received " << s << endl;
-				if (sched_ptr != NULL) sched_ptr->SetSignal(s);
+				cerr << "chdb      rank=" << sched_ptr->getRank() << " received a signal " << s << " - Propagating to Scheduler" << endl;
+				sched_ptr->SetSignal(s);
 			}
 		}
         

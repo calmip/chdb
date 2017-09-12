@@ -239,7 +239,13 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 		buildMpiCommand(command);
 
 		// Call command and keep value
-		sts = callSystem(command);
+		try {
+			sts = callSystem(command);
+		}
+		catch (SigChildExc & e) {
+			cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - terminating this slave" << endl;
+			_exit(0);
+		}
 
 		// Change to previous current directory if necessary
 		// NB - Should work, we don't even check
