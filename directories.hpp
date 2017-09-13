@@ -59,6 +59,9 @@ public:
 	//                    All those temporaries are consolidated at the end
 	virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
 
+	// Explaining how to consolidate data manually !
+	virtual string howToConsolidate() const = 0;
+
 	const vector_of_strings& getFiles() {
 		readFiles();
 		return files;

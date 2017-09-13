@@ -171,20 +171,25 @@ void Scheduler::finalize() {
  *****/
 void Scheduler::SetSignal(int signal) {
 	if (isMaster()) {
-		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Creating CHDB-INTERRUPTION.txt and exiting" << endl;
+        cerr << "Scheduler rank=" << getRank() << " received a signal " << signal << " - Creating CHDB-INTERRUPTION.txt and exiting" << endl;
 		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
 		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
-		ofs << "# Check your output, you may need to retrieve files from temporary files or databases.\n";
+		ofs << dir.howToConsolidate() << endl;
 		
+		int j = 0;
 		for (map<string,bool>::iterator i = checkList.begin(); i != checkList.end(); ++i) {
-			if ( i->second == false) ofs << i->first << endl;
+			if ( i->second == false) {
+				j++;
+				ofs << i->first << endl;
+			}
 		}
+		
+		ofs << "# Number of files not yet processed = " << j << endl;
 		ofs.close();
 		
 		// Close open files, if necessary
 		if (err_file.is_open())    err_file.close();
 		if (report_file.is_open()) report_file.close();
-		
 		_exit(0);
 	} else {
 		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Propagating to Directory object" << endl;

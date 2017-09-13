@@ -30,6 +30,9 @@ public:
 		}
 	}
 
+	// Explaining how to consolidate data manually
+	string howToConsolidate() const { string out="# \n"; return out;};
+
 	//void filesToOutputDb(const vector_of_strings&) {};
 	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&, const string& wd="", const string& sn="");
 	void makeOutDir(bool,bool);

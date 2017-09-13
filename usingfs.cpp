@@ -244,6 +244,7 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 		}
 		catch (SigChildExc & e) {
 			cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - terminating this slave" << endl;
+			sleep (5);
 			_exit(0);
 		}
 

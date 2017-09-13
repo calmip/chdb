@@ -348,6 +348,7 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		rvl = callSystem(cmd);
 	} catch (SigChildExc & e) {
 		cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - terminating this slave" << endl;
+		sleep (5);
 		_exit(0);
 	}
 
@@ -684,6 +685,22 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 		cmd += to_remove;
 		callSystem(cmd,false); 
 	}
+}
+
+/***
+ * @brief explaining how to consolidate data manually - This is used when chdb is interrupted
+ * 
+ **********/
+string UsingBdbh::howToConsolidate() const  {
+         string out;
+         string outdir = prms.getOutDir();
+         out =  "#\n";
+         out += "# WANRNING !!! Automatic consolidation is disabled when chdb is interrupted\n";
+         out += "# You should consolidate data manually, the following bash command should work:\n";
+         out += "# for db in " + outdir + ".*/db; do echo \"consolidating data from $db\"; bdbh -d " + outdir + " merge $db; done;\n";
+         out += "# When you are sure that data are consolidated, you can safely remove the temporary directories:\n";
+         out += "# rm -r " + outdir + ".*\n#\n";
+         return out;
 }
 
 /** 
