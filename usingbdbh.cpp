@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <csignal>
 #include <unistd.h>
 #include <string>
 #include <list>
@@ -347,9 +348,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	try {
 		rvl = callSystem(cmd);
 	} catch (SigChildExc & e) {
-		cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - terminating this slave" << endl;
-		sleep (5);
-		_exit(0);
+		cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - resending it to the slave" << endl;
+		kill(getpid(), e.signal_received);
 	}
 
 	// if rvl == 0, we save to the database the output files before returning
@@ -696,10 +696,9 @@ string UsingBdbh::howToConsolidate() const  {
          string outdir = prms.getOutDir();
          out =  "#\n";
          out += "# WANRNING !!! Automatic consolidation is disabled when chdb is interrupted\n";
-         out += "# You should consolidate data manually, the following bash command should work:\n";
+         out += "# You should consolidate data manually, may be using the following bash command:\n";
          out += "# for db in " + outdir + ".*/db; do echo \"consolidating data from $db\"; bdbh -d " + outdir + " merge $db; done;\n";
-         out += "# When you are sure that data are consolidated, you can safely remove the temporary directories:\n";
-         out += "# rm -r " + outdir + ".*\n#\n";
+
          return out;
 }
 

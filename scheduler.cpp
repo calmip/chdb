@@ -161,8 +161,8 @@ void Scheduler::finalize() {
 /****
  * @brief Called by main to inform the scheduler that a signal was received !
  *        See the SignalHandle class
- *        If master, call _exit and never returns
- *        If slave, inform the directory that a signal was received
+ *        If master, Save the state, wait 25 s and exit
+ *        If slave, wait 25 s and exit
  * 
  * @param signal The signal received
  * 
@@ -190,11 +190,12 @@ void Scheduler::SetSignal(int signal) {
 		// Close open files, if necessary
 		if (err_file.is_open())    err_file.close();
 		if (report_file.is_open()) report_file.close();
-		_exit(0);
-	} else {
-		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Propagating to Directory object" << endl;
-		dir.SetSignal(signal);
 	}
+	else {
+		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Sleeping 25 s" << endl;
+	}
+	sleep(25);
+	_exit(0);
 }
 
 /*

@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <csignal>
 #include <unistd.h>
 #include <string>
 #include <list>
@@ -243,9 +244,8 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 			sts = callSystem(command);
 		}
 		catch (SigChildExc & e) {
-			cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - terminating this slave" << endl;
-			sleep (5);
-			_exit(0);
+			cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - resending it to the slave" << endl;
+			kill(getpid(), e.signal_received);
 		}
 
 		// Change to previous current directory if necessary

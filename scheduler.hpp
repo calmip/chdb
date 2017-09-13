@@ -74,7 +74,7 @@ protected:
 
 private:
 	double start_time;
-	int signal_received;
+	//int signal_received;
 	
 	map<string,bool> checkList;
 	
