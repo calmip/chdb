@@ -4,10 +4,19 @@
 #define SYSTEM_H
 
 #include <string>
+#include <stdexcept>
 #include "constypes.hpp"
 using namespace std;
 
 #include <cassert>
+
+/*************
+ * @brief This exception is thrown by callsystem if the child received a signal !
+ **************************/
+struct SigChildExc: public runtime_error {
+	SigChildExc(int s): runtime_error(""),signal_received(s){};
+	int signal_received;
+};
 
 void getHostName(string& h);
 void getCurrentDirName(string& d);

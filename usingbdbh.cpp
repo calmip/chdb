@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <csignal>
 #include <unistd.h>
 #include <string>
 #include <list>
@@ -343,10 +344,16 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 		findOrCreateDir(f);
 	}
 
-	int rvl = callSystem(cmd);
+	int rvl = 0;
+	try {
+		rvl = callSystem(cmd);
+	} catch (SigChildExc & e) {
+		cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - resending it to the slave" << endl;
+		kill(getpid(), e.signal_received);
+	}
 
 	// if rvl == 0, we save to the database the output files before returning
-	//if (rvl==0) {
+	if (rvl==0) {
 		vector_of_strings arg;            // The arg to write output files to the database
 
 		//arg.push_back("--database");
@@ -407,9 +414,9 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 			unlink ( f.c_str());
 		}
 		return rvl;
-//	} else {
-		//		return rvl;
-//	}
+	} else {
+		return rvl;
+	}
 }
 
 /** 
@@ -680,6 +687,21 @@ void UsingBdbh::consolidateOutput(bool from_tmp, const string& path) {
 	}
 }
 
+/***
+ * @brief explaining how to consolidate data manually - This is used when chdb is interrupted
+ * 
+ **********/
+string UsingBdbh::howToConsolidate() const  {
+         string out;
+         string outdir = prms.getOutDir();
+         out =  "#\n";
+         out += "# WANRNING !!! Automatic consolidation is disabled when chdb is interrupted\n";
+         out += "# You should consolidate data manually, may be using the following bash command:\n";
+         out += "# for db in " + outdir + ".*/db; do echo \"consolidating data from $db\"; bdbh -d " + outdir + " merge $db; done;\n";
+
+         return out;
+}
+
 /** 
  * @brief Find or create the directory part of the path name
  * 
@@ -757,7 +779,7 @@ void UsingBdbh::findOrCreateDir(const string & p) {
 }
 
 void UsingBdbh::SetSignal(int signal) {
-	cerr << "UsingBdbh received a signal " << signal << " - Closing output and temporary databases" << endl;
+	cerr << "UsingBdbh rank="<< rank <<" received a signal - " << signal << " - Closing output and temporary databases" << endl;
 	signal_received = true;
 	Sync();
 }

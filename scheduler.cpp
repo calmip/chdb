@@ -100,7 +100,7 @@ void Scheduler::_initCheckList() {
  * @pre The ckeckList must be already initialized
  * 
  * @param treated_files A list of treated (= used for computation) files
- * @param return_values A corresponding lis of returend values, the file is checked only if value is 0 
+ * @param return_values A corresponding list of returned values, the file is checked only if value is 0 
  *
  * @exception Throw a logic_error if some file is not in the list
  * 
@@ -158,25 +158,44 @@ void Scheduler::finalize() {
 	MPI_Finalize();
 }
 
+/****
+ * @brief Called by main to inform the scheduler that a signal was received !
+ *        See the SignalHandle class
+ *        If master, Save the state, wait 25 s and exit
+ *        If slave, wait 25 s and exit
+ * 
+ * @param signal The signal received
+ * 
+ * @return If master, DOES NOT RETURN (call _exit)
+ * 
+ *****/
 void Scheduler::SetSignal(int signal) {
-	cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << endl;
 	if (isMaster()) {
+        cerr << "Scheduler rank=" << getRank() << " received a signal " << signal << " - Creating CHDB-INTERRUPTION.txt and exiting" << endl;
 		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
 		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
-		ofs << "# Check your output, you may need to retrieve files from temporary files or databases.\n";
+		ofs << dir.howToConsolidate() << endl;
 		
+		int j = 0;
 		for (map<string,bool>::iterator i = checkList.begin(); i != checkList.end(); ++i) {
-			if ( i->second == false) ofs << i->first << endl;
+			if ( i->second == false) {
+				j++;
+				ofs << i->first << endl;
+			}
 		}
+		
+		ofs << "# Number of files not yet processed = " << j << endl;
 		ofs.close();
 		
 		// Close open files, if necessary
 		if (err_file.is_open())    err_file.close();
 		if (report_file.is_open()) report_file.close();
-		
-		_exit(0);
 	}
-	dir.SetSignal(signal);
+	else {
+		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Sleeping 25 s" << endl;
+	}
+	sleep(25);
+	_exit(0);
 }
 
 /*

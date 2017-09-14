@@ -119,20 +119,27 @@ class SignalHandle {
         } Init;
 
         static void ConnectScheduler(Scheduler* s_ptr) { sched_ptr = s_ptr; };
+        static void ConnectDir(Directories* d_ptr) { dir_ptr = d_ptr; };
         static void sig_handler(int s) {
+			cerr << "chdb      rank=" << sched_ptr->getRank() << " received a signal " << s << endl;
 			if (sched_ptr != NULL) {
-				cerr << "signal received " << s << endl;
-				if (sched_ptr != NULL) sched_ptr->SetSignal(s);
+				sched_ptr->SetSignal(s);
+			}
+			if (dir_ptr != NULL) {
+				dir_ptr->SetSignal(s);
 			}
 		}
         
     private:
 		static Scheduler* sched_ptr;
+		static Directories* dir_ptr;
 };
 
 // Initialize SignalHandle, ie run the Initializer to connect the signal handler, and init cmd_ptr and sched_ptr
 Scheduler* SignalHandle::sched_ptr = NULL;
+Directories* SignalHandle::dir_ptr   = NULL;
 SignalHandle::Initializer SignalHandle::Init;
+
 
 /** 
  * @brief A factory to create to correct directory object, depending of the parameters

@@ -383,7 +383,7 @@ void BasicScheduler::mainLoopSlave() {
 */
 
 	// Sleep a while before starting, this may be good for the I/O subsystem
-	// Every slave slaves sleep_time * rank, thus the highest the rank the more you sleep
+	// Every slave sleeps sleep_time * rank, thus the highest the rank the more you sleep
 	// We sleep ONLY at the beginning
 	unsigned int sleep_time = prms.getSleepTime();
 	if (sleep_time != 0) {
