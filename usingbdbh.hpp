@@ -25,6 +25,9 @@ public:
 	UsingBdbh(const Parameters& p);
 	virtual ~UsingBdbh();
 
+	// Explaining how to consolidate data manually
+	string howToConsolidate() const;
+
 	//void filesToOutputDb(const vector_of_strings&) {};
 	int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&, const string& wd="", const string& sn="");
 	void makeTempOutDir();

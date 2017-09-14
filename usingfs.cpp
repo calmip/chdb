@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <csignal>
 #include <unistd.h>
 #include <string>
 #include <list>
@@ -239,7 +240,13 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
 		buildMpiCommand(command);
 
 		// Call command and keep value
-		sts = callSystem(command);
+		try {
+			sts = callSystem(command);
+		}
+		catch (SigChildExc & e) {
+			cerr << "External command slave rank="<< rank <<" received a signal " << e.signal_received << " - resending it to the slave" << endl;
+			kill(getpid(), e.signal_received);
+		}
 
 		// Change to previous current directory if necessary
 		// NB - Should work, we don't even check

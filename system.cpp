@@ -22,6 +22,8 @@ using namespace std;
  * @param err_flg (default=false) If true, an exception is thrown if the command returns an error
  * 
  * @return The return status of the command, OR -1 (coud not fork) OR 127 (could not execute /bin/sh)
+ * @exception SigChildExc if the child received a signal, runtime_error if child returned with a status != 0 and err_flg is true
+ * @note If the calling process (ie the chdb slave) receives a SIGINT signal (interruption), this signal will be IGNORED (see the function system())
  *
  */
 
@@ -34,10 +36,17 @@ int callSystem(string cmd, bool err_flg) {
 
 	int retry = NUMBER_OF_RETRIES;
 	bool should_retry;
-	int sts  = 0;
-	int csts = 0;
+	int sts  = 0;              // The return of the system function
+	int csts = 0;              // The return code of the command (if exited correctly)
 	do {
 		sts = system(cmd.c_str());
+		
+		// if the child received a signal, throw a SigChildExc
+		if (WIFSIGNALED(sts)) {
+			int sig = WTERMSIG(sts);
+			throw(SigChildExc(sig));
+		}
+		
 		csts= WEXITSTATUS(sts);
 		if (sts==-1 || csts==127) {
 			string host;
@@ -65,11 +74,13 @@ int callSystem(string cmd, bool err_flg) {
 		retry--;
 	} while (should_retry && retry>0);
 
-	if (csts!=0 && err_flg) {
+	if (WIFEXITED(sts) && csts!=0 && err_flg) {
 		ostringstream err;
 		err << "ERROR ! " << cmd << " returned an error: " << csts;
 		throw(runtime_error(err.str()));
 	}
+	
+	// Child returned normally (warning ! not tested !) => return the command return code
 	return csts;
 }
 
