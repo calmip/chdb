@@ -1,17 +1,35 @@
 /**
  * @file   basicscheduler.cpp
- * @author Emmanuel Courcelle <manu@eoslogin1.bullx>
+ * @author Emmanuel Courcelle <emmanuel.courcelle@inp-toulouse.fr>
  * @date   Tue Sep 30 09:57:49 2014
  * 
  * @brief  
  * 
- * 
+ * This file is part of chdb software
+ * chdb helps users to run embarrassingly parallel jobs on a supercomputer
+ *
+ * chdb is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ *  Copyright (C) 2015-2018    C A L M I P
+ *  chdb is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with chdb.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Authors:
+ *        Emmanuel Courcelle - C.N.R.S. - UMS 3667 - CALMIP
+ *        Nicolas Renon - Université Paul Sabatier - University of Toulouse)
+ *
  */
 
 #include <mpi.h>
 #include <iostream>
-//#include <iterator>
-//#include <set>
 using namespace std;
 
 #include <assert.h>
@@ -24,17 +42,10 @@ using namespace std;
 #include <list>
 #include <algorithm>
 #include <cmath>
-//#include <cstdlib>
 #include <cerrno>
 
-//#include "command.h"
 #include "system.hpp"
 #include "basicscheduler.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -56,11 +67,6 @@ void BasicScheduler::mainLoop() {
 	sleep(5);
 	}
 */
-
-	// Used only by the master
-	// Now declared as a protected member in Scheduler
-	//ofstream err_file;
-	//ofstream report_file;
 
 	// some initialization specific to the master
 	if (isMaster()) {
@@ -198,8 +204,6 @@ void BasicScheduler::mainLoopMaster() {
 		// Listen to the slaves
 		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
 		int talking_slave = sts.MPI_SOURCE;
-		//size_t recv_msg_len;
-		//MPI_Get_count(&sts, MPI_BYTE, (int*) &recv_msg_len);
 
         // Init return_values, may be wall_times, and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);
@@ -658,12 +662,3 @@ void BasicScheduler::checkInvariant() {
 	assert(wall_times.empty() || wall_times.size()==file_pathes.size());
 }
 	
-/*
- * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
- * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx
- * This software is governed by the CeCILL-C license under French law and abiding by the rules of distribution of free software
- * 
- * Please read the file Licence_CeCILL-C_V1-en.txt which should have been distributed with this file
- * The fact that you are presently reading this, and the aforementioned file, means that you have had
- * knowledge of the CeCILL-C license and that you accept its terms.
-*/

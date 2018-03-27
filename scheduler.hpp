@@ -1,30 +1,46 @@
 /**
  * @file   schedulers.hpp
- * @author Emmanuel Courcelle <manu@eoslogin1.bullx>
+ * @author Emmanuel Courcelle <emmanuel.courcelle@inp-toulouse.fr>
  * @date   Mon Sep 29 12:25:30 2014
  * 
- * @brief  
+ * @brief  This abstract class is the base classe for all scheduler-type classes
  * 
+ * 
+ * This file is part of chdb software
+ * chdb helps users to run embarrassingly parallel jobs on a supercomputer
+ *
+ * chdb is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ *  Copyright (C) 2015-2018    C A L M I P
+ *  chdb is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with chdb.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Authors:
+ *        Emmanuel Courcelle - C.N.R.S. - UMS 3667 - CALMIP
+ *        Nicolas Renon - Université Paul Sabatier - University of Toulouse)
  * 
  */
 
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-//#include <vector>
-//#include <string>
-//#include <stdexcept>
 #include <csignal>
 
 #include <iostream>
 #include <fstream>
 #include <map>
 using namespace std;
-//#include <cassert>
 
 //#include "gtest/gtest.h"
 
-//#include "SimpleOpt.h"
 #include "constypes.hpp"
 #include "parameters.hpp"
 #include "directories.hpp"
@@ -47,8 +63,6 @@ public:
 	void startTimer();
 	double getTimer();
 
-	//static void sig_handler(int signal);
-	//static int GetSignal() {return signal_received;};
 	void SetSignal(int s);// { signal_received = s; };
 
 	// for gtests
@@ -74,23 +88,9 @@ protected:
 
 private:
 	double start_time;
-	//int signal_received;
 	
 	map<string,bool> checkList;
 	
-	// The address of the ONLY Scheduler object (as it is non copyable), useful for sig_hanlder
-	//static Scheduler* sched;
-
 };
 
 #endif
-
-/*
- * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
- * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx
- * This software is governed by the CeCILL-C license under French law and abiding by the rules of distribution of free software
- * 
- * Please read the file Licence_CeCILL-C_V1-en.txt which should have been distributed with this file
- * The fact that you are presently reading this, and the aforementioned file, means that you have had
- * knowledge of the CeCILL-C license and that you accept its terms.
-*/

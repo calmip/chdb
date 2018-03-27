@@ -1,7 +1,30 @@
+/**
+ * @file   parameters.cpp
+ * @author Emmanuel Courcelle <emmanuel.courcelle@inp-toulouse.fr>
+ *
+ * This file is part of chdb software
+ * chdb helps users to run embarrassingly parallel jobs on a supercomputer
+ *
+ * chdb is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ *  Copyright (C) 2015-2018    C A L M I P
+ *  chdb is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with chdb.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Authors:
+ *        Emmanuel Courcelle - C.N.R.S. - UMS 3667 - CALMIP
+ *        Nicolas Renon - Université Paul Sabatier - University of Toulouse)
+ */
 
 #include <iostream>
-//#include <iterator>
-//#include <set>
 #include <string>
 using namespace std;
 
@@ -11,14 +34,8 @@ using namespace std;
 #include <cstring>
 #include <cerrno>
 
-//#include "command.h"
 #include "parameters.hpp"
 #include "system.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 
 /**
    \brief 
@@ -274,7 +291,6 @@ void Parameters::setInputType(const string& cft) {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -324,18 +340,9 @@ void Parameters::checkInputDirectory() {
 	}
 }
 
-/*
-void Parameters::checkOutputDirectory() {
-	if (isTypeIter() && output_directory=="") {
-		throw runtime_error("ERROR - Output directory should be specified when asking for iterations");
-	}
-}
-*/
-
-
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
-	cerr << "Copyright license todo\n";
+	cerr << "Copyright 2015-2018 CALMIP - Licence GPL v3, 29 June 2007\n\n";
 
 	if (isVerbose()) {
 #ifdef NOTMP
@@ -367,11 +374,13 @@ void Parameters::usage() {
 	cerr << "                               In iteration mode, this parameter is optional\n";
 	cerr << "  --command-line 'my_exe ...': The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "\n";
+#ifdef BDBH
 	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
 	cerr << "                               NOTE: if several output files are generated for each command, the names must be separated by a comma (,)\n";
 	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
+#endif
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = \"inputdir.out\"\n";
 	cerr << "                               NOTES:\n";
@@ -456,13 +465,3 @@ string Parameters::getLastErrorText(const CSimpleOpt& arg) {
 	}
 	return rvl;
 }
-
-/*
- * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
- * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx
- * This software is governed by the CeCILL-C license under French law and abiding by the rules of distribution of free software
- * 
- * Please read the file Licence_CeCILL-C_V1-en.txt which should have been distributed with this file
- * The fact that you are presently reading this, and the aforementioned file, means that you have had
- * knowledge of the CeCILL-C license and that you accept its terms.
-*/
