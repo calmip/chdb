@@ -1,12 +1,32 @@
 /**
  * @file   directories.hpp
- * @author Emmanuel Courcelle <manu@eoslogin1.bullx>
+ * @author Emmanuel Courcelle <emmanuel.courcelle@inp-toulouse.fr>
  * @date   Mon Sep 29 11:03:01 2014
  * 
  * @brief  This class manages the files contained inside the input or output directory
  *         It has several subclasses, for managing the different types of directories 
  *         (real directory, bdbh file, etc)
  * 
+ * This file is part of chdb software
+ * chdb helps users to run embarrassingly parallel jobs on a supercomputer
+ *
+ * chdb is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ *  Copyright (C) 2015-2018 Emmanuel Courcelle
+ *  chdb is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with chdb.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Authors:
+ *        Emmanuel Courcelle - C.N.R.S. - UMS 3667 - CALMIP
+ *        Nicolas Renon - Université Paul Sabatier - University of Toulouse)
  * 
  */
 
