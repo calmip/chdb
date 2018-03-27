@@ -32,10 +32,7 @@
  #ifndef USING_BDBH_H
 #define USING_BDBH_H
 
-//#include <vector>
 #include <list>
-//#include <stdexcept>
-//#include <set>
 #include <memory>
 using namespace std;
 
@@ -92,7 +89,6 @@ private:
 	BerkeleyDb_aptr temp_bdb;     // The Temp database
 	virtual void findOrCreateDir(const string &);
 	virtual void v_readFiles();
-	// mutable set<string> input_files;
 	set<string> found_directories;
 	string output_dir;
 	string temp_dir;

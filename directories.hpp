@@ -33,17 +33,12 @@
 #ifndef DIRECTORIES_H
 #define DIRECTORIES_H
 
-//#include <vector>
-//#include <string>
 #include <iostream>
 #include <list>
-//#include <stdexcept>
 #include <algorithm>
 #include <set>
 using namespace std;
 
-
-//#include "SimpleOpt.h"
 #include "constypes.hpp"
 #include "parameters.hpp"
 
@@ -96,7 +91,6 @@ public:
 	// input files, cmd, output files
 	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&,const string& wd="",const string& sn="") = 0;
 	size_t getNbOfFiles() { readFiles(); return files_size; };
-	//void insertOutFilesToDb(const vector_of_strings&) {};
 
 	friend class TestCase1_block1_Test;
 	friend class TestCase1_usingFsfindOrCreateDir_Test;
@@ -133,13 +127,3 @@ private:
 };
 
 #endif
-
-/*
- * Copyright Univ-toulouse/CNRS - xxx@xxx, xxx@xxx
- * This software is a computer program whose purpose is to xxxxxxxxxxxxxxxxxx
- * This software is governed by the CeCILL-C license under French law and abiding by the rules of distribution of free software
- * 
- * Please read the file Licence_CeCILL-C_V1-en.txt which should have been distributed with this file
- * The fact that you are presently reading this, and the aforementioned file, means that you have had
- * knowledge of the CeCILL-C license and that you accept its terms.
-*/

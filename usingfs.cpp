@@ -35,15 +35,9 @@
 #include <sstream>
 using namespace std;
 
-//#include "command.h"
 #include "system.hpp"
 #include "usingfs.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
 #include <libgen.h>
-//#include <stdlib.h>
-//#include <sys/types.h>
 #include <dirent.h>
 
 

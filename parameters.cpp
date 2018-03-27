@@ -25,8 +25,6 @@
  */
 
 #include <iostream>
-//#include <iterator>
-//#include <set>
 #include <string>
 using namespace std;
 
@@ -36,14 +34,8 @@ using namespace std;
 #include <cstring>
 #include <cerrno>
 
-//#include "command.h"
 #include "parameters.hpp"
 #include "system.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 
 /**
    \brief 
@@ -299,7 +291,6 @@ void Parameters::setInputType(const string& cft) {
 void Parameters::checkParameters() {
 	checkEmptyMembers();
 	checkInputDirectory();
-	//checkOutputDirectory();
 	checkBlockSize();
 }
 void Parameters::checkBlockSize() {
@@ -349,15 +340,6 @@ void Parameters::checkInputDirectory() {
 	}
 }
 
-/*
-void Parameters::checkOutputDirectory() {
-	if (isTypeIter() && output_directory=="") {
-		throw runtime_error("ERROR - Output directory should be specified when asking for iterations");
-	}
-}
-*/
-
-
 void Parameters::usage() {
 	cerr << "Calcul à Haut DéBit - version " << CHDB_VERSION << "\n";
 	cerr << "Copyright 2015-2018 CALMIP - Licence GPL v3, 29 June 2007\n\n";
@@ -392,11 +374,13 @@ void Parameters::usage() {
 	cerr << "                               In iteration mode, this parameter is optional\n";
 	cerr << "  --command-line 'my_exe ...': The command line to be executed on each input file (see the allowed templates under)\n";
 	cerr << "\n";
+#ifdef BDBH
 	cerr << "PARAMETERS REQUIRED ONLY WITH BDBH:\n";
 	cerr << "  --out-files file1,file2,...: A list of output files created by the command-line (see the allowed templates under)\n";
 	cerr << "                               NOTE: if several output files are generated for each command, the names must be separated by a comma (,)\n";
 	cerr << "                               this parameter is required with bdbh, because output files will be stored inside the output data container\n";
 	cerr << "\n";
+#endif
 	cerr << "OPTIONAL PARAMETERS:\n";
 	cerr << "  --out-dir outdir           : All output will be written to this directory. Default = \"inputdir.out\"\n";
 	cerr << "                               NOTES:\n";

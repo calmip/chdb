@@ -32,20 +32,15 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-//#include <vector>
-//#include <string>
-//#include <stdexcept>
 #include <csignal>
 
 #include <iostream>
 #include <fstream>
 #include <map>
 using namespace std;
-//#include <cassert>
 
 //#include "gtest/gtest.h"
 
-//#include "SimpleOpt.h"
 #include "constypes.hpp"
 #include "parameters.hpp"
 #include "directories.hpp"
@@ -68,8 +63,6 @@ public:
 	void startTimer();
 	double getTimer();
 
-	//static void sig_handler(int signal);
-	//static int GetSignal() {return signal_received;};
 	void SetSignal(int s);// { signal_received = s; };
 
 	// for gtests
@@ -95,13 +88,9 @@ protected:
 
 private:
 	double start_time;
-	//int signal_received;
 	
 	map<string,bool> checkList;
 	
-	// The address of the ONLY Scheduler object (as it is non copyable), useful for sig_hanlder
-	//static Scheduler* sched;
-
 };
 
 #endif

@@ -27,8 +27,6 @@
 
 #include <iostream>
 #include <fstream>
-//#include <iterator>
-//#include <set>
 using namespace std;
 
 #include <cstdlib>
@@ -38,15 +36,8 @@ using namespace std;
 #include <string>
 #include <list>
 #include <cerrno>
-//#include <libgen.h>
 
-//#include "command.h"
 #include "usingfs.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include "system.hpp"

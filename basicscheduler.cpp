@@ -30,8 +30,6 @@
 
 #include <mpi.h>
 #include <iostream>
-//#include <iterator>
-//#include <set>
 using namespace std;
 
 #include <assert.h>
@@ -44,17 +42,10 @@ using namespace std;
 #include <list>
 #include <algorithm>
 #include <cmath>
-//#include <cstdlib>
 #include <cerrno>
 
-//#include "command.h"
 #include "system.hpp"
 #include "basicscheduler.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -76,11 +67,6 @@ void BasicScheduler::mainLoop() {
 	sleep(5);
 	}
 */
-
-	// Used only by the master
-	// Now declared as a protected member in Scheduler
-	//ofstream err_file;
-	//ofstream report_file;
 
 	// some initialization specific to the master
 	if (isMaster()) {
@@ -218,8 +204,6 @@ void BasicScheduler::mainLoopMaster() {
 		// Listen to the slaves
 		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
 		int talking_slave = sts.MPI_SOURCE;
-		//size_t recv_msg_len;
-		//MPI_Get_count(&sts, MPI_BYTE, (int*) &recv_msg_len);
 
         // Init return_values, may be wall_times, and file_pathes with the message
 		readFrmRecvBfr(recv_bfr);

@@ -21,8 +21,6 @@
  *        Nicolas Renon - Université Paul Sabatier - University of Toulouse)
  */
 
-//#include <iostream>
-//#include <iterator>
 
 // See L 47 - Bullshit here
 #include <mpi.h>
@@ -41,7 +39,6 @@
 #include <sstream>
 using namespace std;
 
-//#include "command.h"
 #include "system.hpp"
 #include "usingbdbh.hpp"
 #include "bdbh/command.hpp"
@@ -51,12 +48,7 @@ using namespace std;
 #include "bdbh/write.hpp"
 #include "bdbh/merge.hpp"
 
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
 #include <libgen.h>
-//#include <stdlib.h>
-//#include <sys/types.h>
 #include <dirent.h>
 
 //typedef auto_ptr<bdbh::Command> Command_aptr;
@@ -208,99 +200,6 @@ void UsingBdbh::v_readFiles() {
 	}
 }
 
-
-/**
-   \brief Read the directory, and if a file with the correct type is found, push it in files (private member)
-          If in files sort mode, files is sorted correctly
-*/
-/*
-void UsingFs::readDir(const string &top,size_t head_strip) const {
-	list<Finfo> files_tmp;
-	readDirRecursive(top,head_strip,files_tmp,prms.isSizeSort());
-	if (prms.isSizeSort()) {
-		files.clear();
-		buildBlocks(files_tmp,files);
-	} else {
-		sort(files.begin(),files.end());
-	}
-}
-*/
-/** 
- * @brief Read the directory, and if a file with the correct type is found, push it in
- *             - files        (private member)
- *			   - OR files_tmp (passed by parameter)
- *		  If the name is longer than FILEPATH_MAXLENGTH throw an exception
- *        If a subdirectory is found, this function is recursively called again
- *        If the entry is anything else (symlink, etc) skip it
- *        The parameter head_strip may be used to strip input directory name from the file names
- * 
- * @param top 
- * @param head_strip 
- * @param[out] files_tmp
- */
-/*
-void UsingFs::readDirRecursive(const string &top,size_t head_strip,list<Finfo>& files_tmp,bool is_size_sort) const {
-	bool in_files_empty=input_files.empty();
-	DIR* fd_top=opendir(top.c_str());
-	struct dirent* dir_entry=NULL;
-	do {
-		dir_entry = readdir(fd_top);
-		if (dir_entry != NULL)
-		{
-			// Skip . and ..
-			if (dir_entry->d_name[0]=='.' && dir_entry->d_name[1]=='\0') 
-				continue;
-			if (dir_entry->d_name[0]=='.' && dir_entry->d_name[1]=='.' && dir_entry->d_name[2]=='\0') 
-				continue;
-			
-			string file_name   = top + '/' + dir_entry->d_name;
-			string s_file_name = file_name.substr(head_strip); 
-			if (s_file_name.length() > FILEPATH_MAXLENGTH) {
-				string msg = "ERROR - Filename too long: ";
-				msg += s_file_name + '\t';
-				msg += "Please increase FILEPATH_MAXLENGTH and recompile";
-				throw (runtime_error(msg));
-			};
-				
-			struct stat st_bfr;
-			int rvl = lstat(file_name.c_str(),&st_bfr);
-			if (rvl==-1) {
-				string msg = "ERROR - Cannot read the file ";
-				msg += file_name;
-				throw(runtime_error(msg));
-			}
-
-            // If in size sort, we use files_tmp for temporary storage
-			if (S_ISREG(st_bfr.st_mode)) {
-				if (isCorrectType(s_file_name))
-					if (in_files_empty || input_files.find(s_file_name)!=input_files.end()) {
-						if (is_size_sort) {
-							Finfo tmp_f(s_file_name,st_bfr.st_size);
-							files_tmp.push_back(tmp_f);
-						} else {
-							files.push_back(s_file_name);
-						}
-					}
-			} else if (S_ISDIR(st_bfr.st_mode)) {
-				readDirRecursive(file_name,head_strip,files_tmp,is_size_sort);
-			}
-		}
-	} while ( dir_entry != NULL );
-	closedir(fd_top);
-}
-*/
-/** 
- * @brief Execute a command through executeSystem and return the exit status of the command
- *        We pass the out_pathes vector to create the output directories if necessary
- * 
- * @param in_pathes
- * @param cmd 
- * @param out_pathes 
- * 
- * @return the command exit status
- *
- */	
-//#include <iostream>
 /** 
  * @brief Execute the external command, using complete in_pathes as input and complete out_pathes as output
  *        The in_pathes are read from the database and written to the temp directory
@@ -332,8 +231,6 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	// Read the input pathes from the database, and copy them to the temporary input directory
 	if ( !prms.isTypeIter() ) {
 		string temp_input_dir = getTempInDir();
-	//	const char* args[] = {"--database",in_top.c_str(),"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"extract","--recursive",in_pathes[0].c_str()};
-	//	const char* args[] = {"--root",in_root.c_str(),"--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
 		const char* args[] = {"--root","","--directory",temp_input_dir.c_str(),"--recursive",in_pathes[0].c_str()};
 		bdbh::Parameters bdbh_prms_r(6,args);
 		bdbh::Read read_cmd(bdbh_prms_r,*input_bdb.get());
@@ -349,7 +246,6 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	// Create the subdirectories if necessary
 	// If out_pathes() starts with out_dir, it's OK. If not, complete them to create the subdirectories
 	// Create also a version WITHOUT out_dir, it will be useful to store to the database
-
 	string temp_out_dir            = getTempOutDir();
 	vector_of_strings l_out_pathes = out_pathes;     // Local copy, because the parameter is const
 	for (size_t i=0; i<l_out_pathes.size(); ++i) {
@@ -377,16 +273,12 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	if (rvl==0) {
 		vector_of_strings arg;            // The arg to write output files to the database
 
-		//arg.push_back("--database");
-		//arg.push_back(temp_db_dir);
 		arg.push_back("--root");
 		arg.push_back(out_root);
 		arg.push_back("--directory");
 		arg.push_back(temp_out_dir);
 		arg.push_back("--recursive");
 		arg.push_back("--overwrite");
-		//arg.push_back("--verbose");
-		//arg.push_back("add");
 		// If no output file created, we'll get an exception !
 
 		bool path_exists=false;	          // False if nothing created (which is probably an error)
@@ -423,11 +315,6 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 				string cmd = "rm -rf ";
 				cmd += out_pathes[i];
 				callSystem(cmd,false);
-
-				//rvl = unlink( out_pathes[i].c_str() );
-				//if (rvl != 0) {
-				//	cerr << "WARNING - Could not remove file " << out_pathes[i] << " - " << strerror(rvl) << "\n";
-				//}
 			}
 			
 			// Destroy the input file(s) (ie only in_pathes[0])
@@ -440,39 +327,6 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
 	}
 }
 
-/** 
- * @brief Make the output directory, store the name to output_dir, throw an exception if error
- *        If rank_flg is true, the rank is taken into account (probably called by a slave)
- *
- * @param rank_flg If true, NOTHING IS CREATED
- * @param rep_flg If true, remove the directory if it already exists
- * 
- */
-/*
-void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
-	output_dir = prms.getOutDir();
-	if (rank_flg) {
-		return;
-	}
-
-	// remove directory if rep_flg and directory already exists
-	struct stat status;
-	if (rep_flg && stat(output_dir.c_str(), &status)==0) {
-		string cmd = "rm -r ";
-		cmd += output_dir;
-		callSystem(cmd);
-	}
-	
-	int sts = mkdir(output_dir.c_str(), 0777);
-	if (sts != 0) {
-		string msg="ERROR - Cannot create directory ";
-		msg += output_dir;
-		msg += " - Error= ";
-		msg += strerror(errno);
-		throw(runtime_error(msg));
-	}
-}
-*/
 /** 
  * @brief Make the output directory, store the name to output_dir, throw an exception if error
  *        NOTE - OUTDIRPERSLAVE is IGNORED
@@ -572,8 +426,6 @@ void UsingBdbh::makeTempOutDir() {
 	// Create and open the database
 	temp_bdb = (BerkeleyDb_aptr) new bdbh::BerkeleyDb(temp_db_dir.c_str(),BDBH_OCREATE);
 	
-	//const char* args[] = {"--database",temp_db_dir.c_str(),"create"};
-	//bdbh::Parameters bdbh_prms(3,args);
 	bdbh::Parameters bdbh_prms;
 	bdbh::Create create_cmd(bdbh_prms,*temp_bdb.get());
 	create_cmd.Exec();

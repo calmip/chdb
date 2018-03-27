@@ -31,13 +31,8 @@
 #ifndef BASIC_SCHEDULER_H
 #define BASIC_SCHEDULER_H
 
-//#include <vector>
-//#include <string>
-//#include <stdexcept>
 using namespace std;
 
-
-//#include "SimpleOpt.h"
 #include "constypes.hpp"
 #include "scheduler.hpp"
 

@@ -33,9 +33,11 @@ MODDIRF="$MODDIR/$VERSION"
 [ ! -d "$MODDIR"  ] && echo "ERROR - $MODDIR  DOES NOT EXIST" && exit 1
 [ ! -d "$BINDIR"  ] && echo "ERROR - $BINDIR  DOES NOT EXIST" && exit 1
 
+# Comment out if compiled with bdbh !!!!!
+#BDBH=bdbh/bdbh
 
-cp "bdbh/bdbh" "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$WRAPSRC/env-wrapper.sh" "$WRAPSRC/mod-wrapper.sh" "$BINDIR"
-( cd $BINDIR; chmod 755 bdbh chdb chdb.exe *-wrapper.sh )
+cp $BDBH "chdb.exe" "$WRAPSRC/chdb" "$WRAPSRC/slave-wrapper.sh" "$WRAPSRC/env-wrapper.sh" "$WRAPSRC/mod-wrapper.sh" "$BINDIR"
+( cd $BINDIR; chmod 755 $BDBH chdb chdb.exe *-wrapper.sh )
 
 sed -e "s!BINDIR!$BINDIR!g" <$MODSRCF >$MODDIRF
 chmod 644 $MODDIRF

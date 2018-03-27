@@ -26,8 +26,6 @@
 
 #include <mpi.h>
 #include <fstream>
-//#include <iterator>
-//#include <set>
 using namespace std;
 
 #include <sys/types.h>
@@ -37,13 +35,7 @@ using namespace std;
 #include <list>
 #include <cerrno>
 
-//#include "command.h"
 #include "scheduler.hpp"
-//#include "exception.h"
-//#include <unistd.h>
-//#include <errno.h>
-//#include <libgen.h>
-//#include <stdlib.h>
 #include <sys/types.h>
 #include <dirent.h>
 
