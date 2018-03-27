@@ -16,7 +16,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  Copyright (C) 2015-2018 Emmanuel Courcelle
+ *  Copyright (C) 2015-2018    C A L M I P
  *  chdb is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -32,13 +32,14 @@
 
 //#define DEBUGPID
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <memory>
+
 #ifdef DEBUGPID
 #include <mpi.h>
 #include <fstream>
 #include <sstream>
-#include <unistd.h>
-#include <sys/types.h>
-#include <memory>
 #endif
 
 #include <iostream>
@@ -48,8 +49,12 @@ using namespace std;
 #include "system.hpp"
 #include "parameters.hpp"
 #include "usingfs.hpp"
-#include "usingbdbh.hpp"
 #include "basicscheduler.hpp"
+
+#ifdef BDBH
+#include "usingbdbh.hpp"
+#endif
+
 
 void printHeader(const Parameters& prms, Directories& dir, const Scheduler& sched ) {
 	cout << "CHDB - VERSION " << CHDB_VERSION << " - ";
@@ -177,7 +182,11 @@ Directories* dirFactory(Parameters& prms) {
 	string output= prms.getOutDir();
 	string name = (input=="")?output:input;
 	if ( isEndingWith(name,".db") ) {
+#ifdef BDBH
 		return new UsingBdbh(prms);
+#else
+		throw runtime_error("ERROR - chdb is compiled WITHOUT bdbh - The extension .db should not be used");
+#endif
 	} else {
 		return new UsingFs(prms);
 	}
