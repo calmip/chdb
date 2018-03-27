@@ -1,0 +1,35 @@
+@startuml
+
+	::testing::Test <|-- ChdbTest
+	ChdbTest <|-- ChdbTest1
+	ChdbTest <|-- ChdbTest2
+	ChdbTest <|-- ChdbTest3
+	ChdbTest1 <|-- ChdbTestStr
+	ChdbTest1 <|-- ChdbTestInt
+	ChdbTest1 <|-- ChdbTestDbl
+	ChdbTest1 <|-- ChdbTestStrInt
+	
+	note bottom of ChdbTest1 : Create 5 files in 3 subdirectories of input_dir
+	note bottom of ChdbTest2 : Create 10 files in the input directory, file 0.txt in error
+	note bottom of ChdbTest3 : Create 10 files in the input directory, file 9.txt in error
+	note bottom of ChdbTestStr : Adding the mpi buffer to ChdbTest1 (names only)
+	note bottom of ChdbTestInt : Adding the mpi buffer to ChdbTest1 (return values only)
+	note bottom of ChdbTestDbl :Adding the mpi buffer to ChdbTest1 (doubles for time only)	
+	note bottom of ChdbTestStrInt :Adding the mpi buffer to ChdbTest1 (names + return values)
+
+	ChdbTestsWithParams <|-- ChdbTestsWithParamsUsingFs
+	ChdbTestsWithParams <|-- ChdbTestsWithParamsUsingBdbh
+
+
+	class ::testing::WithParamInterface<ChdbTestsWithParams*> {
+	}
+	ChdbTest1 <|-- TestCase1
+	::testing::WithParamInterface <|-- TestCase1
+
+	ChdbTest2 <|-- TestCase2
+	::testing::WithParamInterface <|-- TestCase2
+
+	ChdbTest3 <|-- TestCase3
+	::testing::WithParamInterface <|-- TestCase3
+
+@enduml

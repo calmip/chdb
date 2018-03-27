@@ -5,7 +5,16 @@ hello.c
 random_name
 *#
 *~
+*.bak
 TESTDATA*
 .emacs*
 html/
 rtf/
+latex/
+not-committed/*
+*.png
+gtests/inputdir*
+gtests/chdb
+gtests/bdbh
+
+
