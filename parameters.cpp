@@ -221,7 +221,8 @@ CSimpleOpt::SOption options[] = {
 		}
 	};
 
-	if ( isTypeFile() && output_directory == "" ) {
+	// Let blank directory if type dir
+	if ( !isTypeDir() && output_directory == "" ) {
 		if (isBdBh()) {
 			output_directory = input_directory.substr(0,input_directory.length()-3);
 			output_directory         += ".out";
