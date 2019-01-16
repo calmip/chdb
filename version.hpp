@@ -1,2 +1,2 @@
-#define CHDB_VERSION "1.0.2"
+#define CHDB_VERSION "1.0.3"
 

@@ -286,6 +286,8 @@ int UsingFs::executeExternalCommand(const vector_of_strings& in_pathes,
  */
 void UsingFs::makeOutDir(bool rank_flg, bool rep_flg) {
 	output_dir = prms.getOutDir();
+	// No value, no default value - Possible with dir type
+	if (output_dir=="") return;
 
 #ifdef OUTDIRPERSLAVE
 	if (rank_flg) {

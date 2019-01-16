@@ -337,6 +337,8 @@ int UsingBdbh::executeExternalCommand(const vector_of_strings& in_pathes,const s
  */
 void UsingBdbh::makeOutDir(bool rank_flg, bool rep_flg) {
 	output_dir = prms.getOutDir();
+	// No value, no default value - Possible with dir type
+	if (output_dir=="") return;
 
 	if (rank_flg) {
 		ostringstream tmp;

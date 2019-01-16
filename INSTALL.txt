@@ -1,0 +1,19 @@
+INSTALLING chdb:
+================
+
+1/ Prerequisites:
+=================
+You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation (chdb compiles with openmpi AND with intelmpi)
+
+2/ Compiling:
+=============
+make
+
+3/ Installing:
+==============
+Have a look to the install.sh script as you should probably have to change some things.
+The script tries to copy requested files to their destination: the binaries, some wrappers AND a module file. This is very
+useful if you use the Module gnu command (see http://modules.sourceforge.net/) on your site.
+
+Emmanuel Courcelle
+emmanuel.courcelle@inp-toulouse.fr
