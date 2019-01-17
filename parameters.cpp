@@ -69,6 +69,9 @@ using namespace std;
 Parameters::Parameters(int argc,char* argv[]):
 	sleep_time(0),
     tmp_directory(DEFAULT_TMP_DIRECTORY),
+    is_type_file(false),
+    is_type_dir(false),
+    is_type_iter(false),
 	is_bdbh(false),
 	is_in_memory(false),
 	is_size_sort(DEFAULT_SIZE_SORT),
@@ -221,8 +224,8 @@ CSimpleOpt::SOption options[] = {
 		}
 	};
 
-	// Let blank directory if type dir
-	if ( !isTypeDir() && output_directory == "" ) {
+	// the output directory is required ONLY for "file" types
+	if ( isTypeFile() && output_directory == "" ) {
 		if (isBdBh()) {
 			output_directory = input_directory.substr(0,input_directory.length()-3);
 			output_directory         += ".out";
@@ -241,6 +244,7 @@ CSimpleOpt::SOption options[] = {
 
 /****
   \brief Set members related to input type
+  \
 
   \param cft The type read from the command line
 *********/
@@ -248,6 +252,7 @@ void Parameters::setInputType(const string& cft) {
 	file_type = cft;
 	if (file_type == "dir") {
 		is_type_dir = true;
+		return;
 	} else {
 		is_type_dir = false;
 	}
