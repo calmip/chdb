@@ -33,6 +33,7 @@
 
 using namespace std;
 
+#include <mpi.h>
 #include "constypes.hpp"
 #include "scheduler.hpp"
 
@@ -61,6 +62,7 @@ private:
 	void mainLoopMaster();
 	void mainLoopProlog();
 	void mainLoopSlave();
+	void masterWaitForSlaves(void* recv_bfr, size_t bfr_size, int tag, MPI_Status& sts);
 	void sendEndMsg(void*, int);
 
 

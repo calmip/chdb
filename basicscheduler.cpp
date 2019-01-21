@@ -177,6 +177,18 @@ void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
 	MPI_Send(send_bfr, 0, MPI_BYTE, slave, CHDB_TAG_END, MPI_COMM_WORLD);
 }
 
+void BasicScheduler::masterWaitForSlaves(void* recv_bfr, size_t bfr_size, int tag, MPI_Status& sts) {
+	useconds_t sleep_time = 100000;	// Sleep time 100 ms
+	MPI_Request request;
+	int flag = 0;
+	MPI_Irecv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &request);
+	
+	do {
+		MPI_Test(&request,&flag,&sts);
+		usleep(sleep_time);
+	} while(flag==0);
+}
+
 /** 
  * @brief The main loop for the master
  * 
@@ -202,7 +214,11 @@ void BasicScheduler::mainLoopMaster() {
 		writeToSndBfr(send_bfr,bfr_size,send_msg_len);
 		
 		// Listen to the slaves
-		MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+		masterWaitForSlaves(recv_bfr, bfr_size, CHDB_TAG_READY, sts);
+		//MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
+	//string received((const char*)recv_bfr,80);
+	//cerr << received << '\n';
+
 		int talking_slave = sts.MPI_SOURCE;
 
         // Init return_values, may be wall_times, and file_pathes with the message
@@ -242,7 +258,10 @@ void BasicScheduler::mainLoopMaster() {
 	//
 	int working_slaves = getNbOfSlaves(); // The master is not a slave
 	while(working_slaves>0) {
-		MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
+		masterWaitForSlaves(recv_bfr, bfr_size, MPI_ANY_TAG, sts);
+		//MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
+//	string received((const char*)recv_bfr,80);
+//	cerr << received << '\n';
 		int talking_slave = sts.MPI_SOURCE;
 		int tag = sts.MPI_TAG;
 
