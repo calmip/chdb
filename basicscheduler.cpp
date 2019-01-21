@@ -111,7 +111,7 @@ void BasicScheduler::mainLoopProlog() {
 		throw(runtime_error(out.str()));
 	}
 
-	// Create the output directory unless not specified (possible with 'dir' file type)
+	// Create the output directory unless not specified (possible with 'dir' or 'iter' file types)
 	if (prms.getOutDir() != "") {
 		dir.makeOutDir(false,false);
 	}
