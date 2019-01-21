@@ -162,7 +162,15 @@ double Scheduler::getTimer() {
  * 
  */
 void Scheduler::finalize() {
-	MPI_Barrier(MPI_COMM_WORLD);
+	int flag = 0;
+	useconds_t sleep_time = 100000;
+	MPI_Request request;
+	MPI_Ibarrier(MPI_COMM_WORLD,&request);
+	MPI_Status sts;
+	do {
+		MPI_Test(&request,&flag,&sts);
+		usleep(sleep_time);
+	} while(flag==0);
 	MPI_Finalize();
 }
 
