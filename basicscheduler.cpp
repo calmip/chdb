@@ -178,14 +178,13 @@ void BasicScheduler::sendEndMsg(void* send_bfr, int slave) {
 }
 
 void BasicScheduler::masterWaitForSlaves(void* recv_bfr, size_t bfr_size, int tag, MPI_Status& sts) {
-	useconds_t sleep_time = 100000;	// Sleep time 100 ms
 	MPI_Request request;
 	int flag = 0;
 	MPI_Irecv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &request);
 	
 	do {
 		MPI_Test(&request,&flag,&sts);
-		usleep(sleep_time);
+		sleepMs(SLEEP_TIME);
 	} while(flag==0);
 }
 

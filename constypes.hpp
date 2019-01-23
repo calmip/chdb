@@ -62,6 +62,11 @@ inline bool isNotNull(int i) { return (i!=0); }
 */
 #define NUMBER_OF_RETRIES 5
 
+/*
+  Time to wait in BasicScheduler::masterWaitForSlaves (in ms)
+*/
+#define SLEEP_TIME 100
+
 /**
    \brief To have a class non copyable, you just have to private derive from this class
 */

@@ -36,6 +36,7 @@ using namespace std;
 #include <cerrno>
 
 #include "scheduler.hpp"
+#include "system.hpp"
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -163,13 +164,12 @@ double Scheduler::getTimer() {
  */
 void Scheduler::finalize() {
 	int flag = 0;
-	useconds_t sleep_time = 100000;
 	MPI_Request request;
 	MPI_Ibarrier(MPI_COMM_WORLD,&request);
 	MPI_Status sts;
 	do {
 		MPI_Test(&request,&flag,&sts);
-		usleep(sleep_time);
+		sleepMs(SLEEP_TIME);
 	} while(flag==0);
 	MPI_Finalize();
 }
