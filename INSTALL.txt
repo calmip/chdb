@@ -3,17 +3,25 @@ INSTALLING chdb:
 
 1/ Prerequisites:
 =================
-You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation (chdb compiles with openmpi AND with intelmpi)
+You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation: chdb may be used with:
+    - Any mpi implementation if you do not use mpi-based slaves
+    - openmpi OR intelmpi if want to use chdb with mpi-based slaves
 
-2/ Compiling:
-=============
-make
-
-3/ Installing:
+2/ Installing:
 ==============
-Have a look to the install.sh script as you should probably have to change some things.
-The script tries to copy requested files to their destination: the binaries, some wrappers AND a module file. This is very
-useful if you use the Module gnu command (see http://modules.sourceforge.net/) on your site.
+cmake -S. -Bbuild [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]
 
+If the current mpi release cannot be detected, you may force an mpi type with:
+
+cmake -S. -Bbuild -DCHDB_MPI=OPENMPI|INTELMPI  [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]
+make
+make install
+
+3/ Testing:
+===========
+Please follow the chdb tutorial available on https://www.calmip.univ-toulouse.fr/spip.php?article648
+(The "Essential" part of the tuto should work)
+ 
 Emmanuel Courcelle
-emmanuel.courcelle@inp-toulouse.fr
+emmanuel.courcelle@toulouse-inp.fr
+
