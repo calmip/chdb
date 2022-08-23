@@ -3,8 +3,8 @@
 /*===========================================================================
 
     chdb - Calcul à Haut Débit couplé à une Base de données embarquée (expérimental)
-	       high throughput Computing witH an embedded DataBase (the latter is still experimental)
-	 
+           high throughput Computing witH an embedded DataBase (the latter is still experimental)
+           Aug 2022 - bdbh support is DROPPED 
 =============================================================================*/
 
 /**
@@ -51,6 +51,7 @@ using namespace std;
 #include "usingfs.hpp"
 #include "basicscheduler.hpp"
 
+// Aug 2022 - BDBH SUPPORT DROPPED
 #ifdef BDBH
 #include "usingbdbh.hpp"
 #endif
