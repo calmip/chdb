@@ -203,7 +203,7 @@ int main(int argc,char* argv[])
 	
 	try {
 		Parameters prms(argc,argv);
-		auto_ptr<Directories> dir_aptr(dirFactory(prms));
+		unique_ptr<Directories> dir_aptr(dirFactory(prms));
 		Directories& dir = *dir_aptr.get();
 
 		BasicScheduler sched(prms,dir);
