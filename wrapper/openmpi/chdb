@@ -1,3 +1,4 @@
 #! /bin/bash
-export OMPI_MCA_mpi_yield_when_idle=1
+# Thanks to this wrapper you can export here environment variables if necessary
+# (ie OMPI_MCA_xxx cf. the openmpi documentation)
 exec chdb.exe "$@"

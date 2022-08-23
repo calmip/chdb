@@ -1,3 +1,4 @@
 #! /bin/bash
-export I_MPI_WAIT_MODE=1
+# Thanks to this wrapper you can export here environment variables if necessary
+# (ie I_MPI_xxx cf. the intelmpi documentation)
 exec chdb.exe "$@"
