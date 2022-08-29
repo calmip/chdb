@@ -73,11 +73,11 @@ inline bool isNotNull(int i) { return (i!=0); }
 
 class NonCopyable {
 public:
-	NonCopyable(){};
+    NonCopyable(){};
 
 private:
-	NonCopyable(const NonCopyable&) {};
-	void operator=(const NonCopyable&) {};
+    NonCopyable(const NonCopyable&) {};
+    void operator=(const NonCopyable&) {};
 };
 
 /* Some typedefs */

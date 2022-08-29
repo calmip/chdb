@@ -47,50 +47,50 @@ using namespace std;
 
 class Scheduler: private NonCopyable {
 public:
-	Scheduler(const Parameters& p, Directories& d);
-	int getRank() const     { return rank; };
-	size_t getNbOfSlaves() const { return comm_size-1; };
-	bool isMaster() const   { return rank==0;};
+    Scheduler(const Parameters& p, Directories& d);
+    int getRank() const     { return rank; };
+    size_t getNbOfSlaves() const { return comm_size-1; };
+    bool isMaster() const   { return rank==0;};
 
-	static void init(int,char**);
-	static void finalize();
-	static void abort();
+    static void init(int,char**);
+    static void finalize();
+    static void abort();
 
-	virtual void mainLoop()=0;
-	virtual bool errorHandle()=0;
-	virtual size_t getTreatedFiles() const=0;
+    virtual void mainLoop()=0;
+    virtual bool errorHandle()=0;
+    virtual size_t getTreatedFiles() const=0;
 
-	void startTimer();
-	double getTimer();
+    void startTimer();
+    double getTimer();
 
-	void SetSignal(int s);// { signal_received = s; };
+    void SetSignal(int s);// { signal_received = s; };
 
-	// for gtests
-	//friend class SchedTestStr_vctToBfrStrings_Test;
-	//friend class SchedTestStr_bfrToVctStrings_Test;
-	//friend class SchedTestInt_vctToBfrInt_Test;
-	//friend class SchedTestInt_bfrToVctInt_Test;
+    // for gtests
+    //friend class SchedTestStr_vctToBfrStrings_Test;
+    //friend class SchedTestStr_bfrToVctStrings_Test;
+    //friend class SchedTestInt_vctToBfrInt_Test;
+    //friend class SchedTestInt_bfrToVctInt_Test;
 
 protected:
 
-	void _initCheckList();
-	void _checkListItems(const vector_of_strings&, const vector_of_int&);
-	
-	const Parameters& prms;
-	Directories& dir;
+    void _initCheckList();
+    void _checkListItems(const vector_of_strings&, const vector_of_int&);
+    
+    const Parameters& prms;
+    Directories& dir;
 
-	int comm_size;
-	int rank;
+    int comm_size;
+    int rank;
 
-	// Derived classes should know what to do with those files
-	ofstream err_file;
-	ofstream report_file;
+    // Derived classes should know what to do with those files
+    ofstream err_file;
+    ofstream report_file;
 
 private:
-	double start_time;
-	
-	map<string,bool> checkList;
-	
+    double start_time;
+    
+    map<string,bool> checkList;
+    
 };
 
 #endif

@@ -47,7 +47,7 @@ using namespace std;
 
 /** This struct is used for sorting the files before storing them - see readDir */
 struct Finfo {
-	Finfo(const string& n, off_t s): name(n),st_size(s) {};
+    Finfo(const string& n, off_t s): name(n),st_size(s) {};
   string name;
   off_t st_size;
 };
@@ -55,74 +55,74 @@ struct Finfo {
 class Directories: private NonCopyable {
 
 public:
-	Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()) {};
-	virtual ~Directories(){};
-	
-	// setRank should be set ONLY ONE TIME (this is checked)
-	// ONLY IF master, setRank calls checkParameters and throws a runtime_exception if there is something wrong
-	void setRank(int,int);
+    Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()) {};
+    virtual ~Directories(){};
+    
+    // setRank should be set ONLY ONE TIME (this is checked)
+    // ONLY IF master, setRank calls checkParameters and throws a runtime_exception if there is something wrong
+    void setRank(int,int);
 
-	virtual void   makeOutDir(bool,bool) = 0;
-	virtual void   makeTempOutDir()  = 0;
-	virtual string getOutDir() const = 0;
-	virtual string getTempOutDir() const = 0;
-	virtual string getTempInDir() const = 0;
-	virtual void findOrCreateDir(const string &) = 0;
-	virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
+    virtual void   makeOutDir(bool,bool) = 0;
+    virtual void   makeTempOutDir()  = 0;
+    virtual string getOutDir() const = 0;
+    virtual string getTempOutDir() const = 0;
+    virtual string getTempInDir() const = 0;
+    virtual void findOrCreateDir(const string &) = 0;
+    virtual void buildBlocks(list<Finfo>&, vector_of_strings&) const;
 
-	// consolidateOutput: the slaves may write output to temporaries (this depends on children of Directories)
-	//                    All those temporaries are consolidated at the end
-	virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
+    // consolidateOutput: the slaves may write output to temporaries (this depends on children of Directories)
+    //                    All those temporaries are consolidated at the end
+    virtual void consolidateOutput(bool from_temp, const string& path="") = 0;
 
-	// Explaining how to consolidate data manually !
-	virtual string howToConsolidate() const = 0;
+    // Explaining how to consolidate data manually !
+    virtual string howToConsolidate() const = 0;
 
-	const vector_of_strings& getFiles() {
-		readFiles();
-		return files;
-	}
-	
-	// If in iter mode, generate the list of files
-	// Else, delegate this to v_readFiles, a virtual pure.
-	void readFiles();
+    const vector_of_strings& getFiles() {
+        readFiles();
+        return files;
+    }
+    
+    // If in iter mode, generate the list of files
+    // Else, delegate this to v_readFiles, a virtual pure.
+    void readFiles();
 
-	vector_of_strings nextBlock();
-	void completeFilePath(const string& p, string& text, bool force_out=false);
-	// input files, cmd, output files
-	virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&,const string& wd="",const string& sn="") = 0;
-	size_t getNbOfFiles() { readFiles(); return files_size; };
+    vector_of_strings nextBlock();
+    void completeFilePath(const string& p, string& text, bool force_out=false);
+    // input files, cmd, output files
+    virtual int executeExternalCommand(const vector_of_strings&,const string&,const vector_of_strings&,const string& wd="",const string& sn="") = 0;
+    size_t getNbOfFiles() { readFiles(); return files_size; };
 
-	friend class TestCase1_block1_Test;
-	friend class TestCase1_usingFsfindOrCreateDir_Test;
+    friend class TestCase1_block1_Test;
+    friend class TestCase1_usingFsfindOrCreateDir_Test;
 
-	// Derived classes may override those functions if they have something to close in emergency...
-	virtual void Sync() {};
-	virtual void SetSignal(int signal) {
-		//cerr << "Directory rank="<< rank <<" received a signal - " << signal << " - Ignoring it !" << endl;
-	};
-	
+    // Derived classes may override those functions if they have something to close in emergency...
+    virtual void Sync() {};
+    virtual void SetSignal(int signal) {
+        //cerr << "Directory rank="<< rank <<" received a signal - " << signal << " - Ignoring it !" << endl;
+    };
+    
 protected:
-	void initInputFiles() const;
-	bool isCorrectType(const string &, bool) const;
+    void initInputFiles() const;
+    bool isCorrectType(const string &, bool) const;
 
-	const Parameters& prms;
-	
-	// The input files to be treated
-	mutable vector_of_strings files;
-	mutable size_t files_size;
-	
-	// The files which are specified through the switch --in-files
-	mutable set<string> input_files;
-	int rank;
-	int comm_size;
-	void buildMpiCommand(string&) const;
+    const Parameters& prms;
+    
+    // The input files to be treated
+    mutable vector_of_strings files;
+    mutable size_t files_size;
+    
+    // The files which are specified through the switch --in-files
+    mutable set<string> input_files;
+    int rank;
+    int comm_size;
+    void buildMpiCommand(string&) const;
 
 private:
-	mutable vector_of_strings::iterator blk_ptr;
-//	void replaceTmpl(const string& tmpl, const string& value, string& text);
-	virtual void v_readFiles() = 0;
-	// Check the parameters, they should be coherent, but this depends on the derived classes
-	virtual void checkParameters() = 0;
+    mutable vector_of_strings::iterator blk_ptr;
+//    void replaceTmpl(const string& tmpl, const string& value, string& text);
+    virtual void v_readFiles() = 0;
+    // Check the parameters, they should be coherent, but this depends on the derived classes
+    virtual void checkParameters() = 0;
 
 };
 

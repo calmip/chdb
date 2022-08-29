@@ -41,8 +41,8 @@ using namespace std;
  * @brief This exception is thrown by callsystem if the child received a signal !
  **************************/
 struct SigChildExc: public runtime_error {
-	SigChildExc(int s): runtime_error(""),signal_received(s){};
-	int signal_received;
+    SigChildExc(int s): runtime_error(""),signal_received(s){};
+    int signal_received;
 };
 
 void getHostName(string& h);
@@ -75,20 +75,20 @@ template <typename T> void bfrToVct(void const* bfr, size_t& data_size, vector<T
  *
  */
 template <typename T> void vctToBfr(const vector<T>& values, void* bfr, size_t bfr_size, size_t& data_size) {
-	// does not work for all T !
-	assert(sizeof(T) >= sizeof(int));
+    // does not work for all T !
+    assert(sizeof(T) >= sizeof(int));
 
-	size_t vct_sze  = values.size();
+    size_t vct_sze  = values.size();
 
-	data_size=(vct_sze+1) * sizeof(T);
-	if (data_size > bfr_size) {
-		throw(runtime_error("ERROR - Buffer too small"));
-	}
-	T * v = (T*) bfr;
-	v[0]  = (T) vct_sze;
-	for (size_t i=0; i<vct_sze; ++i) {
-		v[i+1] = values[i];
-	}
+    data_size=(vct_sze+1) * sizeof(T);
+    if (data_size > bfr_size) {
+        throw(runtime_error("ERROR - Buffer too small"));
+    }
+    T * v = (T*) bfr;
+    v[0]  = (T) vct_sze;
+    for (size_t i=0; i<vct_sze; ++i) {
+        v[i+1] = values[i];
+    }
 }
 
 /** 
@@ -100,16 +100,16 @@ template <typename T> void vctToBfr(const vector<T>& values, void* bfr, size_t b
  *
  */
 template <typename T> void bfrToVct(void const* bfr, size_t& data_size, vector<T>& values) {
-	// does not work for all T !
-	assert(sizeof(T) >= sizeof(int));
+    // does not work for all T !
+    assert(sizeof(T) >= sizeof(int));
 
-	values.clear();
-	T* v = (T*) bfr;
-	int sze = (int) v[0];
-	for (int i=0; i<sze; ++i) {
-		values.push_back(v[i+1]);
-	}
-	data_size = sizeof(T)*(values.size()+1);
+    values.clear();
+    T* v = (T*) bfr;
+    int sze = (int) v[0];
+    for (int i=0; i<sze; ++i) {
+        values.push_back(v[i+1]);
+    }
+    data_size = sizeof(T)*(values.size()+1);
 }
 
 #endif

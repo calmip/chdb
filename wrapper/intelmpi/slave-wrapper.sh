@@ -25,8 +25,8 @@ MPI_SLAVES=$1; shift
 HOSTNAME=$1; shift
 
 # Load the modules: their names is base64 coded and stored in $M64.
-module purge
-for m in $(echo $M64|base64 -d); do module load $m; done
+module purge 2>/dev/null
+for m in $(echo $M64|base64 -d); do module load $m 2> /dev/null ;done
 
 # Print the modules only in verbose mode
 [ -z "$CHDB_VERBOSE" ] || module li

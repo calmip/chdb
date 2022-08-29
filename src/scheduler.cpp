@@ -53,40 +53,40 @@ using namespace std;
 
 
 Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start_time(-1) {
-	int flg;
-	MPI_Initialized(&flg);
-	if (flg==0) {
-		throw logic_error("ERROR - MPI not yet initialized");
-	};
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-	MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
+    int flg;
+    MPI_Initialized(&flg);
+    if (flg==0) {
+        throw logic_error("ERROR - MPI not yet initialized");
+    };
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
 
-	if (comm_size==1) {
-		throw logic_error("ERROR - YOU SHOULD HAVE AT LEAST 1 SLAVE");
-	}
+    if (comm_size==1) {
+        throw logic_error("ERROR - YOU SHOULD HAVE AT LEAST 1 SLAVE");
+    }
 
-	// Set two env variables
-	ostringstream os_tmp;
-	os_tmp << rank;
-	int rvl1 = setenv("CHDB_RANK",os_tmp.str().c_str(),true);
-	os_tmp.str("");
+    // Set two env variables
+    ostringstream os_tmp;
+    os_tmp << rank;
+    int rvl1 = setenv("CHDB_RANK",os_tmp.str().c_str(),true);
+    os_tmp.str("");
 
-	os_tmp << comm_size;
-	int rvl2 = setenv("CHDB_COMM_SIZE",os_tmp.str().c_str(),true);
-	
-	// @todo - Let the user modify herself the environment ???
-	string chdb_env = "CHDB_RANK CHDB_COMM_SIZE";
-	if (prms.isVerbose()) {
-		setenv("CHDB_VERBOSE","1",true);
-		chdb_env += " CHDB_VERBOSE";
-	}
-	int rvl3 = setenv("CHDB_ENVIRONMENT",chdb_env.c_str(), true);
+    os_tmp << comm_size;
+    int rvl2 = setenv("CHDB_COMM_SIZE",os_tmp.str().c_str(),true);
+    
+    // @todo - Let the user modify herself the environment ???
+    string chdb_env = "CHDB_RANK CHDB_COMM_SIZE";
+    if (prms.isVerbose()) {
+        setenv("CHDB_VERBOSE","1",true);
+        chdb_env += " CHDB_VERBOSE";
+    }
+    int rvl3 = setenv("CHDB_ENVIRONMENT",chdb_env.c_str(), true);
 
-	if (rvl1!=0 || rvl2!=0 || rvl3!=0)
-		throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK, CHDB_COMM_SIZE or CHDB_ENVIRONMENT");
+    if (rvl1!=0 || rvl2!=0 || rvl3!=0)
+        throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK, CHDB_COMM_SIZE or CHDB_ENVIRONMENT");
 
-	// Give some infos to dir
-	dir.setRank(rank,comm_size); 
+    // Give some infos to dir
+    dir.setRank(rank,comm_size); 
 }
 
 
@@ -97,10 +97,10 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
  * 
  *****/ 
 void Scheduler::_initCheckList() {
-	const vector_of_strings& files = dir.getFiles();
-	for (vector_of_strings::const_iterator s=files.begin(); s!= files.end(); ++s) {
-		checkList[*s] = false;
-	}
+    const vector_of_strings& files = dir.getFiles();
+    for (vector_of_strings::const_iterator s=files.begin(); s!= files.end(); ++s) {
+        checkList[*s] = false;
+    }
 }
 
 /**
@@ -115,25 +115,25 @@ void Scheduler::_initCheckList() {
  * 
  *********/
 void Scheduler::_checkListItems(const vector_of_strings& treated_files, const vector_of_int& return_values) {
-	for (size_t i=0; i < treated_files.size(); ++i) {
-		string f = treated_files[i];
-		int    v = return_values[i];
-		if (checkList.find(f) == checkList.end()) {
-			string msg = "ERROR - THE FILE " + f + " IS NOT IN THE CHECK LIST !";
-			throw logic_error(msg.c_str());
-		}
-		if (v==0) checkList[f] = true;
-	}
+    for (size_t i=0; i < treated_files.size(); ++i) {
+        string f = treated_files[i];
+        int    v = return_values[i];
+        if (checkList.find(f) == checkList.end()) {
+            string msg = "ERROR - THE FILE " + f + " IS NOT IN THE CHECK LIST !";
+            throw logic_error(msg.c_str());
+        }
+        if (v==0) checkList[f] = true;
+    }
 }
 
-	
+    
 
 /** 
  * @brief Call MPI_Abort
  * 
  */
 void Scheduler::abort() {
-	MPI_Abort(MPI_COMM_WORLD,1);
+    MPI_Abort(MPI_COMM_WORLD,1);
 }
 
 /** 
@@ -144,18 +144,18 @@ void Scheduler::abort() {
  */
 
 void Scheduler::init(int argc, char**argv) {
-	MPI_Init(&argc,&argv);
+    MPI_Init(&argc,&argv);
 }
-	
+    
 void Scheduler::startTimer() {
-	start_time = MPI_Wtime();
+    start_time = MPI_Wtime();
 }
 
 double Scheduler::getTimer() {
-	if (start_time==-1) {
-		throw(logic_error("ERROR - Timer was not started !"));
-	}
-	return MPI_Wtime()-start_time;
+    if (start_time==-1) {
+        throw(logic_error("ERROR - Timer was not started !"));
+    }
+    return MPI_Wtime()-start_time;
 }
 
 /** 
@@ -163,15 +163,15 @@ double Scheduler::getTimer() {
  * 
  */
 void Scheduler::finalize() {
-	int flag = 0;
-	MPI_Request request;
-	MPI_Ibarrier(MPI_COMM_WORLD,&request);
-	MPI_Status sts;
-	do {
-		MPI_Test(&request,&flag,&sts);
-		sleepMs(SLEEP_TIME);
-	} while(flag==0);
-	MPI_Finalize();
+    int flag = 0;
+    MPI_Request request;
+    MPI_Ibarrier(MPI_COMM_WORLD,&request);
+    MPI_Status sts;
+    do {
+        MPI_Test(&request,&flag,&sts);
+        sleepMs(SLEEP_TIME);
+    } while(flag==0);
+    MPI_Finalize();
 }
 
 /****
@@ -186,31 +186,31 @@ void Scheduler::finalize() {
  * 
  *****/
 void Scheduler::SetSignal(int signal) {
-	if (isMaster()) {
+    if (isMaster()) {
         cerr << "Scheduler rank=" << getRank() << " received a signal " << signal << " - Creating CHDB-INTERRUPTION.txt and exiting" << endl;
-		ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
-		ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
-		ofs << dir.howToConsolidate() << endl;
-		
-		int j = 0;
-		for (map<string,bool>::iterator i = checkList.begin(); i != checkList.end(); ++i) {
-			if ( i->second == false) {
-				j++;
-				ofs << i->first << endl;
-			}
-		}
-		
-		ofs << "# Number of files not yet processed = " << j << endl;
-		ofs.close();
-		
-		// Close open files, if necessary
-		if (err_file.is_open())    err_file.close();
-		if (report_file.is_open()) report_file.close();
-	}
-	else {
-		cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Sleeping 25 s" << endl;
-	}
-	sleep(25);
-	_exit(0);
+        ofstream ofs ("CHDB-INTERRUPTION.txt", ofstream::out);
+        ofs << "# CHDB WAS INTERRUPTED - You may restart chdb using this file with the switch --in-files\n";
+        ofs << dir.howToConsolidate() << endl;
+        
+        int j = 0;
+        for (map<string,bool>::iterator i = checkList.begin(); i != checkList.end(); ++i) {
+            if ( i->second == false) {
+                j++;
+                ofs << i->first << endl;
+            }
+        }
+        
+        ofs << "# Number of files not yet processed = " << j << endl;
+        ofs.close();
+        
+        // Close open files, if necessary
+        if (err_file.is_open())    err_file.close();
+        if (report_file.is_open()) report_file.close();
+    }
+    else {
+        cerr << "Scheduler rank=" << getRank() << " received a signal - " << signal << " - Sleeping 25 s" << endl;
+    }
+    sleep(25);
+    _exit(0);
 }
 
