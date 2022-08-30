@@ -57,7 +57,7 @@ public:
     static void abort();
 
     virtual void mainLoop()=0;
-    virtual bool errorHandle()=0;
+    virtual bool errorHandle(const vector_of_int&,const vector_of_strings&)=0;
     virtual size_t getTreatedFiles() const=0;
 
     void startTimer();
