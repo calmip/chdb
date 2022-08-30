@@ -496,10 +496,7 @@ void BasicScheduler::executeCommand(const vector_of_strings& file_pathes,
     double zerod = 0.0;
     
     return_values.assign (file_pathes.size(),zero);
-    if (prms.isReportMode()) {
-        // Init wall_times
-        wall_times.assign(file_pathes.size(),zerod);
-    }
+    wall_times.assign(file_pathes.size(),zerod);
 
     for (size_t i=0; i<file_pathes.size(); ++i) {
         string cmd = command;
@@ -552,10 +549,8 @@ void BasicScheduler::executeCommand(const vector_of_strings& file_pathes,
             //}
         }
 
-        // Store the time elapsed if report mode
-        if ( prms.isReportMode() ) {
-            wall_times[i] = end - start;
-        }
+        // Store the time elapsed (useful in report mode)
+        wall_times[i] = end - start;
     }
     
     // Sync the temporary and output databases, for security
@@ -652,16 +647,6 @@ void BasicScheduler::writeToSndBfr(void* bfr,
     size_t strn_data_size = 0;
     size_t dbl_data_size = 0;
 
-    // Mode No Report:
-    // ---------------
-    //
-    // Fill the buffer with the data from return_values, then from file_pathes
-    //      iiiiiiiiifffffffffffffffffffffffffff00000000000000000000000000000
-    //      ^        ^                          ^
-    //      0        int_data_size              int_data_size+str_data_size  ^bfr_size
-    //
-    // Mode --report:
-    // --------------
     //
     // Fill the buffer with the data from:
     //                 - return_values
@@ -673,29 +658,29 @@ void BasicScheduler::writeToSndBfr(void* bfr,
     //     0        +int_data_size +dbl_data_size +strn_data_size +str_data_size          bfr_size
     
     data_size = 0;
+
     vctToBfr(return_values,bfr,bfr_size,int_data_size);
     bfr      = (void*) ((char*) bfr + int_data_size);
     bfr_size -= int_data_size;
     data_size += int_data_size;
-    if (prms.isReportMode()) {
+
+    vctToBfr(wall_times,bfr,bfr_size,dbl_data_size);
+    bfr = (void*)((char*) bfr + dbl_data_size);
+    bfr_size -= dbl_data_size;
+    data_size += dbl_data_size;
         
-        vctToBfr(wall_times,bfr,bfr_size,dbl_data_size);
-        bfr = (void*)((char*) bfr + dbl_data_size);
-        bfr_size -= dbl_data_size;
-        data_size += dbl_data_size;
-        
-        vctToBfr(node_name,bfr,bfr_size,strn_data_size);
-        bfr = (void*)((char*) bfr + strn_data_size);
-        bfr_size -= strn_data_size;
-        data_size += strn_data_size;
-    }
+    vctToBfr(node_name,bfr,bfr_size,strn_data_size);
+    bfr = (void*)((char*) bfr + strn_data_size);
+    bfr_size -= strn_data_size;
+    data_size += strn_data_size;
+
     vctToBfr(file_pathes,bfr,bfr_size,str_data_size);
     data_size += str_data_size;
     // bfr_size -= str_data_size;
 }
 
 /** 
- * @brief Read a receive buffer and initialize the vectors return_values, may be wall_times/node_name, and file_pathes
+ * @brief Read a receive buffer and initialize the vectors return_values, wall_times, node_name, and file_pathes
  * 
  * @param [inout] bfr
  * @param[out]  return_values The returned values, (empty if slave reading)
@@ -710,15 +695,18 @@ void BasicScheduler::readFrmRecvBfr (const void* bfr,
                                      vector_of_strings& node_name,
                                      vector_of_strings& file_pathes ) {
     size_t data_size;
+
     bfrToVct(bfr,data_size,return_values);
     bfr = (void*) ((char*) bfr + data_size);
-    if (prms.isReportMode()) {
-        bfrToVct(bfr,data_size,wall_times);
-        bfr = (void*) ((char*) bfr + data_size);
-        bfrToVct(bfr,data_size,node_name);
-        bfr = (void*) ((char*) bfr + data_size);
-    }
+
+    bfrToVct(bfr,data_size,wall_times);
+    bfr = (void*) ((char*) bfr + data_size);
+
+    bfrToVct(bfr,data_size,node_name);
+    bfr = (void*) ((char*) bfr + data_size);
+
     bfrToVct(bfr, data_size, file_pathes);
+
     checkInvariant(return_values, wall_times, file_pathes);
 }
 
