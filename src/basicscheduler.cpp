@@ -30,6 +30,7 @@
 
 #include <mpi.h>
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 #include <assert.h>
@@ -123,9 +124,6 @@ void BasicScheduler::mainLoopProlog() {
     // Open the report file, if any
     // NOTE - opened here and not in the constructor because it should NOT be opened on slaves !
     openReportFileIfNecessary();
-
-    return_values.clear();
-    wall_times.clear();
 }
 
 /*******
@@ -161,11 +159,7 @@ void BasicScheduler::openReportFileIfNecessary() {
         }
     }
 }
-
-
-
-
-    
+  
 /** 
  * @brief Send to the slave a message with no data and END TAG
  * 
@@ -204,50 +198,48 @@ void BasicScheduler::mainLoopMaster() {
     allocBfr(send_bfr,bfr_size);
     allocBfr(recv_bfr,bfr_size);
 
-    file_pathes = dir.nextBlock();
+    vector_of_int return_values, dummy_vi;
+    vector_of_double wall_times, dummy_vd;
+    vector_of_strings node_name, dummy_vs;
+    vector_of_strings rec_file_pathes, file_pathes;
 
+    file_pathes = dir.nextBlock();
     while(!file_pathes.empty()) {
 
-        // Prepare the send buffer for the next message
-        size_t send_msg_len=0;
-        writeToSndBfr(send_bfr,bfr_size,send_msg_len);
-        
         // Listen to the slaves
         masterWaitForSlaves(recv_bfr, bfr_size, CHDB_TAG_READY, sts);
-        //MPI_Recv((char*)recv_bfr,(int)bfr_size, MPI_BYTE, MPI_ANY_SOURCE, CHDB_TAG_READY, MPI_COMM_WORLD, &sts);
-    //string received((const char*)recv_bfr,80);
-    //cerr << received << '\n';
 
         int talking_slave = sts.MPI_SOURCE;
 
-        // Init return_values, may be wall_times, and file_pathes with the message
-        readFrmRecvBfr(recv_bfr);
+        // Init return_values, may be wall_times/node_name, and file_pathes with the message
+        readFrmRecvBfr(recv_bfr, return_values, wall_times, node_name, rec_file_pathes);
         
         // counting the files
-        treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
+        treated_files += count_if(rec_file_pathes.begin(),rec_file_pathes.end(),isNotNullStr);
 
         // checking the list items - If using bdbh, the temporary databases should be already synced
-        _checkListItems(file_pathes,return_values);
+        _checkListItems(rec_file_pathes,return_values);
         
         // Write info to report
         if (prms.isReportMode()) {
-            reportBody(report_file, talking_slave);
+            reportBody(report_file, talking_slave, return_values, wall_times, node_name, rec_file_pathes );
         }
 
         // Handle the error, if error found and abort mode exit from the loop
-        bool err_found = errorHandle();
+        bool err_found = errorHandle(return_values, rec_file_pathes);
         if (err_found && prms.isAbrtOnErr()) {
             sendEndMsg(send_bfr, talking_slave);
             break;
-
         }
 
+        // Prepare the send buffer for the next message
+        size_t send_msg_len=0;
+        writeToSndBfr(send_bfr, bfr_size, send_msg_len, dummy_vi, dummy_vd, dummy_vs, file_pathes);
+        
         // Send the block to the slave
         MPI_Send(send_bfr,send_msg_len,MPI_BYTE,talking_slave,CHDB_TAG_GO,MPI_COMM_WORLD);
 
-        // Init return_values and file_pathes for next iteration
-        return_values.clear();
-        wall_times.clear();
+        // Init file_pathes for next iteration
         file_pathes = dir.nextBlock();
     }
 
@@ -258,27 +250,25 @@ void BasicScheduler::mainLoopMaster() {
     int working_slaves = getNbOfSlaves(); // The master is not a slave
     while(working_slaves>0) {
         masterWaitForSlaves(recv_bfr, bfr_size, MPI_ANY_TAG, sts);
-        //MPI_Recv(recv_bfr, bfr_size, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &sts);
-//    string received((const char*)recv_bfr,80);
-//    cerr << received << '\n';
+
         int talking_slave = sts.MPI_SOURCE;
         int tag = sts.MPI_TAG;
 
         // Init return_values and file_pathes with the message
-        readFrmRecvBfr(recv_bfr);
-        
+        readFrmRecvBfr(recv_bfr, return_values, wall_times, node_name, rec_file_pathes);
+
         // We received a tag "READY": send the message END
         if (tag==CHDB_TAG_READY) {
 
             // counting the files
-            treated_files += count_if(file_pathes.begin(),file_pathes.end(),isNotNullStr);
+            treated_files += count_if(rec_file_pathes.begin(),rec_file_pathes.end(),isNotNullStr);
             
             // Handle the error
-            errorHandle();
+            errorHandle(return_values, rec_file_pathes);
         
             // Write info to report
             if (prms.isReportMode()) {
-                reportBody(report_file, talking_slave);
+                reportBody(report_file, talking_slave, return_values, wall_times, node_name, rec_file_pathes);
             }
 
             // Send an empty message tagged END to the slave
@@ -286,9 +276,8 @@ void BasicScheduler::mainLoopMaster() {
         }
 
         // We received a tag "END": consolidate data (if necessary) and forget this slave
-        // We consolidate from 
         else {
-            dir.consolidateOutput(false,file_pathes[0]);
+            dir.consolidateOutput(false,rec_file_pathes[0]);
             working_slaves--;
         }
     }
@@ -308,7 +297,7 @@ void BasicScheduler::mainLoopMaster() {
 
 /** 
  * @brief Write the header in the report file
- *        Assign the vector wall_time_slaves
+ *        Zero the vector wall_time_slaves
  * 
  * @param os 
  */
@@ -318,6 +307,7 @@ void BasicScheduler::reportHeader(ostream& os) {
     wall_time_slaves.clear();
     wall_time_slaves.assign(getNbOfSlaves()+1,0.0);
     files_slaves.assign(getNbOfSlaves()+1,0);
+    node_name_slaves.assign(getNbOfSlaves()+1,"");
 }
 
 /** 
@@ -328,7 +318,13 @@ void BasicScheduler::reportHeader(ostream& os) {
  * @param os 
  * @param rank 
  */
-void BasicScheduler::reportBody(ostream& os, int rank) {
+void BasicScheduler::reportBody(ostream& os,
+                                int rank,
+                                const vector_of_int& return_values,
+                                const vector_of_double& wall_times,
+                                const vector_of_strings& node_name,
+                                const vector_of_strings& file_pathes)
+{
     double wall_time_slave=0;
     int n=0;
     for (size_t i=0; i<file_pathes.size(); ++i) {
@@ -343,6 +339,7 @@ void BasicScheduler::reportBody(ostream& os, int rank) {
     }
     wall_time_slaves[rank] += wall_time_slave;
     files_slaves[rank]     += n;
+    node_name_slaves[rank] = node_name[0];
 }
 
 /** 
@@ -352,7 +349,7 @@ void BasicScheduler::reportBody(ostream& os, int rank) {
  */
 void BasicScheduler::reportSummary(ostream& os) {
     os << "----------------------------------------------\n";
-    os << "SLAVE\tN INP\tCUMULATED TIME (s)\n";
+    os << left << setw(7) << "SLAVE"<< setw(7) << "Nb INP" << setw(19) << "CUMULATED TIME (s)" << setw(40) << left << "NODE.pid" << endl;
     size_t nb_slaves = getNbOfSlaves();
     double min=1E6;
     double max=0;
@@ -362,7 +359,7 @@ void BasicScheduler::reportSummary(ostream& os) {
         if (wall_time_slaves[i]<min) min=wall_time_slaves[i];
         if (wall_time_slaves[i]>max) max=wall_time_slaves[i];
         avg += wall_time_slaves[i];
-        os << i << '\t' << files_slaves[i] << '\t' << wall_time_slaves[i] << '\n';
+        os << left << setw(7) << i << setw(7) << files_slaves[i] << setw(19) << wall_time_slaves[i] << setw(40) << left << node_name_slaves[i] << endl;
     }
 
     // computing the average time and standard deviation
@@ -393,6 +390,7 @@ void BasicScheduler::mainLoopSlave() {
     size_t bfr_size=0;
     void* bfr=NULL;
     allocBfr(bfr,bfr_size);
+
 /*
     {
         pid_t pid = getpid();
@@ -416,20 +414,32 @@ void BasicScheduler::mainLoopSlave() {
     const int master    = 0;
     int tag             = CHDB_TAG_GO;
     size_t send_msg_len = 0;
+
+    vector_of_int return_values, dummy_vi;
+    vector_of_double wall_times, dummy_vd;
+    vector_of_strings node_name, dummy_vs;
+    vector_of_strings file_pathes;
+
+    // Init node_name (will be used only if report mode enabled)
+    string h;
+    getHostName(h);
+    node_name.clear();
+    node_name.push_back(h + '.' + to_string(getpid()));
+    
     while(tag==CHDB_TAG_GO) {
 
         // Prepare the send buffer for the next message
-        writeToSndBfr(bfr,bfr_size,send_msg_len);
+        writeToSndBfr(bfr,bfr_size,send_msg_len, return_values, wall_times, node_name, file_pathes);
 
         // Send the report+ready message to the master, receive a list of files to treat
         MPI_Sendrecv_replace((char*)bfr,(int)bfr_size,MPI_BYTE,master,CHDB_TAG_READY,master,MPI_ANY_TAG,MPI_COMM_WORLD,&sts);
         tag = sts.MPI_TAG;
 
-        // Init file_pathes with the message
-        readFrmRecvBfr(bfr);
+        // Init file_pathes from the message
+        readFrmRecvBfr(bfr, dummy_vi, dummy_vd, dummy_vs, file_pathes);
 
         if (tag==CHDB_TAG_GO) {
-            executeCommand();
+            executeCommand(file_pathes, return_values, wall_times);
         }
     }
 
@@ -450,7 +460,7 @@ void BasicScheduler::mainLoopSlave() {
         file_pathes.push_back(dir.getOutDir());
     }
 
-    writeToSndBfr(bfr,bfr_size,send_msg_len);
+    writeToSndBfr(bfr,bfr_size,send_msg_len, return_values, wall_times, node_name, file_pathes);
     MPI_Send(bfr, bfr_size, MPI_BYTE, master, CHDB_TAG_END, MPI_COMM_WORLD);
 
     // free memory
@@ -460,9 +470,15 @@ void BasicScheduler::mainLoopSlave() {
 /** 
  * @brief Execute the command on all files of file_pathes, store the result in return_values and may be the wall time in wall_times
  *        This function should be called by the slaves only
+ *
+ * @param[in] file_pathes The input files to treat
+ * @param[out] return_values For each input, the returned value
+ * @param[out] wall_times For each input, The elapsed time of this computation
  * 
  */
-void BasicScheduler::executeCommand() {
+void BasicScheduler::executeCommand(const vector_of_strings& file_pathes,
+                                    vector_of_int& return_values,
+                                    vector_of_double& wall_times ) {
 
     // Create the output and temporary directories when first-time call
     // If the output directory already exists, it will be removed
@@ -478,9 +494,10 @@ void BasicScheduler::executeCommand() {
     string command = prms.getExternalCommand();
     int zero = 0;
     double zerod = 0.0;
+    
     return_values.assign (file_pathes.size(),zero);
-
     if (prms.isReportMode()) {
+        // Init wall_times
         wall_times.assign(file_pathes.size(),zerod);
     }
 
@@ -552,13 +569,16 @@ void BasicScheduler::executeCommand() {
  * 
  * @pre return_values is filled with the returned values
  * @pre file_pathes is filled with the treated file pathes, in the same order as return_values
+ *
+ * @param[in] return_values
+ * @param[in] file_pathes
  * 
  * @return true = error found, false = no error
  */
-bool BasicScheduler::errorHandle() {
+bool BasicScheduler::errorHandle(const vector_of_int& return_values, const vector_of_strings& file_pathes) {
 
     // find the first value in error and return false if none
-    vector_of_int::iterator it = find_if(return_values.begin(),return_values.end(),isNotNull);
+    auto it = find_if(return_values.begin(),return_values.end(),isNotNull);
     if (it == return_values.end()) {
         return false;
 
@@ -607,20 +627,30 @@ void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
 }
 
 /** 
- * @brief Write to a send buffer the vectors return_values, may be wall_times, and file_pathes
+ * @brief Write to a send buffer the vectors return_values, wall_times, node_name, file_pathes
  * 
  * @pre The bfr should be already allocated with allocBfr
 
  * @param[in]  bfr       The buffer (should be already allocated)
  * @param[in]  bfr_size  The buffer length
  * @param[out] data_size The data stored, should be <= bfr_size
- * 
+ * @param[in]  return_values The returned values, (empty if master sending)
+ * @param[in]  wall_times The elapsed time of this computation (empty if master sending)
+ * @param[in]  node_name The slave node name (1 cell only, empty if master sending)
+ * @param[in]  file_pathes The file pathes to treat / treated
  */
-void BasicScheduler::writeToSndBfr(void* bfr, size_t bfr_size, size_t& data_size) {
-    checkInvariant();
-    size_t int_data_size=0;
-    size_t str_data_size=0;
-    size_t dbl_data_size=0;
+void BasicScheduler::writeToSndBfr(void* bfr,
+                                   size_t bfr_size,
+                                   size_t& data_size,
+                                   const vector_of_int& return_values,
+                                   const vector_of_double& wall_times,
+                                   const vector_of_strings& node_name,
+                                   const vector_of_strings& file_pathes) {
+    checkInvariant(return_values, wall_times, file_pathes);
+    size_t int_data_size = 0;
+    size_t str_data_size = 0;
+    size_t strn_data_size = 0;
+    size_t dbl_data_size = 0;
 
     // Mode No Report:
     // ---------------
@@ -633,40 +663,63 @@ void BasicScheduler::writeToSndBfr(void* bfr, size_t bfr_size, size_t& data_size
     // Mode --report:
     // --------------
     //
-    // Fill the buffer with the data from return_values, from wall_times, then from file_pathes
-    //     iiiiiiiiidddddddddfffffffffffffffffffffffffff00000000000000000000000000000
-    //     ^        ^        ^-----v                    ^-------v                   ^----------------------v
-    //     0        int_data_size  int_data_size+dbl_data_size  int_data_size+dbl_data_size+str_data_size  bfr_size
+    // Fill the buffer with the data from:
+    //                 - return_values
+    //                 - wall_times (times)
+    //                 - wall_times (node_name.pid)
+    //                 - file_pathes
+    //     iiiiiiiiidddddddddhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhfffffffffffffffffffffffffff00000000000000000000000000000
+    //     ^        ^        ^-----v              v            ^--v                       ^
+    //     0        +int_data_size +dbl_data_size +strn_data_size +str_data_size          bfr_size
     
+    data_size = 0;
     vctToBfr(return_values,bfr,bfr_size,int_data_size);
     bfr      = (void*) ((char*) bfr + int_data_size);
-    bfr_size = bfr_size - int_data_size;
-    data_size= int_data_size;
+    bfr_size -= int_data_size;
+    data_size += int_data_size;
     if (prms.isReportMode()) {
+        
         vctToBfr(wall_times,bfr,bfr_size,dbl_data_size);
         bfr = (void*)((char*) bfr + dbl_data_size);
-        bfr_size = bfr_size - dbl_data_size;
+        bfr_size -= dbl_data_size;
         data_size += dbl_data_size;
+        
+        vctToBfr(node_name,bfr,bfr_size,strn_data_size);
+        bfr = (void*)((char*) bfr + strn_data_size);
+        bfr_size -= strn_data_size;
+        data_size += strn_data_size;
     }
     vctToBfr(file_pathes,bfr,bfr_size,str_data_size);
     data_size += str_data_size;
+    // bfr_size -= str_data_size;
 }
 
 /** 
- * @brief Read a receive buffer and initialize the vectors return_values, may be wall_times, and file_pathes
+ * @brief Read a receive buffer and initialize the vectors return_values, may be wall_times/node_name, and file_pathes
  * 
- * @param bfr 
+ * @param [inout] bfr
+ * @param[out]  return_values The returned values, (empty if slave reading)
+ * @param[out]  wall_times The elapsed time of this computation (empty if slave reading)
+ * @param[out]  node_name The slave node name (1 cell only, empty if slave reading)
+ * @param[out]  file_pathes The file pathes to treat / treated
+
  */
-void BasicScheduler::readFrmRecvBfr    (const void* bfr) {
+void BasicScheduler::readFrmRecvBfr (const void* bfr,
+                                     vector_of_int& return_values,
+                                     vector_of_double& wall_times,
+                                     vector_of_strings& node_name,
+                                     vector_of_strings& file_pathes ) {
     size_t data_size;
     bfrToVct(bfr,data_size,return_values);
     bfr = (void*) ((char*) bfr + data_size);
     if (prms.isReportMode()) {
         bfrToVct(bfr,data_size,wall_times);
         bfr = (void*) ((char*) bfr + data_size);
+        bfrToVct(bfr,data_size,node_name);
+        bfr = (void*) ((char*) bfr + data_size);
     }
     bfrToVct(bfr, data_size, file_pathes);
-    checkInvariant();
+    checkInvariant(return_values, wall_times, file_pathes);
 }
 
 /** 
@@ -675,7 +728,9 @@ void BasicScheduler::readFrmRecvBfr    (const void* bfr) {
  *              2/ wall_times empty, OR same size as file_pathes
  *
  */
-void BasicScheduler::checkInvariant() {
+void BasicScheduler::checkInvariant(const vector_of_int& return_values,
+                                    const vector_of_double& wall_times,
+                                    const vector_of_strings& file_pathes) {
     assert(return_values.empty() || return_values.size()==file_pathes.size());
     assert(wall_times.empty() || wall_times.size()==file_pathes.size());
 }

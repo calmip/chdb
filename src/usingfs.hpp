@@ -80,7 +80,7 @@ public:
         if(output_dir.length()==0 && !prms.isTypeDir()) throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
         return output_dir;
     }
-    void consolidateOutput(bool from_temp, const string& path="");
+    void consolidateOutput(bool from_temp, const string& path="") override;
 
 //    friend class TestCase1_usingFsfindOrCreateDir_Test;
 
