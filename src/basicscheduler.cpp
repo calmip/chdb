@@ -407,7 +407,7 @@ void BasicScheduler::mainLoopSlave() {
     // We sleep ONLY at the beginning
     unsigned int sleep_time = prms.getSleepTime();
     if (sleep_time != 0) {
-        sleep(sleep_time*rank);
+        sleepMs(sleep_time*rank);
     }
     
     // all msgs are sent/received to/from the master
