@@ -402,14 +402,6 @@ void BasicScheduler::mainLoopSlave() {
     }
 */
 
-    // Sleep a while before starting, this may be good for the I/O subsystem
-    // Every slave sleeps sleep_time * rank, thus the highest the rank the more you sleep
-    // We sleep ONLY at the beginning
-    unsigned int sleep_time = prms.getSleepTime();
-    if (sleep_time != 0) {
-        sleepMs(sleep_time*rank);
-    }
-    
     // all msgs are sent/received to/from the master
     const int master    = 0;
     int tag             = CHDB_TAG_GO;
@@ -421,10 +413,34 @@ void BasicScheduler::mainLoopSlave() {
     vector_of_strings file_pathes;
 
     // Init node_name (will be used only if report mode enabled)
-    string h;
-    getHostName(h);
     node_name.clear();
-    node_name.push_back(h + '.' + to_string(getpid()));
+    node_name.push_back(hostname + '.' + to_string(getpid()));
+
+    //cerr << "coucou node_rank=" << node_rank << endl;
+    
+    // Sleep a while before starting, this may be good for the I/O subsystem
+    // Every slave sleeps sleep_time * rank, thus the highest the rank the more you sleep
+    // We sleep ONLY at the beginning
+    unsigned int sleep_time = prms.getSleepTime();
+    if (sleep_time != 0)
+    {
+        sleep(sleep_time*rank);
+    }
+
+   /* mpi mode: If no sleep specified, introduce a little delay, calculated from node_rank,
+    *           to avoid DOS messages from the nodes which get a lot of ssh connections simultaneously
+    *           Not sure it is really useful because we now use non blocking mpi functions
+    *           together with some delays, so that the slaves are already desynchronized !
+    *           Code removed, can be commented out if necessary
+    
+    else
+    {
+        if (prms.getMpiSlaves() != "")
+        {
+            sleep(100*node_rank);
+        }
+    }
+    */
     
     while(tag==CHDB_TAG_GO) {
 

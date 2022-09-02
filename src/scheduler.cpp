@@ -34,6 +34,7 @@ using namespace std;
 #include <string>
 #include <list>
 #include <cerrno>
+#include <functional>
 
 #include "scheduler.hpp"
 #include "system.hpp"
@@ -86,7 +87,17 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
         throw runtime_error("ERROR - COULD NOT setenv CHDB_RANK, CHDB_COMM_SIZE or CHDB_ENVIRONMENT");
 
     // Give some infos to dir
-    dir.setRank(rank,comm_size); 
+    dir.setRank(rank,comm_size);
+
+    // Initialize hostname
+    getHostName(hostname);
+
+    // Initialize a second communicator
+    // node_comm is a connector specific to each node
+    // It is used to compute the "node_rank", ie the node of this process for one node
+    hash<string> hasher;
+    MPI_Comm_split(MPI_COMM_WORLD, hasher(hostname), rank, &node_comm);
+    MPI_Comm_rank (node_comm, &node_rank);
 }
 
 

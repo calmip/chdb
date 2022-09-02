@@ -81,13 +81,17 @@ protected:
 
     int comm_size;
     int rank;
-
+    int node_rank;
+    string hostname;
+    MPI_Comm node_comm;
+    
     // Derived classes should know what to do with those files
     ofstream err_file;
     ofstream report_file;
 
 private:
     double start_time;
+    
     
     map<string,bool> checkList;
     
