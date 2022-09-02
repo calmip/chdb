@@ -130,18 +130,23 @@ void getCurrentDirName(string& d) {
     free((void*)d_c);
 }
 
-
 /** 
  * @brief Sleep duration, counted in milliseconds
  * 
- * @param duration (must be an int in [0,1000[
- * @exception range_error if duration >= 1000
+ * @param duration
 */
 void sleepMs(unsigned int duration) {
-    if (duration>1000) throw(range_error("INTERNAL ERROR - SLEEP TIME LIMITED TO 1000 ms !"));
     struct timespec req;
-    req.tv_sec  = 0;
-    req.tv_nsec = 1000000*duration; // 1 ms = 1000000 ns
+    if (duration > 1000)
+    {
+        req.tv_sec  = duration / 1000;	// 2500 => 2
+        req.tv_nsec = 1000000 * (duration % 1000); // 1 ms = 1000000 ns, 2500 % 1000 = 500
+    } 
+    else
+    {
+        req.tv_sec  = 0;
+        req.tv_nsec = 1000000*duration; // 1 ms = 1000000 ns
+    }
     nanosleep(&req,NULL);
 }
 

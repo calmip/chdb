@@ -162,7 +162,15 @@ CSimpleOpt::SOption options[] = {
                 work_directory = arguments.OptionArg();
                 break;
             case OPT_SLEEPTIME:
-                sleep_time = atoi(arguments.OptionArg());
+                errno = 0;
+                {
+                    char *endptr;
+                    float s = strtof(arguments.OptionArg(),&endptr);
+                    if (errno == 0 && s>0)
+                    {
+                        sleep_time = (unsigned int) 1000.0 * s;
+                    }
+                }
                 break;
             case OPT_ENV_SNIPPET:
                 env_snippet = arguments.OptionArg();
@@ -401,8 +409,9 @@ void Parameters::usage() {
     cerr << "                                  --create-environment 'cp ~/DATA/*.inp .; cp ~/DATA/*.conf .'\n";
     cerr << "  --block-size 1             : The higher the block-size, the less mpi communications, but you may get\n";
     cerr << "                               load-balancing issues (default = 1)\n";
-    cerr << "  --sleep-time <T>           : Before starting process, each slave sleeps T * rank seconds. This is to desynchronize I/O calls when\n";
-    cerr << "                               chdb is used to launch I/O intensive programs, as this could stress the shared filesystem\n";
+    cerr << "  --sleep-time <T>           : Before starting process, each slave sleeps T * rank seconds. T is a float (ex: 0.2, ie 200ms)\n";
+    cerr << "                               This is useful to desynchronize I/O calls when chdb is used to launch I/O intensive programs,\n";
+    cerr << "                               as this could stress the shared filesystem\n";
     cerr << "  --on-error errors.txt      : When the command returns something different from 0, the status and the file path \n";
     cerr << "                               are stored in this file for later reference and execution\n";
     cerr << "                               NOTE: The default is to INTERRUPT chdb when the return status is not 0\n";
