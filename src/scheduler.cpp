@@ -53,7 +53,7 @@ using namespace std;
  */
 
 
-Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start_time(-1) {
+Scheduler::Scheduler(const Parameters& p, Directories& d, bool o=false) : prms(p), dir(d), only_testing(o), start_time(-1) {
     int flg;
     MPI_Initialized(&flg);
     if (flg==0) {
@@ -62,7 +62,7 @@ Scheduler::Scheduler(const Parameters& p, Directories& d) : prms(p),dir(d),start
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
 
-    if (comm_size==1) {
+    if (! only_testing && comm_size==1) {
         throw logic_error("ERROR - YOU SHOULD HAVE AT LEAST 1 SLAVE");
     }
 

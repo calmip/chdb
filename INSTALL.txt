@@ -2,26 +2,56 @@ INSTALLING chdb:
 ================
 
 1/ Prerequisites:
-=================
+-----------------
 You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation: chdb may be used with:
     - Any mpi implementation if you do not use mpi-based slaves
     - openmpi OR intelmpi if want to use chdb with mpi-based slaves
 
 2/ Installing:
-==============
-cmake -S. -Bbuild [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]
+--------------
+`cmake -S. -Bbuild [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
 
 If the current mpi release cannot be detected, you may force an mpi type with:
 
-cmake -S. -Bbuild -DCHDB_MPI=OPENMPI|INTELMPI  [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]
-make
-make install
+`cmake -S. -Bbuild -DCHDB_MPI=OPENMPI|INTELMPI  [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
+
+Then build the software:
+
+`cd build`
+`make`
+`make install`
 
 3/ Testing:
-===========
-Please follow the chdb tutorial available on https://www.calmip.univ-toulouse.fr/spip.php?article648
-(The "Essential" part of the tuto should work)
- 
+-----------
+### Functional tests:
+
+1. You can try the tests in directory `ftests`
+2. You can follow the chdb tutorial available on https://www.calmip.univ-toulouse.fr/spip.php?article648
+   (The "Essential" part of the tuto should work)
+
+### Unit tests (for developers):
+
+Install first the testing framework googletest: https://github.com/google/googletest :
+
+`cd googletest-release-1.12.1`
+`mkdir build`
+`cd build`
+`cmake  -DCMAKE_INSTALL_PREFIX=..  ..`
+`make install`
+
+then from the chdb direcory:
+
+`cd chdb`
+`cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DGOOGLETEST_ROOT=/path/to/googletest-release-1.12.1`
+`cd build`
+`make`
+`./parameters_unittest`
+`./system_unittest`
+`./directories_unittest`
+`./scheduler_unittest`
+
+**NOTE** - This was tested with googletest release 1.8.1 and 1.12.1
+
 Emmanuel Courcelle
 emmanuel.courcelle@toulouse-inp.fr
 

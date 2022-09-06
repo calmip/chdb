@@ -55,6 +55,7 @@ using namespace std;
 #define CHDB_TAG_GO    1010
 #define CHDB_TAG_END   1020
 
+
 void BasicScheduler::mainLoop() {
 
 // May be useful for debugging with gdb
@@ -84,6 +85,7 @@ void BasicScheduler::mainLoop() {
         mainLoopSlave();
     }
 }
+
 /***
  * @brief Called ONLY on Master BEFORE calling MainLoop, to initialize several stuff
  * 
@@ -429,6 +431,7 @@ void BasicScheduler::mainLoopSlave() {
 
    /* mpi mode: If no sleep specified, introduce a little delay, calculated from node_rank,
     *           to avoid DOS messages from the nodes which get a lot of ssh connections simultaneously
+    *
     *           Not sure it is really useful because we now use non blocking mpi functions
     *           together with some delays, so that the slaves are already desynchronized !
     *           Code removed, can be commented out if necessary
@@ -671,7 +674,7 @@ void BasicScheduler::writeToSndBfr(void* bfr,
     //                 - file_pathes
     //     iiiiiiiiidddddddddhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhfffffffffffffffffffffffffff00000000000000000000000000000
     //     ^        ^        ^-----v              v            ^--v                       ^
-    //     0        +int_data_size +dbl_data_size +strn_data_size +str_data_size          bfr_size
+    //     0        +int_data_size +dbl_data_size +strn_data_size +str_data_size          data_size
     
     data_size = 0;
 

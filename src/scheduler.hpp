@@ -47,7 +47,7 @@ using namespace std;
 
 class Scheduler: private NonCopyable {
 public:
-    Scheduler(const Parameters& p, Directories& d);
+    Scheduler(const Parameters& p, Directories& d, bool);
     int getRank() const     { return rank; };
     size_t getNbOfSlaves() const { return comm_size-1; };
     bool isMaster() const   { return rank==0;};
@@ -55,7 +55,7 @@ public:
     static void init(int,char**);
     static void finalize();
     static void abort();
-
+    
     virtual void mainLoop()=0;
     virtual bool errorHandle(const vector_of_int&,const vector_of_strings&)=0;
     virtual size_t getTreatedFiles() const=0;
@@ -78,6 +78,7 @@ protected:
     
     const Parameters& prms;
     Directories& dir;
+    bool only_testing;   // If true, we are running unit tests. It is legal to have only 1 rank (mpirun -n 1)
 
     int comm_size;
     int rank;
