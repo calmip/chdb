@@ -1098,20 +1098,25 @@ INSTANTIATE_TEST_SUITE_P(
     Values(test_case_Fs_withtmp.get(),test_case_Fs_notmp.get())
 );
 
-// REMOVED BECAUSE bdbh WAS REMOVED
-#if false
-unique_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
-
-INSTANTIATE_TEST_SUITE_P(
-    tmpOrNotSeveralDirectories,
-    TestCase1,
-    Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get(),test_case_Bdbh_withtmp.get())
-//    Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
-);
 INSTANTIATE_TEST_SUITE_P(
     tmpOrNotSeveralDirectories,
     TestCase4,
-    Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+    Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get())
     //Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
 );
-#endif
+
+// REMOVED BECAUSE bdbh WAS REMOVED
+// REMOVED unique_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
+// REMOVED
+// REMOVEDINSTANTIATE_TEST_SUITE_P(
+    // REMOVEDtmpOrNotSeveralDirectories,
+    // REMOVEDTestCase1,
+    // REMOVEDValues(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get(),test_case_Bdbh_withtmp.get())
+// REMOVED//    Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+// REMOVED);
+// REMOVEDINSTANTIATE_TEST_SUITE_P(
+    // REMOVEDtmpOrNotSeveralDirectories,
+    // REMOVEDTestCase4,
+    // REMOVEDValues(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
+    // REMOVED//Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get());
+// REMOVED);
