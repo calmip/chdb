@@ -42,18 +42,19 @@ using namespace std;
  **********************/
 class BasicScheduler: public Scheduler {
 public:
-    BasicScheduler(const Parameters& p, Directories& d):Scheduler(p,d),first_execution(true),treated_files(0){};
+    BasicScheduler(const Parameters& p, Directories& d, bool o=false):Scheduler(p,d,o),first_execution(true),treated_files(0){};
     void mainLoop() override;
     bool errorHandle(const vector_of_int&,const vector_of_strings&) override;
     size_t getTreatedFiles() const override { return treated_files; };
  
-    friend class TestCase1_ExecuteCommandFrmList1_Test;
-    friend class TestCase1_ExecuteCommandFrmList2_Test;
+//    friend class TestCase1_ExecuteCommandFrmList1_Test;
+//    friend class TestCase1_ExecuteCommandFrmList2_Test;
     friend class SchedTestStrInt_readwriteToSndBfr_Test;
+    friend class TestInvariant_ChdbTest;
 //    friend class WithOrNoTmp_AbortOnError_Test;
 //    friend class WithOrNoTmp_ContinueOnError_Test;
-    friend class TestCase1_AbortOnError_Test;
-    friend class TestCase1_ContinueOnError_Test;
+//    friend class TestCase1_AbortOnError_Test;
+//    friend class TestCase1_ContinueOnError_Test;
 
 private:
     vector_of_double wall_time_slaves;  // The cumulated elapsed time of each slave - maintained by the master

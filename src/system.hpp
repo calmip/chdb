@@ -80,10 +80,12 @@ template <typename T> void vctToBfr(const vector<T>& values, void* bfr, size_t b
 
     size_t vct_sze  = values.size();
 
-    data_size=(vct_sze+1) * sizeof(T);
-    if (data_size > bfr_size) {
+    // data_size unchanged if there is an exception
+    size_t local_data_size=(vct_sze+1) * sizeof(T);
+    if (local_data_size > bfr_size) {
         throw(runtime_error("ERROR - Buffer too small"));
     }
+    data_size = local_data_size;
     T * v = (T*) bfr;
     v[0]  = (T) vct_sze;
     for (size_t i=0; i<vct_sze; ++i) {

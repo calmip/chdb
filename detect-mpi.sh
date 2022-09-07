@@ -11,7 +11,7 @@
 #            OPENMPI     openmpi detected
 #            INTELMPI    intelmpi detected
 #            OTHER       mpi detected, but don't know the version
-#	     NONE        no mpi detected (ie mpiexec not in the path)
+#            NONE        no mpi detected (ie mpiexec not in the path)
 #
 
 MPIEXEC_OUTPUT=$(mpiexec --version 2>/dev/null)
@@ -36,7 +36,7 @@ then
    exit 0
 fi
 
-# mpiexec found, but we did not undestrand the version
+# mpiexec found, but we did not undestand the version
 /bin/echo -n OTHER
 exit 0
 

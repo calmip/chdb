@@ -33,12 +33,12 @@
 #include <string>
 #include <map>
 #include <memory>
-#include "../constypes.hpp"
-#include "../system.hpp"
-#include "../parameters.hpp"
-#include "../directories.hpp"
-#include "../usingfs.hpp"
-#include "../usingbdbh.hpp"
+#include "../src/constypes.hpp"
+#include "../src/system.hpp"
+#include "../src/parameters.hpp"
+#include "../src/directories.hpp"
+#include "../src/usingfs.hpp"
+// REMOVED #include "../src/usingbdbh.hpp"
 #include "gtest/gtest.h"
 
 // This macro is useful to initialize argv with read-write area, this is required by simpleOpt
@@ -49,17 +49,17 @@
 // the following is used by some test programs
 // file NAme and COntent
 struct naco {
-	naco(const string& n, const string& c) : name(n),content(c) {};
-	string name;
-	string content;
+    naco(const string& n, const string& c) : name(n),content(c) {};
+    string name;
+    string content;
 };
 
 // convenient functions
 void createFile(const string& d, const naco& n);
 string readFile(const string&);
-string readFileFromBdbh(const string& db, const string& key);
+// REMOVED string readFileFromBdbh(const string& db, const string& key);
 bool existsFile(const string&);
-bool existsFileFromBdbh(const string& db, const string& key);
+// REMOVED bool existsFileFromBdbh(const string& db, const string& key);
 void removeFile(const string&);
 
 // some defines: The input directory names
@@ -73,114 +73,60 @@ void removeFile(const string&);
 
 /***** TEST FIXTURES *****/
 
+// Testing the functions defined in system.hpp
 // Test fixture base class -> used by most tests
 // getInputDir() may be overloaded by subclasses, so you may have several objects for 1 input directory
 // For instance = 1 REAL directory + the corresponding bdbh version of this directory !
 class ChdbTest: public ::testing::Test {
 protected:
-	ChdbTest(const string& n): input_dir(n){bdbh::Initialize();};
-	virtual ~ChdbTest() { removeFile(getInputDir()+".out*");/*bdbh::Terminate();*/ };
-	virtual string getInputDir() const { return input_dir; };
+    ChdbTest(const string& n): input_dir(n){/* REMOVED bdbh::Initialize(); */ };
+    virtual ~ChdbTest() { removeFile(getInputDir()+".out*");/*bdbh::Terminate();*/ };
+    virtual string getInputDir() const { return input_dir; };
 
 private:
-	string input_dir;
+    string input_dir;
 };
 
 // ChdbTest1 = Create 5 files in 3 subdirectories of input_dir
 class ChdbTest1 : public ChdbTest {
 public:
-	ChdbTest1();
+    ChdbTest1();
 
 protected:
-	vector<string> expected_file_pathes;
-	map<string,string> expected_file_contents;
-	map<string,string> expected_file_contents_with_rank;
+    vector<string> expected_file_pathes;
+    map<string,string> expected_file_contents;
+    map<string,string> expected_file_contents_with_rank;
 };
 
 // ChdbTest2 = Create 10 files in the input directory, file 0.txt in error
 class ChdbTest2: public ChdbTest {
 public:
-	ChdbTest2();
+    ChdbTest2();
 
 protected:
-	vector<string> expected_file_pathes;
-	map<string,string> expected_file_contents;
+    vector<string> expected_file_pathes;
+    map<string,string> expected_file_contents;
 };
 
 // ChdbTest3 = Create 10 files in the input directory, file 9.txt in error
 class ChdbTest3: public ChdbTest {
 public:
-	ChdbTest3();
+    ChdbTest3();
 
 protected:
-	vector<string> expected_file_pathes;
-	map<string,string> expected_file_contents;
+    vector<string> expected_file_pathes;
+    map<string,string> expected_file_contents;
 };
 
 // ChdbTest4 = Create 5 directories .dir in the input directory, nothing in the directories
 class ChdbTest4: public ChdbTest {
 public:
-	ChdbTest4();
-	
+    ChdbTest4();
+    
 protected:
-	vector<string> expected_input_files;
-	vector<string> expected_file_pathes;
-//	map<string,string> expected_file_contents;
-};
-
-// Adding the mpi buffer to ChdbTest1 (names only)
-class SchedTestStr : public ChdbTest1 {
-public:
-	SchedTestStr();
-	~SchedTestStr() { free(bfr); };
-
-protected:
-	string expected_bfr;
-	void*  bfr;
-	size_t bfr_len;
-};
-
-// Adding the mpi buffer to ChdbTest1 (return values only)
-class SchedTestInt : public ChdbTest1 {
-public:
-	SchedTestInt();
-	~SchedTestInt() { free(bfr); };
-
-protected:
-	vector_of_int expected_values;
-	
-	string expected_bfr;
-	void*  bfr;
-	size_t bfr_len;
-};
-
-// Adding the mpi buffer to ChdbTest1 (doubles for time only)
-class SchedTestDbl : public ChdbTest1 {
-public:
-	SchedTestDbl();
-	~SchedTestDbl() { free(bfr); };
-
-protected:
-	vector_of_double expected_values;
-	
-	string expected_bfr;
-	void*  bfr;
-	size_t bfr_len;
-};
-
-// Adding the mpi buffer to ChdbTest1 (names + return values)
-class SchedTestStrInt : public ChdbTest1 {
-public:
-	SchedTestStrInt();
-	~SchedTestStrInt() { free(bfr); };
-
-protected:
-	vector_of_strings expected_file_pathes;
-	vector_of_int expected_values_1;
-	string expected_bfr;
-	string expected_bfr_1;
-	void*  bfr;
-	size_t bfr_len;
+    vector<string> expected_input_files;
+    vector<string> expected_file_pathes;
+//    map<string,string> expected_file_contents;
 };
 
 /**
@@ -188,17 +134,17 @@ protected:
  */
 class ChdbTestsWithParams {
 public:
-	ChdbTestsWithParams(const string& t): tmp_dir(t) {};
-	string getTmpDir() const { return tmp_dir; };
-	virtual Directories* createDirectory(const Parameters&)=0;
-	virtual string getDescription() const = 0;
-	virtual string getDirectoryType() const = 0;
+    ChdbTestsWithParams(const string& t): tmp_dir(t) {};
+    string getTmpDir() const { return tmp_dir; };
+    virtual Directories* createDirectory(const Parameters&)=0;
+    virtual string getDescription() const = 0;
+    virtual string getDirectoryType() const = 0;
 
-	virtual void cvtInputDir(const string&) = 0;
-	virtual string cmplInputDir(const string&) = 0;
+    virtual void cvtInputDir(const string&) = 0;
+    virtual string cmplInputDir(const string&) = 0;
 
 private:
-	string tmp_dir;
+    string tmp_dir;
 };
 
 /**
@@ -207,62 +153,118 @@ private:
  */
 class ChdbTestsWithParamsUsingFs: public ChdbTestsWithParams {
 public:
-	ChdbTestsWithParamsUsingFs(const string& t): ChdbTestsWithParams(t) {};
-	virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
-	virtual string cmplInputDir(const string& n) {return n;};
-	virtual void cvtInputDir(const string&) {};
-	virtual string getDescription() const {string rvl="TESTING USINGFS ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
-	virtual string getDirectoryType() const {return (string) "UsingFs";};
+    ChdbTestsWithParamsUsingFs(const string& t): ChdbTestsWithParams(t) {};
+    virtual Directories* createDirectory(const Parameters& p) { return new UsingFs(p); };
+    virtual string cmplInputDir(const string& n) {return n;};
+    virtual void cvtInputDir(const string&) {};
+    virtual string getDescription() const {string rvl="TESTING USINGFS ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
+    virtual string getDirectoryType() const {return (string) "UsingFs";};
 };
-class ChdbTestsWithParamsUsingBdbh: public ChdbTestsWithParams {
-public:
-	ChdbTestsWithParamsUsingBdbh(const string& t): ChdbTestsWithParams(t) {};
-	virtual Directories* createDirectory(const Parameters& p) { return new UsingBdbh(p); };
-	virtual string cmplInputDir(const string& n) { string s=n+".db"; return s;};
-	virtual string getDescription() const {string rvl="TESTING USINGBDBH ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
-	virtual string getDirectoryType() const {return (string) "UsingBdbh";};
-	virtual void cvtInputDir(const string& src);
-};
+// REMOVED class ChdbTestsWithParamsUsingBdbh: public ChdbTestsWithParams {
+// REMOVED public:
+// REMOVED     ChdbTestsWithParamsUsingBdbh(const string& t): ChdbTestsWithParams(t) {};
+// REMOVED     virtual Directories* createDirectory(const Parameters& p) { return new UsingBdbh(p); };
+// REMOVED     virtual string cmplInputDir(const string& n) { string s=n+".db"; return s;};
+// REMOVED     virtual string getDescription() const {string rvl="TESTING USINGBDBH ";rvl+="TEMPORARY=";rvl+=getTmpDir();return rvl;};
+// REMOVED     virtual string getDirectoryType() const {return (string) "UsingBdbh";};
+// REMOVED     virtual void cvtInputDir(const string& src);
+// REMOVED };
 
 /** 
  * @brief To be used with TEST_P macros
  * 
  */
+ 
 class TestCase1: public ChdbTest1,
-				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+                 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
 public:
-	TestCase1() : ChdbTest1(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
-		GetParam()->cvtInputDir(ChdbTest1::getInputDir());
-	};
-	~TestCase1() { removeFile(getInputDir()+".out*"); };
-	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest1::getInputDir()); };
+    TestCase1() : ChdbTest1(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+        GetParam()->cvtInputDir(ChdbTest1::getInputDir());
+    };
+    ~TestCase1() { removeFile(getInputDir()+".out*"); };
+    virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest1::getInputDir()); };
 };
 class TestCase2: public ChdbTest2,
-				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+                 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
 public:
-	TestCase2() : ChdbTest2(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
-		GetParam()->cvtInputDir(ChdbTest2::getInputDir());
-	};
-	~TestCase2() { removeFile(getInputDir()+".out*"); };
-	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest2::getInputDir()); };
+    TestCase2() : ChdbTest2(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+        GetParam()->cvtInputDir(ChdbTest2::getInputDir());
+    };
+    ~TestCase2() { removeFile(getInputDir()+".out*"); };
+    virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest2::getInputDir()); };
 };
 class TestCase3: public ChdbTest3,
-				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+                 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
 public:
-	TestCase3() : ChdbTest3(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
-		GetParam()->cvtInputDir(ChdbTest3::getInputDir());
-	};
-	~TestCase3() { removeFile(getInputDir()+".out*"); };
-	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest3::getInputDir()); };
+    TestCase3() : ChdbTest3(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+        GetParam()->cvtInputDir(ChdbTest3::getInputDir());
+    };
+    ~TestCase3() { removeFile(getInputDir()+".out*"); };
+    virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest3::getInputDir()); };
 };
 class TestCase4: public ChdbTest4,
-				 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
+                 public ::testing::WithParamInterface<ChdbTestsWithParams*> {
 public:
-	TestCase4() : ChdbTest4(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
-		GetParam()->cvtInputDir(ChdbTest4::getInputDir());
-	};
-	~TestCase4() { removeFile(getInputDir()+".out*"); };
-	virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest4::getInputDir()); };
+    TestCase4() : ChdbTest4(),::testing::WithParamInterface<ChdbTestsWithParams*>() {
+        GetParam()->cvtInputDir(ChdbTest4::getInputDir());
+    };
+    ~TestCase4() { removeFile(getInputDir()+".out*"); };
+    virtual string getInputDir() { return GetParam()->cmplInputDir(ChdbTest4::getInputDir()); };
+};
+
+// Adding the mpi buffer to ChdbTest1 (names only)
+class SchedTestStr : public ChdbTest1 {
+public:
+    SchedTestStr();
+    ~SchedTestStr() { free(bfr); };
+
+protected:
+    string expected_bfr;
+    void*  bfr;
+    size_t bfr_len;
+};
+
+// Adding the mpi buffer to ChdbTest1 (return values only)
+class SchedTestInt : public ChdbTest1 {
+public:
+    SchedTestInt();
+    ~SchedTestInt() { free(bfr); };
+
+protected:
+    vector_of_int expected_values;
+    
+    string expected_bfr;
+    void*  bfr;
+    size_t bfr_len;
+};
+
+// Adding the mpi buffer to ChdbTest1 (doubles for time only)
+// REMOVED class SchedTestDbl : public ChdbTest1 {
+// REMOVED public:
+// REMOVED     SchedTestDbl();
+// REMOVED     ~SchedTestDbl() { free(bfr); };
+// REMOVED 
+// REMOVED // REMOVED protected:
+// REMOVED     vector_of_double expected_values;
+// REMOVED     
+// REMOVED     string expected_bfr;
+// REMOVED     void*  bfr;
+// REMOVED     size_t bfr_len;
+// REMOVED };
+
+// Adding the mpi buffer to ChdbTest1 (names + return values)
+class SchedTestStrInt : public ChdbTest1 {
+public:
+    SchedTestStrInt();
+    ~SchedTestStrInt() { free(bfr); };
+
+protected:
+    vector_of_strings expected_file_pathes;
+    vector_of_int expected_values_1;
+    string expected_bfr;
+    string expected_bfr_1;
+    void*  bfr;
+    size_t bfr_len;
 };
 
 #endif

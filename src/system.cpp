@@ -134,7 +134,7 @@ void getCurrentDirName(string& d) {
  * @brief Sleep duration, counted in milliseconds
  * 
  * @param duration
-*/
+ */
 void sleepMs(unsigned int duration) {
     struct timespec req;
     if (duration > 1000)
@@ -303,7 +303,8 @@ void mkdir (const string& dir, mode_t mode) {
 /** 
  * @brief Write in a Buffer for sending a block of file names
  *        We store the number of strings (as an integer), then the strings
- *        Storing three files, little endian: 3000xxx\0xxx\0xxx\0
+ *        Storing three files: 0003xxx\0xxx\0xxx\0
+ *        Storing Zero file: 0000
  * 
  * @param[in] files_names A vector of file names
  * @param[in] bfr The buffer (should be already allocated)
@@ -313,17 +314,20 @@ void mkdir (const string& dir, mode_t mode) {
  * 
  */
 void vctToBfr(const vector_of_strings& file_pathes, void* bfr, size_t bfr_size, size_t& data_size ) {
-    data_size=sizeof(int);
+    size_t local_data_size=sizeof(int);
     for (size_t i=0; i<file_pathes.size(); ++i) {
-        data_size += file_pathes[i].length()+1;
+        local_data_size += file_pathes[i].length()+1;
     }
 
-    if (data_size > bfr_size) {
+    // data_size unchanged if there is an exception
+    if (local_data_size > bfr_size) {
         throw(runtime_error("ERROR - Buffer too small"));
     }
-
+    data_size = local_data_size;
+    
     size_t vct_sze = file_pathes.size();
     memcpy(bfr,(void*)&vct_sze,sizeof(int));
+
     size_t offset=sizeof(int);
     for (size_t i=0;i<vct_sze; ++i) {
         strcpy((char*)bfr+offset,file_pathes[i].c_str());
