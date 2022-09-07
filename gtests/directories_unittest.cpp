@@ -1092,7 +1092,7 @@ TEST_P(TestCase4,filetypedir) {
 unique_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_notmp   (new ChdbTestsWithParamsUsingFs("none"));
 unique_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithParamsUsingFs("."));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     tmpOrNotSeveralDirectories,
     TestCase1,
     Values(test_case_Fs_withtmp.get(),test_case_Fs_notmp.get())
@@ -1102,13 +1102,13 @@ INSTANTIATE_TEST_CASE_P(
 #if false
 unique_ptr<ChdbTestsWithParamsUsingBdbh> test_case_Bdbh_withtmp (new ChdbTestsWithParamsUsingBdbh("."));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     tmpOrNotSeveralDirectories,
     TestCase1,
     Values(test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get(),test_case_Bdbh_withtmp.get())
 //    Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())
 );
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     tmpOrNotSeveralDirectories,
     TestCase4,
     Values(test_case_Fs_notmp.get(),test_case_Fs_withtmp.get(),test_case_Bdbh_withtmp.get())

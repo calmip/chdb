@@ -45,9 +45,12 @@ using namespace std;
 #include "parameters.hpp"
 #include "directories.hpp"
 
-class Scheduler: private NonCopyable {
+class Scheduler {
 public:
     Scheduler(const Parameters& p, Directories& d, bool);
+    Scheduler (const Scheduler&) = delete;
+    Scheduler& operator= (const Scheduler&) = delete;
+    
     int getRank() const     { return rank; };
     size_t getNbOfSlaves() const { return comm_size-1; };
     bool isMaster() const   { return rank==0;};

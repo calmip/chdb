@@ -50,7 +50,7 @@ then from the chdb direcory:
 `./directories_unittest`
 `./scheduler_unittest`
 
-**NOTE** - This was tested with googletest release 1.8.1 and 1.12.1
+**NOTE** - This was tested with googletest release 1.12.1
 
 Emmanuel Courcelle
 emmanuel.courcelle@toulouse-inp.fr
