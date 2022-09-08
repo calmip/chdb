@@ -96,7 +96,7 @@ Scheduler::Scheduler(const Parameters& p, Directories& d, bool o=false) : prms(p
     // node_comm is a connector specific to each node
     // It is used to compute the "node_rank", ie the node of this process for one node
     hash<string> hasher;
-    int color = (int) (hasher(hostname) >> 1);  // Must be positive integer
+    int color = abs((int) hasher(hostname));  // Must be positive integer
 
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, &node_comm);
     MPI_Comm_rank (node_comm, &node_rank);
