@@ -35,9 +35,9 @@ else()
 endif()
 
 add_executable(chdb.exe src/chdb.cpp src/basicscheduler.cpp src/directories.cpp src/parameters.cpp src/scheduler.cpp src/system.cpp src/usingfs.cpp)
-
 #target_link_libraries(chdb.exe PRIVATE chdb mpi)
 target_link_libraries(chdb.exe PRIVATE MPI::MPI_CXX)
+install(TARGETS chdb.exe DESTINATION bin)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     if(GOOGLETEST_ROOT)
@@ -55,10 +55,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_link_libraries(scheduler_unittest PRIVATE MPI::MPI_CXX gtest)
     add_custom_target(ext_cmd ALL cp ${CMAKE_CURRENT_SOURCE_DIR}/gtests/ext_cmd.sh . COMMENT "Generating ext_cmd.sh"  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gtests/ext_cmd.sh )
 endif()
-
-
-
-#install(TARGETS chdb.exe DESTINATION bin)
 
 if("${CHDB_MPI}" STREQUAL "OPENMPI")
     install(PROGRAMS  wrapper/openmpi/env-wrapper.sh DESTINATION bin)
