@@ -304,7 +304,7 @@ void BasicScheduler::mainLoopMaster() {
  * @param os 
  */
 void BasicScheduler::reportHeader(ostream& os) {
-    os << "SLAVE\tTIME(s)\tSTATUS\tINPUT PATH\n";
+    os << "SLAVE   TIME(s)        STATUS   INPUT PATH\n";
 
     wall_time_slaves.clear();
     wall_time_slaves.assign(getNbOfSlaves()+1,0.0);
@@ -331,9 +331,9 @@ void BasicScheduler::reportBody(ostream& os,
     int n=0;
     for (size_t i=0; i<file_pathes.size(); ++i) {
         if (file_pathes[i].size()!=0) {
-            os << rank << '\t';
-            os << wall_times[i] << '\t';
-            os << return_values[i] << '\t';
+            os << left << setw(8) << rank;
+            os << setw(15) << wall_times[i];
+            os << setw(9) << return_values[i];
             os << file_pathes[i] << '\n';
             wall_time_slave += wall_times[i];
             n += 1;
