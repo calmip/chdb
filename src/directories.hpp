@@ -52,10 +52,12 @@ struct Finfo {
   off_t st_size;
 };
 
-class Directories: private NonCopyable {
+class Directories {
 
 public:
     Directories(const Parameters& p):prms(p),rank(-1),comm_size(0),blk_ptr(files.begin()) {};
+    Directories(const Directories&) = delete;
+    Directories& operator= (const Directories&) = delete;
     virtual ~Directories(){};
     
     // setRank should be set ONLY ONE TIME (this is checked)

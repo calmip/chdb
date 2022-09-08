@@ -61,7 +61,7 @@ testing::Environment* const env =
 // --------------------------------
 
 // Test basicscheduler::readFrmRecvBfr and basicscheduler::writeToSndBfr
-TEST_F(SchedTestStrInt,readwriteToSndBfr) {
+TEST_F(ChdbTest1,readwriteToSndBfr) {
 
     // Init prms
     char* argv[11];
@@ -84,7 +84,8 @@ TEST_F(SchedTestStrInt,readwriteToSndBfr) {
     vector_of_double d1, rec_d1;
 
     size_t bfr_size = 100;
-    void* bfr = malloc(bfr_size);
+    unique_ptr<char[]> bfr_mngr = make_unique<char[]>(bfr_size);
+    void* bfr = static_cast<void*>(bfr_mngr.get());
     size_t data_size = 0;
 
     // We serialize i1, d1, s1, s2 using writeToSndBfr

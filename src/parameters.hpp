@@ -46,11 +46,13 @@ using namespace std;
     \brief This class parses and keeps in memory the command line
 */
 
-class Parameters: private NonCopyable {
+class Parameters {
 
 public:
     // May throw a runtime_error if something wrong with the parameters
     Parameters(int, char**);
+    Parameters(const Parameters&) = delete;
+    Parameters& operator= (const Parameters&) = delete;
 
     string getInDir()     const { return input_directory; };
     string getOutDir(bool db_free=false)    const { return (!db_free) ? output_directory: output_directory_db_free; };

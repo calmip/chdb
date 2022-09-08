@@ -1,15 +1,19 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(chdb LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 11)
+
+if (NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-Message (STATUS "CMAKE_BUILD_TYPE = " ${CMAKE_BUILD_TYPE})
+Message (STATUS "CMAKE_BUILD_TYPE     = " ${CMAKE_BUILD_TYPE})
 Message (STATUS "CMAKE_INSTALL_PREFIX = " ${CMAKE_INSTALL_PREFIX})
+Message (STATUS "CMAKE_CXX_STANDARD   = " ${CMAKE_CXX_STANDARD})
 
 add_compile_options(
 #       -Wall -Werror
@@ -49,6 +53,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     target_link_libraries(system_unittest PRIVATE MPI::MPI_CXX gtest)
     target_link_libraries(directories_unittest PRIVATE MPI::MPI_CXX gtest)
     target_link_libraries(scheduler_unittest PRIVATE MPI::MPI_CXX gtest)
+    add_custom_target(ext_cmd ALL cp ${CMAKE_CURRENT_SOURCE_DIR}/gtests/ext_cmd.sh . COMMENT "Generating ext_cmd.sh"  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gtests/ext_cmd.sh )
 endif()
 
 

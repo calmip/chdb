@@ -34,6 +34,7 @@
 using namespace std;
 
 #include <mpi.h>
+#include <memory>
 #include "constypes.hpp"
 #include "scheduler.hpp"
 
@@ -49,7 +50,7 @@ public:
  
 //    friend class TestCase1_ExecuteCommandFrmList1_Test;
 //    friend class TestCase1_ExecuteCommandFrmList2_Test;
-    friend class SchedTestStrInt_readwriteToSndBfr_Test;
+    friend class ChdbTest1_readwriteToSndBfr_Test;
     friend class TestInvariant_ChdbTest;
 //    friend class WithOrNoTmp_AbortOnError_Test;
 //    friend class WithOrNoTmp_ContinueOnError_Test;
@@ -73,7 +74,7 @@ private:
 
     void checkInvariant(const vector_of_int&, const vector_of_double&, const vector_of_strings&);
 
-    void allocBfr(void*& bfr, size_t& bfr_sze);
+    void allocBfr(unique_ptr<char[]>& bfr_mngr, size_t& bfr_sze);
     void writeToSndBfr (void*, size_t, size_t&,
                         const vector_of_int&, const vector_of_double&, const vector_of_strings&, const vector_of_strings&);
     void readFrmRecvBfr(const void*,
