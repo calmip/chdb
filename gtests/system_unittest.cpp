@@ -133,6 +133,7 @@ TEST(parseFilePath,parseFilePath) {
 
 TEST(isEndingWith,isEndingWith) {
     string name="a/b/c/e.txt1";
+    EXPECT_EQ(true,isEndingWith(name,name));
     EXPECT_EQ(true,isEndingWith(name,".txt1"));
     EXPECT_EQ(true,isEndingWith(name,"txt1"));
     EXPECT_EQ(false,isEndingWith(name,".txt"));
@@ -143,6 +144,7 @@ TEST(isEndingWith,isEndingWith) {
 
 TEST(isBeginningWith,isBeginningWith) {
     string name="a/b/c/e.txt1";
+    EXPECT_EQ(true,isBeginningWith(name,name));
     EXPECT_EQ(true,isBeginningWith(name,"a/b"));
     EXPECT_EQ(false,isBeginningWith(name,"/a/b"));
     EXPECT_EQ(true,isBeginningWith(name,"a/b/c/e.txt1"));

@@ -11,9 +11,25 @@ You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation: chd
 --------------
 `cmake -S. -Bbuild [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
 
+### Selecting the correct mpi library:
+
 If the current mpi release cannot be detected, you may force an mpi type with:
 
 `cmake -S. -Bbuild -DCHDB_MPI=OPENMPI|INTELMPI  [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
+
+Only intelmpi or openmpi are currently supported
+
+### Selecting the correct c++ standard level:
+
+The default is using C++20, however only several 2020 or 2017 specific lines are provided, they are indicated during the compilation and an alternated code is proposed for older compilers.
+
+If you compiler does not support C++20 std, you may select 2014 or 2017 with:
+
+`cmake -S. -Bbuild -DCMAKE_CXX_STANDARD 14|17 [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
+
+chdb compiles at least with gcc 4.8.5 to 10.3.0
+
+### Compiling
 
 Then build the software:
 
@@ -39,7 +55,7 @@ Install first the testing framework googletest: https://github.com/google/google
 `cmake  -DCMAKE_INSTALL_PREFIX=..  ..`
 `make install`
 
-then from the chdb direcory:
+then from the chdb directory:
 
 `cd chdb`
 `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DGOOGLETEST_ROOT=/path/to/googletest-release-1.12.1`

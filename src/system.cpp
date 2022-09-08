@@ -27,6 +27,11 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
+
+#if __cplusplus >= 201703L
+    #include <filesystem>
+#endif
+
 using namespace std;
 
 #include <libgen.h>
@@ -125,9 +130,15 @@ void getHostName(string& h) {
  * @param[out] d
  */
 void getCurrentDirName(string& d) {
+#if __cplusplus >= 201703L
+    #warning Using C++17 filesystem library
+    d = filesystem::current_path().string();
+#else
+    #warning NOT USING C++17 filesystem library
     const char* d_c = get_current_dir_name();
     d = (string) d_c;
     free((void*)d_c);
+#endif
 }
 
 /** 
@@ -161,6 +172,27 @@ void sleepMs(unsigned int duration) {
  */
 void parseFilePath(const string& path, string& dir, string& name, string& base, string& ext) {
 
+#if __cplusplus >= 201703L
+    #warning Using C++17 filesystem library
+    filesystem::path fs_path(path);
+    dir = fs_path.parent_path().string();
+    if (dir == "") dir = ".";   // Current directory
+
+    name = fs_path.filename().string();
+    if (name[0] == '.')
+    {
+        base = "";
+        ext = name;
+        ext.erase(0,1);
+    }
+    else
+    {
+        base = fs_path.stem().string();
+        ext = fs_path.extension().string();
+    }
+    if (ext != "" && ext[0] == '.') ext.erase(0,1);// .txt --> txt
+#else
+    #warning NOT USING C++17 filesystem library
     char*  file_path = (char*) malloc(path.length()+1);
     strcpy(file_path,path.c_str());
 
@@ -182,6 +214,8 @@ void parseFilePath(const string& path, string& dir, string& name, string& base, 
         base="";
         ext="";
     }
+#endif
+
 }
 
 /** 
@@ -212,41 +246,51 @@ vector_of_strings split(const string& s) {
 }
 
 /** 
- * @brief Returns true if string ends with the extension
+ * @brief Returns true if string ends with the suffix
  * 
  * @param name 
- * @param ext 
+ * @param suffix 
  * 
  * @return 
  */
-bool isEndingWith(const string& name, const string& ext) {
-    size_t ext_len = ext.length();
-    size_t nme_len = name.length();
-    if ( ext_len < nme_len ) {
-        string nme_ext = name.substr(nme_len-ext_len);
-        return ( nme_ext == ext );
+bool isEndingWith(const string& name, const string& suffix) {
+#if __cplusplus > 201703L
+    #warning Using C++20 ends_with
+    return name.ends_with(suffix);
+#else
+    size_t suffix_len = suffix.length();
+    size_t name_len = name.length();
+    if ( suffix_len < name_len ) {
+        string name_suffix = name.substr(name_len-suffix_len);
+        return ( name_suffix == suffix );
     } else {
         return false;
     }
+#endif
 }
 
 /** 
  * @brief Returns true if string begins with the heading
  * 
  * @param string
- * @param heading
+ * @param prefix
  * 
  * @return 
  */
-bool isBeginningWith(const string& name, const string& heading) {
-    size_t heading_len = heading.length();
+bool isBeginningWith(const string& name, const string& prefix) {
+#if __cplusplus > 201703L
+    #warning Using C++20 starts_with
+    return name.starts_with(prefix);
+#else    
+    size_t prefix_len = prefix.length();
     size_t nme_len = name.length();
-    if ( heading_len <= nme_len ) {
-        string nme_head = name.substr(0,heading_len);
-        return ( nme_head == heading );
+    if ( prefix_len <= nme_len ) {
+        string nme_head = name.substr(0,prefix_len);
+        return ( nme_head == prefix );
     } else {
         return false;
     }
+#endif
 }
 
 /**

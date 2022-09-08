@@ -194,11 +194,15 @@ void BasicScheduler::mainLoopMaster() {
     // loop over the file blocks
     // Listen to the slaves
     size_t bfr_size=0;
-    void* send_bfr=NULL;
-    void* recv_bfr=NULL;
 
-    allocBfr(send_bfr,bfr_size);
-    allocBfr(recv_bfr,bfr_size);
+    unique_ptr<char[]> send_bfr_mngr;
+    unique_ptr<char[]> recv_bfr_mngr;
+
+    allocBfr(send_bfr_mngr,bfr_size);
+    allocBfr(recv_bfr_mngr,bfr_size);
+
+    void* send_bfr = static_cast<void*> (send_bfr_mngr.get());
+    void* recv_bfr = static_cast<void*> (recv_bfr_mngr.get());
 
     vector_of_int return_values, dummy_vi;
     vector_of_double wall_times, dummy_vd;
@@ -291,10 +295,6 @@ void BasicScheduler::mainLoopMaster() {
     if (prms.isReportMode()) {
         reportSummary(report_file);
     }
-
-    // free memory
-    free(send_bfr);
-    free(recv_bfr);
 }
 
 /** 
@@ -390,8 +390,10 @@ void BasicScheduler::mainLoopSlave() {
     MPI_Status sts;
 
     size_t bfr_size=0;
-    void* bfr=NULL;
-    allocBfr(bfr,bfr_size);
+    unique_ptr<char[]> bfr_mngr;
+
+    allocBfr(bfr_mngr,bfr_size);
+    void* bfr = static_cast<void*> (bfr_mngr.get());
 
 /*
     {
@@ -481,9 +483,6 @@ void BasicScheduler::mainLoopSlave() {
 
     writeToSndBfr(bfr,bfr_size,send_msg_len, return_values, wall_times, node_name, file_pathes);
     MPI_Send(bfr, bfr_size, MPI_BYTE, master, CHDB_TAG_END, MPI_COMM_WORLD);
-
-    // free memory
-    free(bfr);
 }
 
 /** 
@@ -625,19 +624,16 @@ bool BasicScheduler::errorHandle(const vector_of_int& return_values, const vecto
  *          4000 is the integer representation of 4 in little endian machines
  *          A,B,C,D are integers representing the status retrieved by the slaves for each file name
  *
- * @param[out] bfr The allocated buffer
+ * @param[out] bfr_mngr The allocated buffer (a smart pointer)
  * @param[out] bfr_sze The size of the allocated buffer
  *
  */
-void BasicScheduler::allocBfr(void*& bfr,size_t& bfr_size) {
+void BasicScheduler::allocBfr(unique_ptr<char[]>& bfr_mngr,size_t& bfr_size) {
     size_t vct_size = prms.getBlockSize();
     bfr_size  = sizeof(int) + vct_size*sizeof(int);
     bfr_size += sizeof(int) + vct_size*sizeof(double);
     bfr_size += sizeof(int) + vct_size*(FILEPATH_MAXLENGTH+1);
-    bfr       = malloc(bfr_size);
-    if (bfr==NULL) {
-        throw(runtime_error("ERROR - Could not allocate memory"));
-    }
+    bfr_mngr = make_unique<char[]>(bfr_size);
 }
 
 /** 
