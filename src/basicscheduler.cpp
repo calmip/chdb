@@ -428,7 +428,7 @@ void BasicScheduler::mainLoopSlave() {
     unsigned int sleep_time = prms.getSleepTime();
     if (sleep_time != 0)
     {
-        sleep(sleep_time*rank);
+        sleepMs(sleep_time*rank);
     }
 
    /* mpi mode: If no sleep specified, introduce a little delay, calculated from node_rank,
@@ -442,7 +442,7 @@ void BasicScheduler::mainLoopSlave() {
     {
         if (prms.getMpiSlaves() != "")
         {
-            sleep(100*node_rank);
+            sleepMs(100*node_rank);
         }
     }
     */
