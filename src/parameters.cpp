@@ -229,8 +229,8 @@ CSimpleOpt::SOption options[] = {
         }
     };
 
-    // Let blank directory if type dir
-    if ( !isTypeDir() && output_directory == "" ) {
+    // the output directory is required ONLY for "file" types
+    if ( isTypeFile() && output_directory == "" ) {
         if (isBdBh()) {
             output_directory = input_directory.substr(0,input_directory.length()-3);
             output_directory         += ".out";
@@ -254,40 +254,49 @@ CSimpleOpt::SOption options[] = {
 *********/
 void Parameters::setInputType(const string& cft) {
     file_type = cft;
-    if (file_type == "dir") {
+
+    // dir
+    if (file_type == "dir")
+    {
         is_type_dir = true;
-    } else {
-        is_type_dir = false;
+        is_type_file = false;
+        is_type_iter = false;
     }
-    
-    try {
-        if ( cft.find(' ')==string::npos ) {
-            is_type_iter = false;
-            is_type_file = true;
-        } else {
-            size_t idx;
-            unsigned int start=0,end=0,step=1;
-            start = stoul(cft,&idx);
-            // idx = number of processed characters
-            if (idx != cft.length()) {
-                string cft1 = cft.substr(idx);
-                end = stoul(cft1, &idx);
-                if (idx != cft1.length()) {
-                    string cft2 = cft1.substr(idx);
-                    step = stoul(cft2, nullptr);
+    // file or iter
+    else
+    {
+        try {
+            if ( cft.find(' ')==string::npos ) {
+                is_type_dir = false;
+                is_type_iter = false;
+                is_type_file = true;
+            } else {
+                
+                size_t idx;
+                unsigned int start=0,end=0,step=1;
+                start = stoul(cft,&idx);
+                // idx = number of processed characters
+                if (idx != cft.length()) {
+                    string cft1 = cft.substr(idx);
+                    end = stoul(cft1, &idx);
+                    if (idx != cft1.length()) {
+                        string cft2 = cft1.substr(idx);
+                        step = stoul(cft2, nullptr);
+                    }
                 }
-            }
-            iter_start = start;
-            iter_end   = end;
-            iter_step  = step;
-            is_type_iter = true;
-            is_type_file = false;
-        };
-    }
-    // As we do not check, stoul may throw an invalid_argument
-    // But we want a runtime_error to be thrown...
-    catch (const invalid_argument& e) {
-        throw(runtime_error(e.what()));
+                iter_start = start;
+                iter_end   = end;
+                iter_step  = step;
+                is_type_dir = false;
+                is_type_iter = true;
+                is_type_file = false;
+            };
+        }
+        // As we do not check, stoul may throw an invalid_argument
+        // But we want a runtime_error to be thrown...
+        catch (const invalid_argument& e) {
+            throw(runtime_error(e.what()));
+        }
     }
 }
     

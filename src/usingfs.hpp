@@ -65,19 +65,19 @@ public:
     void makeOutDir(bool,bool);
     void makeTempOutDir();
     string getTempOutDir() const {
-        if (temp_output_dir.length()==0 && !prms.isTypeDir()) throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
+        if (temp_output_dir.length()==0 && prms.isTypeFile()) throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
         return temp_output_dir;
     };
 
     // temporary input directory not used - But throws if temp not inited for consistency reasons
     // (see Directory::UsingBdbh)
     string getTempInDir() const { 
-        if (temp_output_dir.length()==0 && !prms.isTypeDir()) throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
+        if (temp_output_dir.length()==0 && prms.isTypeFile()) throw(logic_error("ERROR - temp_output_dir NOT INITIALIZED"));
         return prms.getInDir();
     };        
 
     string getOutDir() const  {
-        if(output_dir.length()==0 && !prms.isTypeDir()) throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
+        if(output_dir.length()==0 && prms.isTypeFile()) throw(logic_error("ERROR - output_dir NOT INITIALIZED"));
         return output_dir;
     }
     void consolidateOutput(bool from_temp, const string& path="") override;
