@@ -1095,7 +1095,7 @@ unique_ptr<ChdbTestsWithParamsUsingFs> test_case_Fs_withtmp (new ChdbTestsWithPa
 INSTANTIATE_TEST_SUITE_P(
     tmpOrNotSeveralDirectories,
     TestCase1,
-    Values(test_case_Fs_withtmp.get(),test_case_Fs_notmp.get())
+    Values(test_case_Fs_withtmp.get(),test_case_Fs_withtmp.get())
 );
 
 INSTANTIATE_TEST_SUITE_P(
