@@ -411,7 +411,7 @@ void Parameters::usage() {
     cerr << "                                  - a RELATIVE path specified from --command will be treated FROM THE WORK DIRECTORY\n";
     cerr << "                                  - a RELATIVE PATH specified from ANY OTHER SWITCH will be treated FROM THE INITIAL LAUNCH DIRECTORY\n";
     cerr << "                               The default is: \"Do not change directory\", EXCEPT for the type: \"dir\", \n";
-    cerr << "                               where the default is = \"change to %in-dir%/%path%\"";
+    cerr << "                               where the default is = \"change to %in-dir%/%path%\" \n";
     cerr << "  --create-environment       : A snippet containing some shell commands to create a working environment inside the work directory \n";
     cerr << "                               Will be executed AFTER chdir workdir and BEFORE the command itself\n";
     cerr << "                               EXAMPLE:\n";
