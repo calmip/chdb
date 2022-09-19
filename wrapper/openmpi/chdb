@@ -1,4 +1,0 @@
-#! /bin/bash
-# Thanks to this wrapper you can export here environment variables if necessary
-# (ie OMPI_MCA_xxx cf. the openmpi documentation)
-exec chdb.exe "$@"

@@ -1,4 +1,4 @@
 #! /bin/bash
 # Thanks to this wrapper you can export here environment variables if necessary
-# (ie I_MPI_xxx cf. the intelmpi documentation)
+# (ie OMPI_MCA_xxx for openmpi, or I_MPI_xxx for intelmpi)
 exec chdb.exe "$@"

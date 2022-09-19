@@ -7,7 +7,7 @@
 #
 #    - WORKDIR             --> We must change directory to $WORKDIR 
 #    - M64                 --> the modules to load, base 64 coded (easier to manage strange characters) 
-#	 - E64                 --> the environment variables to retrieve
+#    - E64                 --> the environment variables to retrieve
 #    - MPI_SLAVES          --> Number of mpi processes (s), may be also nb of processes/node and nb of threads/process (S:s:c)
 #    - HOSTNAME            --> The hostname (right now only localhost suppported)
 #    - COMMANDE PARAMETRES --> The command and its parameters
@@ -24,18 +24,40 @@ E64=$1;shift
 MPI_SLAVES=$1; shift
 HOSTNAME=$1; shift
 
-# Load the modules: their names is base64 coded and stored in $M64.
-module purge 2>/dev/null
-for m in $(echo $M64|base64 -d); do module load $m 2> /dev/null ;done
-
-# Print the modules only in verbose mode
-[ -z "$CHDB_VERBOSE" ] || module li
-
-# Set the environment variables
-for v in $(echo $E64|base64 -d); do eval "export $v"; done
+# Set the environment variables (including CHDB_VERBOSE if --verbose is specified)
+for v in $(echo $E64|base64 -d)
+do
+   [ -z "$CHDB_VERBOSE" ] || echo "export $v" 
+    eval "export $v"
+done
 
 # Print the env only in verbose mode
 [ -z "$CHDB_VERBOSE" ] || for v in CHDB_RANK CHDB_COMM_SIZE; do echo "$v=${!v}"; done
+
+[ -z "$CHDB_VERBOSE" ] || echo "====================================="
+
+# Print the name of wrapper - only in verbose mode
+[ -z "$CHDB_VERBOSE" ] || echo "slave wrapper = $0"
+
+# Load the modules: their names is base64 coded and stored in $M64.
+# If starts with '/' we suppose that it is a path to file to be sourced
+# If does not start with '/' we suppose it is a module name
+
+module purge 2>/dev/null
+for m in $(echo $M64|base64 -d)
+do
+    if [[ "$m" =~ ^/ ]]
+    then
+        [ -z "$CHDB_VERBOSE" ] || echo "source $m"
+        source $m
+    else
+        module load $m 2>/dev/null
+    fi
+done
+
+# Print the modules only in verbose mode
+[ -z "$CHDB_VERBOSE" ] || module li -t
+[ -z "$CHDB_VERBOSE" ] || echo "====================================="
 
 # Parse $MPI_SLAVES
 #       If "4"    ==> numa="NA" (Non applicable) and $s=4
@@ -44,6 +66,7 @@ read numa s <<< $(echo $MPI_SLAVES | awk -F':' -v r=$CHDB_RANK 'NF==3{ S=$1;s=$2
 
 # Comment out for debugging
 #echo "WORKDIR=$WORKDIR"
+#echo "CHDB_RANK=$CHDB_RANK"
 #echo "MPI_SLAVES=$MPI_SLAVES ==> numa=$numa, s=$s"
 #echo "HOSTNAME=$HOSTNAME"
 #echo "COMMAND=""$@"
@@ -54,11 +77,12 @@ cd $WORKDIR
 # Calling mpirun, may be through numactl
 if [[ $numa == "NA" ]]
 then
-#	echo mpirun -np $s -host $HOSTNAME "$@"
-	mpirun -np $s -host $HOSTNAME "$@"
-	exit $?
+    [ -z "$CHDB_VERBOSE" ] || echo mpirun -np $s -host $HOSTNAME "$@"
+    mpirun -np $s -host $HOSTNAME "$@"
+    exit $?
 else
-#	echo numactl --physcpubind $numa -- mpirun -np $s -host $HOSTNAME "$@"
-	numactl --physcpubind $numa -- mpirun -np $s -host $HOSTNAME "$@"
-	exit $?
+    [ -z "$CHDB_VERBOSE" ] || echo "Which mpirun --> " $(which mpirun)
+    [ -z "$CHDB_VERBOSE" ] || echo Calling numactl --physcpubind $numa -- mpirun -np $s -host $HOSTNAME "$@"
+    numactl --physcpubind $numa -- mpirun -np $s -host $HOSTNAME "$@"
+    exit $?
 fi

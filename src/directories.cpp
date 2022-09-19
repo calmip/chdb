@@ -144,6 +144,20 @@ void Directories::buildMpiCommand(string& cmd) const {
             string mpi_cmd = mpi_cmd_c;
             string h;
             getHostName(h);
+            const char * mpi_c = getenv("CHDB_MPI");
+            if (mpi_c == NULL)
+            {
+                replaceTmpl("%CHDB_MPI%", "", mpi_cmd);
+            }
+            else
+            {
+                string mpi = mpi_c;
+                // If character other than a-z/0-9, do not replace (security)
+                if (mpi.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789") == string::npos)
+                {
+                    replaceTmpl("%CHDB_MPI%", mpi, mpi_cmd);
+                }
+            }
             replaceTmpl("%MPI_SLAVES%", mpi_slaves, mpi_cmd);
             replaceTmpl("%HOSTNAME%", h, mpi_cmd);
             replaceTmpl("%COMMAND%", cmd, mpi_cmd);

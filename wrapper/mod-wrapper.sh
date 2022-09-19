@@ -7,10 +7,16 @@
 #
 #    Echo the output of module li, base64 encoded
 #
-# EC, Calmip, 2017
+# EC, Calmip, 2017, 2022
 #
-	
+
 #set -v
 
-module li -t 2>&1|tail -n +2|base64 -w 0
-	
+if [ "$CHDB_MODULES" ]
+then
+   echo $CHDB_MODULES|base64 -w 0
+else
+   module li -t 2>&1|tail -n +2|base64 -w 0
+fi
+
+
