@@ -3,16 +3,17 @@
 #
 # Usage (from chdb, using --mpi-slaves)
 #
-#    slave-wrapper.sh WORKDIR M64 MPI_SLAVES HOSTNAME COMMANDE PARAMETRES
+#    slave-wrapper.sh WORKDIR M64 E64 S64 MPI_SLAVES HOSTNAME COMMANDE PARAMETRES
 #
 #    - WORKDIR             --> We must change directory to $WORKDIR 
 #    - M64                 --> the modules to load, base 64 coded (easier to manage strange characters) 
 #    - E64                 --> the environment variables to retrieve
+#    - S64                 --> The snippet to execute
 #    - MPI_SLAVES          --> Number of mpi processes (s), may be also nb of processes/node and nb of threads/process (S:s:c)
 #    - HOSTNAME            --> The hostname (right now only localhost suppported)
 #    - COMMANDE PARAMETRES --> The command and its parameters
 #
-# EC, Calmip, 2015
+# EC, Calmip, 2015-2022
 #
 
 #set -v
@@ -21,6 +22,7 @@
 WORKDIR=$1; shift
 M64=$1;shift
 E64=$1;shift
+S64=$1; shift
 MPI_SLAVES=$1; shift
 HOSTNAME=$1; shift
 
@@ -40,24 +42,24 @@ done
 [ -z "$CHDB_VERBOSE" ] || echo "slave wrapper = $0"
 
 # Load the modules: their names is base64 coded and stored in $M64.
-# If starts with '/' we suppose that it is a path to file to be sourced
-# If does not start with '/' we suppose it is a module name
-
 module purge 2>/dev/null
 for m in $(echo $M64|base64 -d)
 do
-    if [[ "$m" =~ ^/ ]]
-    then
-        [ -z "$CHDB_VERBOSE" ] || echo "source $m"
-        source $m
-    else
-        module load $m 2>/dev/null
-    fi
+    module load $m 2>/dev/null
 done
 
 # Print the modules only in verbose mode
 [ -z "$CHDB_VERBOSE" ] || module li -t
 [ -z "$CHDB_VERBOSE" ] || echo "====================================="
+
+# Execute the snippet
+S64_dec=$(echo $S64|base64 -d)
+
+if [ -n "$S64_dec" ]
+then
+    [ -z "$CHDB_VERBOSE" ] || echo "now executing the snippet: $S64_dec"
+    eval "$S64_dec"
+fi
 
 # Parse $MPI_SLAVES
 #       If "4"    ==> numa="NA" (Non applicable) and $s=4

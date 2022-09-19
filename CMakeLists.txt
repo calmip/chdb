@@ -59,6 +59,7 @@ endif()
 install(PROGRAMS  wrapper/slave-openmpi-wrapper.sh DESTINATION bin)
 install(PROGRAMS  wrapper/slave-intelmpi-wrapper.sh DESTINATION bin)
 install(PROGRAMS  wrapper/env-wrapper.sh DESTINATION bin)
+install(PROGRAMS  wrapper/snippet-wrapper.sh DESTINATION bin)
 install(PROGRAMS  wrapper/mod-wrapper.sh DESTINATION bin)
 install(PROGRAMS  wrapper/chdb DESTINATION bin)
 
