@@ -88,7 +88,7 @@ int callSystem(string cmd, bool err_flg) {
                 msg += "returned -1";
                 csts = sts;
             } else {
-                msg += "could not execute cmd";
+                msg += "could not execute cmd - may be a shared library not found ?";
             }
             cerr << msg << '\n';
             should_retry = true;

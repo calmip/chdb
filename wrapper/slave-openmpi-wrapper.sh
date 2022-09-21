@@ -63,7 +63,7 @@ fi
 
 # Parse $MPI_SLAVES
 #       If "4"    ==> numa="NA" (Non applicable) and $s=4
-#       If "5:2:2 ==> numa=--physcpubind=0-3 for slave 1, 4-7 for slave 2, ..., 16-19 for slave 5, again 0-3 for slave 6 etc.
+#       If "5:2:2 ==> numa=--cpu-set=0-3 for slave 1, 4-7 for slave 2, ..., 16-19 for slave 5, again 0-3 for slave 6 etc.
 read numa s t <<< $(echo $MPI_SLAVES | awk -F':' -v r=$CHDB_RANK 'NF==3{ S=$1;s=$2;c=$3;size=s*c;offset=((r-1)%S)*size;for (k=0;k<size-1;k++) { printf "%i,",offset+k ; }; printf "%i",offset+k; printf " %i %i\n",s,c}NF==1 {print "NA",$1,$3}')                  
 
 # Comment out for debugging
@@ -76,7 +76,7 @@ read numa s t <<< $(echo $MPI_SLAVES | awk -F':' -v r=$CHDB_RANK 'NF==3{ S=$1;s=
 # go to workdir
 cd $WORKDIR
 
-# Calling mpirun, may be through numactl
+# Calling mpirun
 if [[ $numa == "NA" ]]
 then
     [ -z "$CHDB_VERBOSE" ] || echo mpirun -np $s "$@"
