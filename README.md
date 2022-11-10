@@ -17,5 +17,5 @@ The tasks launched by chdb may be:
 - A multithreaded program using several cores of the node
 - An mpi program. The only restriction is that each elementary tasks cannot use more than one cluster node.
 
-You can have a look to our tutorial on the Calmip website: https://www.calmip.univ-toulouse.fr/spip.php?article565
+You can have a look to our tutorial on the Calmip website: https://www.calmip.univ-toulouse.fr/espace-utilisateurs/doc-technique-olympe/lancer-un-calcul-sur-olympe/chdb-tutorial
 
