@@ -2,18 +2,72 @@ INSTALLING chdb:
 ================
 
 1/ Prerequisites:
-=================
-You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation (chdb compiles with openmpi AND with intelmpi)
+-----------------
+You should have a c++ compiler (gcc rel >=5.4.0), AND an mpi implementation: chdb may be used with:
+    - Any mpi implementation if you do not use mpi-based slaves
+    - openmpi OR intelmpi if want to use chdb with mpi-based slaves
 
-2/ Compiling:
-=============
-make
+2/ Installing:
+--------------
+`cmake -S. -Bbuild [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
 
-3/ Installing:
-==============
-Have a look to the install.sh script as you should probably have to change some things.
-The script tries to copy requested files to their destination: the binaries, some wrappers AND a module file. This is very
-useful if you use the Module gnu command (see http://modules.sourceforge.net/) on your site.
+### Selecting the correct mpi library:
+
+If the current mpi release cannot be detected, you may force an mpi type with:
+
+`cmake -S. -Bbuild -DCHDB_MPI=OPENMPI|INTELMPI  [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
+
+Only intelmpi or openmpi are currently supported
+
+### Selecting the correct c++ standard level:
+
+The default is using C++20, however only several 2020 or 2017 specific lines are provided, they are indicated during the compilation and an alternated code is proposed for older compilers.
+
+If you compiler does not support C++20 std, you may select 2014 or 2017 with:
+
+`cmake -S. -Bbuild -DCMAKE_CXX_STANDARD 14|17 [-DCMAKE_INSTALL_PREFIX=/path/to/chdb/installation]`
+
+chdb compiles at least with gcc 4.8.5 to 10.3.0
+
+### Compiling
+
+Then build the software:
+
+`cd build`
+`make`
+`make install`
+
+3/ Testing:
+-----------
+### Functional tests:
+
+1. You can try the tests in directory `ftests`
+2. You can follow the chdb tutorial available on https://www.calmip.univ-toulouse.fr/spip.php?article648
+   (The "Essential" part of the tuto should work)
+
+### Unit tests (for developers):
+
+Install first the testing framework googletest: https://github.com/google/googletest :
+
+`cd googletest-release-1.12.1`
+`mkdir build`
+`cd build`
+`cmake  -DCMAKE_INSTALL_PREFIX=/usr/local/googletest ..`
+`make install`
+
+then from the chdb directory:
+
+`cd chdb`
+`cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DGOOGLETEST_ROOT=/usr/local/googletest`
+`cd build`
+`make`
+`./parameters_unittest`
+`./system_unittest`
+`./directories_unittest`
+`./scheduler_unittest`
+
+**NOTE** - This was tested with googletest release 1.12.1
 
 Emmanuel Courcelle
-emmanuel.courcelle@inp-toulouse.fr
+emmanuel.courcelle@toulouse-inp.fr
+

@@ -1,3 +1,0 @@
-#! /bin/bash
-export I_MPI_WAIT_MODE=1
-exec chdb.exe "$@"
