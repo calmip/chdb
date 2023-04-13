@@ -18,16 +18,18 @@ end box
 Master --> Master: Init mpi
 Master --> md: Read the list of files to treat
 
+== Barrier (waiting for init) ==
+
 == Processing ==
 loop until all slaves running
-	Master -> s1bs: Sending block of files
+	Master -> s1bs: Sending block of files (CHDB_TAG_GO)
 	loop for files in block
 		s1bs --> s1d: Reading file
 		s1d --> s1bs: file read
 		s1bs --> s1bs: Executing program
 		Note over s1bs,s1d: Asynchronous execution
 	end loop
-	Master -> s2bs: sending block of files
+	Master -> s2bs: sending block of files (CHDB_TAG_GO)
 	loop for files in block
 		s2bs --> s2d: Reading file
 		s2d --> s2bs: file read
@@ -37,7 +39,7 @@ loop until all slaves running
 end
 
 loop until no more blocks
-	s2bs -> Master: finished
+	s2bs -> Master: sending results (CHDB_TAG_READY)
 	Note over s1bs, s2d
 	   The slave is given a new block
 	   as soon as finished current
@@ -50,12 +52,9 @@ loop until no more blocks
 		Note over s2bs,s2d: Asynchronous execution
 	end loop
 
-	s2bs -> Master: finished
-	Master -> s2bs: Sending block of files
-	s2bs --> s2d: Reading file
-	
-	s1bs -> Master: finished
-	Master -> s1bs: Sending block of files
+	s2bs -> Master: sending results (CHDB_TAG_READY)
+	s1bs -> Master: sending results (CHDB_TAG_READY)
+	Master -> s1bs: Sending block of files (CHDB_TAG_GO)
 	loop for files in block
 		s1bs --> s1d: Reading file
 		s1d --> s1bs: file read
@@ -69,16 +68,18 @@ end
 
 == Terminating ==
 loop until all slaves finished
-	s2bs --> s2d: Copying data from tmp
-	s2d --> s2bs: Done
-	s2bs -> Master: finished
-	Master --> md: Consolidating slave2 data to Output Dir
-	md --> Master: OK
-	s1bs --> s1d: Copying data from tmp
-	s1d --> s1bs: Done
-	s1bs -> Master: finished
-	Master --> md: Consolidating slave1 data to Output Dir
-	md --> Master: OK
+	Master -> s2bs: Close everything (CHDB_TAG_END)
+    s2bs --> s2d: Copying data from tmp or memory
+    s2d --> s2bs: Done
+    s2bs -> Master: finished (CHDB_TAG_END)
+    Master --> md: Consolidating slave2 data to Output Dir
+    md --> Master: OK
+	Master -> s1bs: Close everything (CHDB_TAG_END)
+    s1bs --> s1d: Copying data from tmp or memory
+    s1d --> s1bs: Done
+    s1bs -> Master: finished (CHDB_TAG_END)
+    Master --> md: Consolidating slave1 data to Output Dir
+    md --> Master: OK
 end
 
 @enduml
