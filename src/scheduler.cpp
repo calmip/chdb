@@ -157,9 +157,14 @@ void Scheduler::abort() {
  */
 
 void Scheduler::init(int argc, char**argv) {
-    MPI_Init(&argc,&argv);
+    char *** tmp = nullptr;
+    if (argv != nullptr)
+    {
+        tmp = &argv;
+    }
+    MPI_Init(&argc,tmp);
 }
-    
+
 void Scheduler::startTimer() {
     start_time = MPI_Wtime();
 }
